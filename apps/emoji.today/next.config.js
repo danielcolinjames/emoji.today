@@ -4,29 +4,11 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "images.blackbird.xyz",
+        hostname: "assets.github.com",
         port: "",
         pathname: "/**",
       },
     ],
-  },
-  publicRuntimeConfig: {
-    MONGODB_URI: process.env.MONGODB_URI,
-  },
-  serverRuntimeConfig: {
-    MONGODB_URI: process.env.MONGODB_URI,
-  },
-  env: {
-    MONGODB_URI: process.env.MONGODB_URI,
-  },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      }
-    }
-    return config
   },
 }
 
