@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+In the project.mdc file, you will see a description of the project. If we ever seem to be building features that don't adhere to the described project principles in that document, please let me know. Make sure everything we're building fits that. Sometimes it might be off because of sample code with the wrong text or something, so it's your job to keep us on track, and use that document as the source of truth for what we're building here.
+
+I want you to always be careful to explain your moves before you start modifying things. Ideally we can write good tests and stuff too—I want to make this as maintainable a project as possible. I want to be able to have you and other agents come in here and immediately understand the lay of the land. I want us to document all our decisions in the notes.mdc file. As we go, we should always update what we're working on. Assume a chat could get cut short at any moment, and we should always be updating the notes.mdc file, and reviewing it to see what the latest is.
+
+There's also a /docs directory which has notes from the Farcaster docs which this repo is kind of based on. I want you to reference those where relevant, but not overly rely on them.
+
+You should also have access to an MCP server for Supabase, which is what will power the backend. And you should also have access to a Neynar MCP which can help us understand the Neynar docs. We are kind of using Neynar as well as Farcaster, and I think their docs are a bit more comprehensive. Neynar has some functionality that Farcaster's template apps don't, I think. It's kind of confusing. So make sure you highlight any discrepancies, and ask me if you're not 100% sure about something. I'm still learning how to build mini apps.
+
