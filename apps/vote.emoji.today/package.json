@@ -1,5 +1,5 @@
 {
-  "name": "@emoji-today/mini-app",
+  "name": "vote.emoji.today",
   "version": "0.1.0",
   "type": "module",
   "private": true,

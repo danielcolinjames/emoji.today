@@ -1,5 +1,5 @@
 {
-  "name": "emoji.date",
+  "name": "emoji.today",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -26,6 +26,7 @@
     "react": "^18",
     "react-calendar-heatmap": "^1.9.0",
     "react-dom": "^18",
+    "rgb-hex": "^4.1.0",
     "swr": "^2.2.4"
   },
   "devDependencies": {
