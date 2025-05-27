@@ -75,10 +75,10 @@ export default function Home() {
           <h1 className="text-4xl font-normal tracking-tighter sm:text-5xl md:text-6xl lg:text-8xl leading-tight">
             Launching Friday.
           </h1>
-          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-[64px] text-gray-400 mt-2 md:mt-3 leading-tight">
+          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-gray-400 leading-tight">
             And Saturday.
           </p>
-          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-[64px] text-gray-400 leading-tight">
+          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-gray-400 leading-tight">
             And every day after that.
           </p>
         </div>

@@ -17,6 +17,9 @@ const nextConfig = {
       },
     ],
   },
+  compiler: {
+    styledJsx: false,
+  },
 }
 
 module.exports = nextConfig

@@ -4,17 +4,17 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "emoji.date",
-  description: "emoji.date",
+  title: "emoji.today",
+  description: "emoji.today",
   openGraph: {
-    images: "https://emoji.date/og.png",
+    images: "https://emoji.today/og.png",
   },
   twitter: {
     card: "summary_large_image",
-    site: "emoji.date",
-    description: `emoji.date`,
-    title: `emoji.date`,
-    images: ["https://emoji.date/og.png"],
+    site: "emoji.today",
+    description: `emoji.today`,
+    title: `emoji.today`,
+    images: ["https://emoji.today/og.png"],
   },
 };
 
