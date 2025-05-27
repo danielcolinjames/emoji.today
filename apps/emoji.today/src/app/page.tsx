@@ -20,8 +20,10 @@ export default function Home() {
   const [echoCount, setEchoCount] = useState(MAX_ECHOES);
   const [mainLogoOpacity, setMainLogoOpacity] = useState(1); // For fading out the main logo
   const [isEmojiCycling, setIsEmojiCycling] = useState(false); // To start emoji cycling
+  const [clientMounted, setClientMounted] = useState(false);
 
   useEffect(() => {
+    setClientMounted(true);
     const initialWait = 4500; // Time before emoji starts to appear
     const pauseBeforeFadeIn = 1000; // 1 second pause with 0% opacity
 
@@ -144,7 +146,7 @@ export default function Home() {
               zIndex: 20,
             }}
           >
-            {Array.from({ length: echoCount }).map((_, i) => {
+            {clientMounted && Array.from({ length: echoCount }).map((_, i) => {
               let opacity;
               if (echoCount <= 1) {
                 opacity = (echoCount === 1) ? MAX_ECHO_OPACITY : MIN_ECHO_OPACITY;

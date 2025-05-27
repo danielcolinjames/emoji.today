@@ -21,7 +21,6 @@ export const metadata: Metadata = {
 import localFont from "next/font/local";
 import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { FathomAnalytics } from "./Fathom";
 
 // Font files can be colocated inside of `app`
 const satoshiFont = localFont({
@@ -50,7 +49,6 @@ export default function RootLayout({
       <meta name="msapplication-TileColor" content="#000000" />
       <meta name="theme-color" content="#000000" />
       <body>
-        <FathomAnalytics />
         <main className="min-h-dvh bg-[#050505] relative pb-10 sm:pb-24">
           <Navbar />
           <div className="w-full pt-[45px] sm:pt-[50px]">{children}</div>
