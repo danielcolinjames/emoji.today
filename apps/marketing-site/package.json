@@ -1,0 +1,10 @@
+{
+  "name": "@emoji-today/marketing-site",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"Error: no dev specified for marketing-site yet\" && exit 1",
+    "build": "echo \"Error: no build specified for marketing-site yet\" && exit 1",
+    "lint": "echo \"Error: no lint specified for marketing-site yet\" && exit 1"
+  }
+}

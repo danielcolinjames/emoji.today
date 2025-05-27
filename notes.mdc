@@ -1,5 +1,59 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+## Notes
+
+### Architectural Discussion (2025-05-27)
+
+**User Identity:**
+- Decided to start with a **Farcaster-centric approach** for V1, leveraging Sign in With Neynar (SIWN).
+- Design database (`users` table with `fid` as primary link) to potentially support other auth methods later.
+- Future consideration: Auto-creating Farcaster accounts for new users via Neynar.
+
+**Backend Architecture:**
+- **API Server:** Likely Next.js (API routes) for handling auth, voting, Supabase interaction, Neynar API interaction.
+- **Database (Supabase):**
+    - `users`: `id` (PK), `fid` (unique), `signer_uuid` (secure), Farcaster profile data, `streak_count`, etc.
+    - `daily_emojis`: `date` (unique), `winning_emoji_id`, `prize_pool_amount`, NFT details.
+    - `votes`: `user_id`, `daily_emoji_id`, `emoji_id`, `voted_at`.
+    - `emojis` (optional, for consistency).
+- **Smart Contracts:** Future components for NFT minting, auction, prize distribution.
+
+**User IDing:**
+- Supabase `id` (UUID) as internal primary key.
+- `fid` from Farcaster as the link to Farcaster identity.
+- Application-specific session tokens (e.g., JWT) issued by our backend after Farcaster auth.
+
+**Cron Jobs:**
+1.  End-of-Day Vote Tally & Winner Selection (daily).
+2.  Prize Pool Distribution / Raffle Trigger.
+3.  NFT Auction Management (if daily).
+- Implement via Supabase `pg_cron` or Vercel Cron Jobs.
+
+**Monorepo (Turborepo):**
+- Recommended for code sharing and efficient builds.
+- Structure: `apps/` (mini-app, marketing-site), `packages/` (ui, configs, contracts).
+
+**Marketing Page & Sign-in:**
+- `emoji.today` (marketing) can have "Sign in with Farcaster" button initiating SIWN.
+- SIWN flow redirects to Neynar, then back to our backend callback.
+- Backend handles `fid`, creates/updates user, issues app session token.
+
+**Sign-in/Sign-up Flow (Farcaster-centric V1):**
+1. User clicks "Sign in with Farcaster".
+2. Redirect to Neynar SIWN.
+3. User auths/authorizes via Farcaster.
+4. Neynar redirects to backend callback with `fid`, `signer_uuid`.
+5. Backend processes, creates/updates user in Supabase, issues app session token.
+6. User redirected to mini-app with session.
+
+## Unanswered questions
+- Specifics of NFT minting/auction smart contract interaction.
+- Detailed error handling and security for auth flow.
+
+## Things to come back to later
+- Hybrid authentication (email/password, other social logins).
+- Auto-creating Farcaster accounts for users.
+- Detailed smart contract design.

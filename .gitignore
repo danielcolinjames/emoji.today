@@ -1,41 +1,69 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
+# Dependencies
+node_modules/
+**/node_modules/
 /.pnp
 .pnp.*
+
+# Yarn 3+ specific (keep if you plan to use Yarn Berry with Zero Installs)
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
+!.yarn/sdks
 !.yarn/versions
 
-# testing
-/coverage
+# Testing
+coverage/
+**/coverage/
 
-# next.js
-/.next/
-/out/
+# Next.js
+.next/
+**/out/
+apps/*/.next/
+packages/*/.next/ # If packages build to .next
 
-# production
-/build
+# Production
+build/
+**/build/
 
-# misc
+# Turborepo
+.turbo/
+apps/*/.turbo/
+packages/*/.turbo/
+
+# Misc
 .DS_Store
 *.pem
 
-# debug
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Local Environment Variables
+.env
+.env.*
 !.env.example
+!.env.example.*
+apps/*/.env
+apps/*/.env.*
+!apps/*/.env.example
+!apps/*/.env.example.*
+packages/*/.env
+packages/*/.env.*
+!packages/*/.env.example
+!packages/*/.env.example.*
 
-# vercel
-.vercel
+# Vercel
+.vercel/
 
-# typescript
+# TypeScript
 *.tsbuildinfo
-next-env.d.ts
+# next-env.d.ts # This is usually specific to a Next.js project, should be in apps/mini-app/.gitignore or committed if needed there.
+
+# IDE / Editor specific
+.vscode/
+*.swp
+*.swo
