@@ -1,0 +1,16 @@
+node_modules
+.next
+.turbo
+
+# Ignore the reference folder at the root
+ref/
+
+# Other common ignores
+*.log
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env*.local
+.env
+.vscode/ 
