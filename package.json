@@ -16,7 +16,11 @@
     "site:build": "turbo run build --filter=emoji.today"
   },
   "devDependencies": {
+    "@types/range-parser": "^1.2.7",
     "turbo": "latest"
   },
-  "packageManager": "yarn@1.22.19"
+  "packageManager": "yarn@1.22.19",
+  "dependencies": {
+    "node-vibrant": "4.0.3"
+  }
 }

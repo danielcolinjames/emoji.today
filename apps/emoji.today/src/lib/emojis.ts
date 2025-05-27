@@ -1,29 +1,3 @@
-// import wcagContrast from "wcag-contrast"
-import rgbHex from "rgb-hex"
-import Vibrant from "node-vibrant"
-
-// export async function getEmojiColors(imageUrl: string) {
-//   try {
-//     const img = new Vibrant(imageUrl)
-//     const colors = await img.getPalette()
-//     console.log(colors)
-//     return new Response(JSON.stringify(colors), {
-//       status: 200,
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     })
-//   } catch (error) {
-//     console.error(error)
-//     return new Response(JSON.stringify({ error: "Failed to process image." }), {
-//       status: 500,
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     })
-//   }
-// }
-
 export function getEmojiImageUrl(emoji: string) {
   if (!emoji || emoji === "") {
     return null
@@ -37,46 +11,6 @@ export function getEmojiImageUrl(emoji: string) {
   const string = `${root}/${emojiCode}.png`
   return string
 }
-
-export async function getEmojiColor(emojiUrl: string) {
-  try {
-    const palette = await Vibrant.from(emojiUrl).getPalette()
-    const mostVibrantColor = palette.Vibrant
-    return mostVibrantColor
-  } catch (error) {
-    console.error("Error getting emoji colors:", error)
-    return undefined
-  }
-}
-
-export async function processImageForVibrantColorHex(imageUrl: string) {
-  try {
-    const palette = await Vibrant.from(imageUrl).getPalette()
-    const vibrantColor = palette.Vibrant?.rgb
-    if (!vibrantColor) {
-      throw new Error("Vibrant color not found")
-    }
-
-    // Convert RGB to Hex
-    const hexColor = `#${rgbHex(
-      vibrantColor[0],
-      vibrantColor[1],
-      vibrantColor[2]
-    )}`
-
-    // Determine if white text should be used
-    // const whiteText = shouldBeWhiteText(hexColor)
-
-    return { accent: hexColor, whiteText: false }
-  } catch (error) {
-    console.error("Error processing image:", error)
-    return { accent: "#000000", whiteText: true }
-  }
-}
-
-// function shouldBeWhiteText(backgroundColor: string, contrastThreshold = 2) {
-//   return wcagContrast.hex("#FFFFFF", backgroundColor) >= contrastThreshold
-// }
 
 // Large array of emojis (1000+ emojis)
 export const emojiArray = [
@@ -123,7 +57,6 @@ export const emojiArray = [
   "😬",
   "😮‍💨",
   "🤥",
-  "😌",
   "😔",
   "😪",
   "🤤",
@@ -889,7 +822,6 @@ export const emojiArray = [
   "🏨",
   "🏩",
   "🏪",
-  "🏫",
   "🏬",
   "🏭",
   "🏯",
@@ -1030,7 +962,7 @@ export const emojiArray = [
   "🌗",
   "🌘",
   "🌙",
-  "🌚",
+  "��",
   "🌛",
   "🌜",
   "🌡️",

@@ -19,9 +19,8 @@ export const metadata: Metadata = {
 };
 
 import localFont from "next/font/local";
-import { Navbar } from "@/components/Navbar";
+import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { SelectedEmojiProvider } from "@/providers/SelectedEmojiProvider";
 import { FathomAnalytics } from "./Fathom";
 
 // Font files can be colocated inside of `app`
@@ -52,11 +51,9 @@ export default function RootLayout({
       <meta name="theme-color" content="#000000" />
       <body>
         <FathomAnalytics />
-        <main className="min-h-screen bg-[#050505] relative pb-10 sm:pb-24">
+        <main className="min-h-dvh bg-[#050505] relative pb-10 sm:pb-24">
           <Navbar />
-          <SelectedEmojiProvider>
-            <div className="w-full pt-[45px] sm:pt-[50px]">{children}</div>
-          </SelectedEmojiProvider>
+          <div className="w-full pt-[45px] sm:pt-[50px]">{children}</div>
           <Footer />
         </main>
         <SpeedInsights />

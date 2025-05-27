@@ -1,19 +1,28 @@
-import Link from "next/link";
+import Image from 'next/image';
+import Link from 'next/link';
 
-export const Navbar = () => {
+const Navbar = () => {
   return (
-    // <div className="flex w-full flex-col min-h-[45px] sm:min-h-[50px] fixed bg-[#050505]/0 backdrop-blur-xl border-b border-[transparent] shadow-xl z-50">
-    <div className="flex w-full flex-col min-h-[45px] sm:min-h-[50px] fixed border-b border-[transparent] z-50">
-      <Link href="/" className="flex items-center justify-center md:justify-center gap-3 z-10 w-full text-sm fixed px-4 py-2">
-        <img src="/assets/logo-simple-white.svg" alt="emoji" className="w-[32px] h-[32px]" style={{ mixBlendMode: "exclusion" }} />
-        {/* <p className="text-xl hidden md:block" style={{ backdropFilter: "invert(100%)" }}>
-          emoji
-          <span className='text-[#E3A300]'>
-            .
+    <header className="w-full py-4 md:py-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-start max-w-5xl lg:max-w-6xl xl:max-w-7xl">
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="relative h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12">
+            <Image
+              src="/images/logo-white.svg"
+              alt="emoji.today logo"
+              layout="fill"
+              objectFit="contain"
+            />
+          </div>
+          <span className="text-xl sm:text-2xl md:text-3xl font-normal tracking-tight group-hover:opacity-80 transition-opacity">
+            <span className="text-white">emoji</span>
+            <span className="text-gray-500">.today</span>
           </span>
-          date
-        </p> */}
-      </Link>
-    </div>
+        </Link>
+        {/* Future Nav items can go here */}
+      </div>
+    </header>
   );
 };
+
+export default Navbar;

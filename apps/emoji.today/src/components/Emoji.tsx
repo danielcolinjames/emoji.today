@@ -1,83 +1,106 @@
 "use client"
-import { getEmojiImageUrl, processImageForVibrantColorHex } from "@/lib/emojis";
-import { useState, useEffect } from 'react';
-import classNames from 'classnames';
 
-export default function Emoji({ emoji, size = 250, hideBorder = false, hideBg = false }: { emoji: string | null, size: number, hideBorder?: boolean, hideBg?: boolean }) {
-  const [emojiString, setEmojiString] = useState<string | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
+import { getRandomEmojis, getEmojiImageUrl } from "@/lib/emojis";
+import { useEffect, useState, useMemo } from "react";
+import Image from "next/image";
+import { useEmojiColor } from "../../../../lib/hooks/useEmojiColor";
+
+interface EmojiProps {
+  emoji?: string | null;
+  containerSize?: number;
+  borderWidth?: number;
+  animate?: boolean;
+}
+
+const Emoji: React.FC<EmojiProps> = ({
+  emoji: initialEmoji = null,
+  containerSize = 300,
+  borderWidth = 18,
+  animate = false
+}) => {
+  const [currentEmoji, setCurrentEmoji] = useState<string | null>(initialEmoji);
+  const [isInitialAnimation, setIsInitialAnimation] = useState(animate && !initialEmoji);
+  const [hasLoadedFirstColor, setHasLoadedFirstColor] = useState(false);
 
   useEffect(() => {
-    if (!emoji || emoji === '') {
-      setEmojiString(null);
-      return;
+    if (isInitialAnimation) {
+      setCurrentEmoji("🙂");
+      setIsInitialAnimation(false);
+    } else if (initialEmoji) {
+      setCurrentEmoji(initialEmoji);
     }
-    setEmojiString(getEmojiImageUrl(emoji ?? ''));
-  }, [emoji]);
+  }, [initialEmoji, animate, isInitialAnimation]);
 
-  const { color } = useEmojiColor(emojiString);
+  const emojiToRender = currentEmoji || (animate ? getRandomEmojis(1)[0] : null);
+  const emojiImageUrl = useMemo(() => emojiToRender ? getEmojiImageUrl(emojiToRender) : null, [emojiToRender]);
 
-  const backgroundColor = color?.accent || '#000000';
-  // const textColor = color?.whiteText ? '#FFFFFF' : '#000000';
+  const { color: accentColor, isLoading: isColorLoading, error: colorError } = useEmojiColor(emojiImageUrl);
 
-  // if emoji is 150px, padding is 75px, border width is 15px
-  const padding = size * 0.5
-  const borderWidth = size * 0.1
+  useEffect(() => {
+    if (!isColorLoading && accentColor && !hasLoadedFirstColor) {
+      setHasLoadedFirstColor(true);
+    }
+  }, [isColorLoading, accentColor, hasLoadedFirstColor]);
+
+  useEffect(() => {
+    if (animate && !isInitialAnimation) {
+      const interval = setInterval(() => {
+        setCurrentEmoji(getRandomEmojis(1)[0]);
+      }, 1500);
+      return () => clearInterval(interval);
+    }
+  }, [animate, isInitialAnimation]);
+
+  const EMOJI_TO_CONTAINER_RATIO = 166 / 500;
+  const emojiDisplaySize = useMemo(() => {
+    return Math.floor(containerSize * EMOJI_TO_CONTAINER_RATIO);
+  }, [containerSize]);
+
+  const componentStyle: React.CSSProperties = {
+    width: `${containerSize}px`,
+    height: `${containerSize}px`,
+    borderWidth: `${borderWidth}px`,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: accentColor || '#FFFFFF',
+    borderStyle: 'solid',
+    backgroundColor: 'rgba(0, 0, 0, 1)',
+    overflow: 'hidden',
+    position: 'relative',
+    transition: 'border-color 0.5s ease-in-out, opacity 0.5s ease-in-out',
+    opacity: (isColorLoading && !hasLoadedFirstColor) ? 0 : 1,
+  };
+
+  const emojiTextStyle: React.CSSProperties = {
+    fontSize: `${emojiDisplaySize}px`,
+    lineHeight: '1',
+    textAlign: 'center',
+  };
+
+  if (colorError) {
+    console.error("Error loading emoji color:", colorError);
+  }
 
   return (
-    <div className={classNames("flex flex-col items-center justify-center rounded-full transition-border-color duration-[500ms]", { 'hover:cursor-grabbing': !hideBg })}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        padding: padding,
-        border: hideBorder ? 'none' : `${borderWidth}px solid ${backgroundColor}`,
-        backgroundColor: hideBg ? 'transparent' : isHovered ? `${backgroundColor}22` : 'black',
-        width: size * 2, height: size * 2, minWidth: size * 2, minHeight: size * 2, maxWidth: size * 2, maxHeight: size * 2
-      }}
-    >
-      {emojiString ? (
-        <img
-          src={emojiString}
-          alt="emoji"
-          style={{ width: size, height: size, minWidth: size, minHeight: size, maxWidth: size, maxHeight: size }}
+    <div style={componentStyle}>
+      {emojiImageUrl ? (
+        <Image
+          src={emojiImageUrl}
+          alt={currentEmoji || "emoji"}
+          width={emojiDisplaySize}
+          height={emojiDisplaySize}
+          style={{ objectFit: "contain" }}
+          priority
         />
+      ) : currentEmoji ? (
+        <span style={emojiTextStyle}>{currentEmoji}</span>
       ) : (
-        <div
-          className="bg-[#050505] rounded-full"
-          style={{ padding: padding, border: `${borderWidth}px solid ${backgroundColor}`, width: size, height: size, minWidth: size, minHeight: size, maxWidth: size, maxHeight: size }}
-        />
+        <span style={emojiTextStyle}>⏳</span>
       )}
     </div>
   );
-}
+};
 
-export function useEmojiColor(emojiUrl: string | null) {
-  const [color, setColor] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!emojiUrl) {
-      setColor(null);
-      setIsLoading(false);
-      setError(null);
-      return
-    }
-    const fetchColor = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await processImageForVibrantColorHex(emojiUrl)
-        setColor(response);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchColor();
-  }, [emojiUrl]);
-
-  return { color, isLoading, error };
-}
+export default Emoji;

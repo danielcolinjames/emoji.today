@@ -1,174 +1,188 @@
 "use client";
-import Emoji, { useEmojiColor } from "@/components/Emoji";
-import { getEmojiImageUrl } from "@/lib/emojis";
-import { useSelectedEmoji } from "@/providers/SelectedEmojiProvider";
-import Head from "next/head";
-import { getRandomEmojis } from "@/lib/emojis";
-import { useEffect, useMemo, useState } from "react";
-// import RandomEmojis from "./components/RandomEmojis";
 
-// const exampleEmojis = ['😂', '🚀', '🎁', '🦋', '🇺🇸', '🌭', '🎄', '🌈', '🗽', '🔥', '🦒', '💃', '🫧', '💘', '🐸', '🛻', '🫥']
+import Head from "next/head";
+import Image from 'next/image';
+import { useEffect, useState } from "react";
+import Emoji from '@/components/Emoji';
+import { getRandomEmojis } from "@/lib/emojis";
+
+const FADE_DURATION_MS = 500;
+const MAX_ECHOES = 30;
+const MIN_ECHOES = 10;
+const MAX_ECHO_OPACITY = 0.5;
+const MIN_ECHO_OPACITY = 0.0; // Last echo will be 0% opacity
 
 export default function Home() {
-  const { selectedEmoji, setSelectedEmoji, selectedEmojiColor } = useSelectedEmoji();
-
-  // const [emoji, setEmoji] = useState(null)
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     setEmoji(getRandomEmoji())
-  //   }, 500)
-
-  //   return () => clearInterval(interval)
-  // }, [])
-  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-
-  const handleEmojiInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-
-    // const lastChar = input.slice(-1);
-
-    // if (isEmoji(lastChar)) {
-    setSelectedEmoji(input);
-    // } else if (input.length === 0) {
-    // setSelectedEmoji(null);
-    // }
-  };
-
-  const [emojisToDisplay, setEmojisToDisplay] = useState<string[]>(Array(17).fill(""));
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [emojiOpacity, setEmojiOpacity] = useState(0); // For emoji fade-in
+  const [currentAnimatedEmoji, setCurrentAnimatedEmoji] = useState<string>("");
+  const [animatedItemSize, setAnimatedItemSize] = useState({ container: 300, border: 18 });
+  const [echoCount, setEchoCount] = useState(MAX_ECHOES);
+  const [mainLogoOpacity, setMainLogoOpacity] = useState(1); // For fading out the main logo
+  const [isEmojiCycling, setIsEmojiCycling] = useState(false); // To start emoji cycling
 
   useEffect(() => {
-    const exampleEmojis = getRandomEmojis(17)
-    setEmojisToDisplay(exampleEmojis)
-  }, [])
+    const initialWait = 4500; // Time before emoji starts to appear
+    const pauseBeforeFadeIn = 1000; // 1 second pause with 0% opacity
 
-  const [faintEmojiToShow, setFaintEmojiToShow] = useState<string>("❔");
+    // Phase 1: Emoji becomes present (0% opacity)
+    const emojiPresentTimer = setTimeout(() => {
+      setCurrentAnimatedEmoji(getRandomEmojis(1)[0]);
+      setShowEmoji(true);    // Make Emoji component render
+      setEmojiOpacity(0);    // Start at 0% opacity
+    }, initialWait);
 
-  useEffect(() => {
-    // every 3 seconds, update one random slot of the emojis to a random emoji
-    const interval = setInterval(() => {
-      const randomIndex = Math.floor(Math.random() * emojisToDisplay.length);
-      const newEmojis = [...emojisToDisplay];
-      newEmojis[randomIndex] = getRandomEmojis(1)[0];
-      setEmojisToDisplay(newEmojis);
+    // Phase 1b: Emoji starts fading in
+    const emojiFadeInTimer = setTimeout(() => {
+      setEmojiOpacity(1);    // Start fading in emoji (CSS transition will take fadeInDuration)
+    }, initialWait + pauseBeforeFadeIn);
 
-    }, 750);
-    return () => clearInterval(interval);
-  }, [emojisToDisplay]);
+    // Phase 2: Main logo fades out (after emoji fade-in starts)
+    const logoFadeOutTimer = setTimeout(() => {
+      setMainLogoOpacity(0); // Main logo fades out
+    }, initialWait + pauseBeforeFadeIn + FADE_DURATION_MS); // FADE_DURATION_MS is the visual fade of emoji
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const randomFaintEmoji = getRandomEmojis(1)[0];
-      setFaintEmojiToShow(randomFaintEmoji);
-    }, 3000);
-    return () => clearInterval(interval);
+    // Phase 3: Emoji starts cycling (after logo is out)
+    const cycleStartTimer = setTimeout(() => {
+      setIsEmojiCycling(true);
+    }, initialWait + pauseBeforeFadeIn + FADE_DURATION_MS + FADE_DURATION_MS); // Second FADE_DURATION_MS for logo fade
+
+    return () => {
+      clearTimeout(emojiPresentTimer);
+      clearTimeout(emojiFadeInTimer);
+      clearTimeout(logoFadeOutTimer);
+      clearTimeout(cycleStartTimer);
+    };
   }, []);
 
-  const emojiUrl = getEmojiImageUrl(selectedEmoji ?? "");
-  const { color } = useEmojiColor(emojiUrl ?? "");
-
-  const [inactivityTimer, setInactivityTimer] = useState<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    const resetInactivityTimer = () => {
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
-      const newTimer = setTimeout(() => {
-        setSelectedEmoji(null);
-      }, 60000); // 60 seconds
-      setInactivityTimer(newTimer);
-    };
-
-    resetInactivityTimer();
-
-    return () => {
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
-    };
-  }, [selectedEmoji]);
-
-  useEffect(() => {
-    const handleUserActivity = () => {
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
-      const newTimer = setTimeout(() => {
-        setSelectedEmoji(null);
-      }, 5 * 1000); // 5 seconds
-      setInactivityTimer(newTimer);
-    };
-
-    window.addEventListener('mousemove', handleUserActivity);
-    window.addEventListener('keydown', handleUserActivity);
-
-    return () => {
-      window.removeEventListener('mousemove', handleUserActivity);
-      window.removeEventListener('keydown', handleUserActivity);
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
-    };
-  }, [inactivityTimer]);
+  const negativeOffsetPx = -30; // This is used for horizontal offset
 
   return (
-    <div className="flex h-full flex-col items-center overflow-hidden">
+    <div className="flex flex-col items-center justify-center text-white bg-[#050505] overflow-y-hidden">
       <Head>
-        <meta property="og:image" content="https://emoji.date/og.png" />
+        <meta property="og:image" content="https://emoji.today/og.png" />
       </Head>
-      {/* NavBar */}
-      <div className="flex w-full flex-col px-8">
-        <div className="relative flex w-full justify-center mt-10 md:mt-40 mb-5">
-          <h1 className="text-center text-5xl font-normal tracking-tighter sm:text-6xl md:text-8xl">
-            What emoji is today?
+
+      {/* Navbar is now rendered by layout.tsx */}
+
+      {/* Main Content Area */}
+      <main className="flex flex-col items-center justify-center flex-grow w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
+
+        {/* Top Text Block */}
+        <div className="text-center w-full mb-12 md:mb-16 lg:mb-20">
+          <h1 className="text-4xl font-normal tracking-tighter sm:text-5xl md:text-6xl lg:text-8xl leading-tight">
+            Launching Friday.
           </h1>
-        </div>
-      </div>
-      <div className="relative flex xl:block">
-        <div className="absolute inset-0 block bg-gradient-to-r from-[#050505] via-transparent to-[#050505] pointer-events-none" />
-        <div className="flex items-center justify-center pt-10 xl:flex-row xl:flex-nowrap xl:overflow-hidden xl:whitespace-nowrap gap-5">
-          {emojisToDisplay.map((emoji, index) => (
-            <p
-              key={index}
-              className="inline-block rounded-full text-6xl hover:cursor-cell sm:text-8xl"
-              onClick={() => setSelectedEmoji(emoji)}
-            >
-              {emoji}
-            </p>
-          ))}
-        </div>
-      </div>
-      <div className="mx-auto flex w-full max-w-lg flex-col px-4 mt-10 md:mt-20">
-        <div className="flex flex-col items-center justify-center gap-10 sm:gap-14">
-          <p className="text-center text-3xl font-thin tracking-tighter sm:text-4xl md:text-5xl">
-            One emoji will represent <span style={{ color: color?.accent || '#5c5c5c' }}>{today}</span> onchain, forever.
+          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-[64px] text-gray-400 mt-2 md:mt-3 leading-tight">
+            And Saturday.
           </p>
-          {/* <p className="rounded-full border-4 border-[#0a0a0a] bg-[#000] p-10 text-center text-7xl font-thin tracking-tighter sm:p-20 sm:text-9xl">
-            {emoji}
-          </p> */}
-          <div className="block md:hidden">
-            <Emoji emoji={selectedEmoji ?? faintEmojiToShow} size={100} />
+          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-[64px] text-gray-400 leading-tight">
+            And every day after that.
+          </p>
+        </div>
+
+        {/* Container for the rightmost item and its echoes - Reverted to original */}
+        <div
+          className="relative flex items-center justify-center w-full"
+          style={{
+            height: `${animatedItemSize.container}px`,
+            // Removed flexDirection, alignItems, justifyContent specific to mobile column
+          }}
+        >
+
+          {/* Rightmost animated item container - Reverted to original */}
+          <div
+            className="absolute right-0" // Reverted from "relative"
+            style={{
+              width: `${animatedItemSize.container}px`,
+              height: `${animatedItemSize.container}px`,
+            }}
+          >
+            {/* 1. Persistent Main Logo (bottom layer, fades out) */}
+            <div
+              className="absolute inset-0 z-30"
+              style={{
+                opacity: mainLogoOpacity,
+                transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`,
+              }}
+            >
+              <Image
+                src="/images/logo-white-with-solid-bg.svg"
+                alt="emoji.today main logo"
+                layout="fill"
+                objectFit="contain"
+                priority
+              />
+            </div>
+
+            {/* 2. Emoji that fades in on top (top layer) */}
+            {showEmoji && (
+              <div
+                className="absolute inset-0 z-40"
+                style={{
+                  opacity: emojiOpacity,
+                  transition: `opacity 1000ms ease-in-out`, // Explicitly 1 second fade
+                }}
+              >
+                <Emoji
+                  emoji={currentAnimatedEmoji}
+                  containerSize={animatedItemSize.container}
+                  borderWidth={animatedItemSize.border}
+                  animate={isEmojiCycling} // Controlled by new state
+                />
+              </div>
+            )}
           </div>
-          <div className="hidden md:block">
-            <Emoji emoji={selectedEmoji ?? faintEmojiToShow} size={150} />
+
+          {/* Echoes Container */}
+          <div
+            style={{
+              position: 'absolute',
+              right: 0,
+              width: '100%',
+              height: `${animatedItemSize.container}px`,
+              zIndex: 20,
+            }}
+          >
+            {Array.from({ length: echoCount }).map((_, i) => {
+              let opacity;
+              if (echoCount <= 1) {
+                opacity = (echoCount === 1) ? MAX_ECHO_OPACITY : MIN_ECHO_OPACITY;
+              } else {
+                const progress = i / (echoCount - 1);
+                opacity = MIN_ECHO_OPACITY + (MAX_ECHO_OPACITY - MIN_ECHO_OPACITY) * Math.pow(1 - progress, 3);
+              }
+              opacity = Math.max(MIN_ECHO_OPACITY, Math.min(MAX_ECHO_OPACITY, opacity));
+              if (i === 0 && echoCount > 0) {
+                opacity = MAX_ECHO_OPACITY;
+              }
+
+              const rightPosition = (i + 1) * Math.abs(negativeOffsetPx);
+
+              return (
+                <div
+                  key={`echo-${i}`}
+                  className="absolute"
+                  style={{
+                    right: `${rightPosition}px`,
+                    opacity: opacity,
+                    zIndex: echoCount - i,
+                    width: `${animatedItemSize.container}px`,
+                    height: `${animatedItemSize.container}px`,
+                  }}
+                >
+                  <Image
+                    src="/images/logo-white-with-solid-bg.svg"
+                    alt={`emoji.today logo echo ${i + 1}`}
+                    layout="fill"
+                    objectFit="contain"
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
-      <div className="mx-auto flex w-full max-w-xs md:max-w-lg flex-col px-4 mt-14 gap-4">
-        <p className="text-center text-3xl font-thin tracking-tighter sm:text-4xl md:text-5xl">
-          Which one should it be?
-        </p>
-        <input
-          type="text"
-          className="text-3xl md:text-5xl w-full bg-[#000] border-4 p-3 md:p-4 rounded-full focus:outline-none outline-none focus:ring-0 focus:border-4 duration-200 transition-all text-center"
-          value={selectedEmoji || ""}
-          style={{
-            '--focus-color': color?.accent ?? '#454545',
-            borderColor: 'var(--focus-color)',
-          } as React.CSSProperties}
-          onChange={handleEmojiInputChange}
-        />
-      </div>
+      </main>
     </div>
-  )
+  );
 }
