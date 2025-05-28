@@ -51,7 +51,7 @@ const Emoji: React.FC<EmojiProps> = ({
     }
   }, [animate, isInitialAnimation]);
 
-  const EMOJI_TO_CONTAINER_RATIO = 166 / 500;
+  const EMOJI_TO_CONTAINER_RATIO = 166.6667 / 500;
   const emojiDisplaySize = useMemo(() => {
     return Math.floor(containerSize * EMOJI_TO_CONTAINER_RATIO);
   }, [containerSize]);

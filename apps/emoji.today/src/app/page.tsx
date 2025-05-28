@@ -15,7 +15,7 @@ export default function Home() {
   const [showEmoji, setShowEmoji] = useState(false);
   const [emojiOpacity, setEmojiOpacity] = useState(0); // For emoji fade-in
   const [currentAnimatedEmoji, setCurrentAnimatedEmoji] = useState<string>("");
-  const [animatedItemSize, setAnimatedItemSize] = useState({ container: 250, border: 18 });
+  const [animatedItemSize, setAnimatedItemSize] = useState({ container: 250, border: 15 });
   const [echoCount, setEchoCount] = useState(MAX_ECHOES);
   const [mainLogoOpacity, setMainLogoOpacity] = useState(1); // For fading out the main logo
   const [isEmojiCycling, setIsEmojiCycling] = useState(false); // To start emoji cycling
