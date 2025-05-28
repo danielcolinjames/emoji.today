@@ -8,7 +8,6 @@ import { getRandomEmojis } from "@/lib/emojis";
 
 const FADE_DURATION_MS = 500;
 const MAX_ECHOES = 30;
-const MIN_ECHOES = 10;
 const MAX_ECHO_OPACITY = 0.5;
 const MIN_ECHO_OPACITY = 0.0; // Last echo will be 0% opacity
 
@@ -16,7 +15,7 @@ export default function Home() {
   const [showEmoji, setShowEmoji] = useState(false);
   const [emojiOpacity, setEmojiOpacity] = useState(0); // For emoji fade-in
   const [currentAnimatedEmoji, setCurrentAnimatedEmoji] = useState<string>("");
-  const [animatedItemSize, setAnimatedItemSize] = useState({ container: 300, border: 18 });
+  const [animatedItemSize, setAnimatedItemSize] = useState({ container: 250, border: 18 });
   const [echoCount, setEchoCount] = useState(MAX_ECHOES);
   const [mainLogoOpacity, setMainLogoOpacity] = useState(1); // For fading out the main logo
   const [isEmojiCycling, setIsEmojiCycling] = useState(false); // To start emoji cycling
@@ -60,25 +59,19 @@ export default function Home() {
   const negativeOffsetPx = -30; // This is used for horizontal offset
 
   return (
-    <div className="flex flex-col items-center justify-center text-white bg-[#050505] overflow-y-hidden">
-      <Head>
-        <meta property="og:image" content="https://emoji.today/og.png" />
-      </Head>
-
-      {/* Navbar is now rendered by layout.tsx */}
-
+    <div className="flex flex-col items-center justify-center text-white bg-[#050505] overflow-y-hidden pt-4 sm:pt-10 md:pt-12 lg:pt-16">
       {/* Main Content Area */}
       <main className="flex flex-col items-center justify-center flex-grow w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
 
         {/* Top Text Block */}
         <div className="text-center w-full mb-12 md:mb-16 lg:mb-20">
-          <h1 className="text-4xl font-normal tracking-tighter sm:text-5xl md:text-6xl lg:text-8xl leading-tight">
+          <h1 className="text-4xl font-light tracking-tighter sm:text-5xl md:text-6xl lg:text-8xl leading-tight">
             Launching Friday.
           </h1>
-          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-gray-400 leading-tight">
+          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-neutral-500 leading-tight font-light">
             And Saturday.
           </p>
-          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-gray-400 leading-tight">
+          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-neutral-500 leading-tight font-light">
             And every day after that.
           </p>
         </div>
@@ -88,13 +81,11 @@ export default function Home() {
           className="relative flex items-center justify-center w-full"
           style={{
             height: `${animatedItemSize.container}px`,
-            // Removed flexDirection, alignItems, justifyContent specific to mobile column
           }}
         >
-
-          {/* Rightmost animated item container - Reverted to original */}
+          {/* Rightmost animated item container */}
           <div
-            className="absolute right-0" // Reverted from "relative"
+            className="absolute right-0"
             style={{
               width: `${animatedItemSize.container}px`,
               height: `${animatedItemSize.container}px`,
@@ -185,6 +176,17 @@ export default function Home() {
           </div>
         </div>
       </main>
+      <footer className="flex flex-col items-center justify-center w-full pt-10 md:pt-20 pb-10 mb-10 gap-1 md:gap-2">
+        <div className="flex space-x-8 items-center">
+          <a href="https://farcaster.xyz/emojitoday" target="_blank" rel="noopener noreferrer">
+            <img src="/images/farcaster-white.svg" alt="Farcaster" className="h-[42px] w-auto" />
+          </a>
+          <a href="https://x.com/emoji_today" target="_blank" rel="noopener noreferrer">
+            <img src="/images/x-white.svg" alt="X" className="w-10 h-10" />
+          </a>
+        </div>
+        <div className="mt-6 text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-neutral-500 font-light">Notifications on.</div>
+      </footer>
     </div>
   );
 }

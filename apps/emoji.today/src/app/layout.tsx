@@ -7,14 +7,14 @@ export const metadata: Metadata = {
   title: "emoji.today",
   description: "emoji.today",
   openGraph: {
-    images: "https://emoji.today/og.png",
+    images: "https://emoji.today/og-1.png",
   },
   twitter: {
     card: "summary_large_image",
     site: "emoji.today",
     description: `emoji.today`,
     title: `emoji.today`,
-    images: ["https://emoji.today/og.png"],
+    images: ["https://emoji.today/og-1.png"],
   },
 };
 
@@ -22,18 +22,11 @@ import localFont from "next/font/local";
 import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
-// Font files can be colocated inside of `app`
 const satoshiFont = localFont({
   src: "../assets/fonts/Satoshi-Variable.ttf",
   display: "swap",
   variable: "--font-satoshi",
 });
-
-// import { trackEvent } from 'fathom-client';
-// In your component
-// const handleClick = () => {
-//   trackEvent('GOAL_ID', 0); // 0 is the value (optional)
-// };
 
 export default function RootLayout({
   children,
@@ -51,7 +44,7 @@ export default function RootLayout({
       <body>
         <main className="min-h-dvh bg-[#050505] relative pb-10 sm:pb-24">
           <Navbar />
-          <div className="w-full pt-[45px] sm:pt-[50px]">{children}</div>
+          <div className="w-full">{children}</div>
           <Footer />
         </main>
         <SpeedInsights />
