@@ -64,7 +64,7 @@ export default function Home() {
       <main className="flex flex-col items-center justify-center flex-grow w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
 
         {/* Top Text Block */}
-        <div className="text-center w-full mb-12 md:mb-16 lg:mb-20">
+        <div className="text-center w-full mb-8 md:mb-10 lg:mb-16">
           <h1 className="text-4xl font-light tracking-tighter sm:text-5xl md:text-6xl lg:text-8xl leading-tight">
             Launching Friday.
           </h1>
@@ -176,16 +176,16 @@ export default function Home() {
           </div>
         </div>
       </main>
-      <footer className="flex flex-col items-center justify-center w-full pt-10 md:pt-20 pb-4 mb-4 sm:mb-8 md:mb-10 gap-1 md:gap-2">
-        <div className="flex space-x-8 items-center">
+      <footer className="flex flex-col items-center justify-center w-full pt-10 md:pt-20 gap-4 md:gap-6">
+        <div className="flex space-x-4 sm:space-x-8 items-center">
           <a href="https://farcaster.xyz/emojitoday" target="_blank" rel="noopener noreferrer">
             <img src="/images/farcaster-white.svg" alt="Farcaster" className="h-[26px] sm:h-[42px] w-auto" />
           </a>
           <a href="https://x.com/emoji_today" target="_blank" rel="noopener noreferrer">
-            <img src="/images/x-white.svg" alt="X" className="h-[26px] sm:h-[42px]" />
+            <img src="/images/x-white.svg" alt="X" className="h-[24px] sm:h-[40px]" />
           </a>
         </div>
-        <div className="mt-6 text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-neutral-500 font-light">Notifications on.</div>
+        <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-neutral-500 font-light">Notifications on.</div>
       </footer>
     </div>
   );
