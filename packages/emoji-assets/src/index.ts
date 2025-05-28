@@ -7,9 +7,11 @@ export interface EmojiData {
 }
 
 // Export the emoji metadata directly
+// After running the full download script, this will contain ALL ~1,700 emojis
 export const EMOJI_DATA: EmojiData[] = emojiData
 
 // Export just the emoji characters for easy use
+// This will be the COMPLETE set of emojis after the full download
 export const POPULAR_EMOJIS: string[] = EMOJI_DATA.map((e) => e.emoji)
 
 /**
