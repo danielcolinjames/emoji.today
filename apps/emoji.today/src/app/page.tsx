@@ -176,13 +176,13 @@ export default function Home() {
           </div>
         </div>
       </main>
-      <footer className="flex flex-col items-center justify-center w-full pt-10 md:pt-20 pb-10 mb-10 gap-1 md:gap-2">
+      <footer className="flex flex-col items-center justify-center w-full pt-10 md:pt-20 pb-4 mb-4 sm:mb-8 md:mb-10 gap-1 md:gap-2">
         <div className="flex space-x-8 items-center">
           <a href="https://farcaster.xyz/emojitoday" target="_blank" rel="noopener noreferrer">
-            <img src="/images/farcaster-white.svg" alt="Farcaster" className="h-[42px] w-auto" />
+            <img src="/images/farcaster-white.svg" alt="Farcaster" className="h-[26px] sm:h-[42px] w-auto" />
           </a>
           <a href="https://x.com/emoji_today" target="_blank" rel="noopener noreferrer">
-            <img src="/images/x-white.svg" alt="X" className="w-10 h-10" />
+            <img src="/images/x-white.svg" alt="X" className="h-[26px] sm:h-[42px]" />
           </a>
         </div>
         <div className="mt-6 text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-neutral-500 font-light">Notifications on.</div>
