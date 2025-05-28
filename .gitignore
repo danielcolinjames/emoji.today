@@ -67,3 +67,6 @@ packages/*/.env.*
 .vscode/
 *.swp
 *.swo
+
+# Copied emoji assets (generated during build)
+apps/emoji.today/public/emoji-assets

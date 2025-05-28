@@ -5,8 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "download": "tsx scripts/download-emojis.ts",
-    "optimize": "tsx scripts/optimize-images.ts",
-    "build": "npm run download && npm run optimize"
+    "build": "echo 'No build needed for emoji-assets'"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
