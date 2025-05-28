@@ -1,0 +1,16 @@
+{
+  "name": "@emoji.today/emoji-assets",
+  "version": "1.0.0",
+  "description": "Emoji assets and utilities for emoji.today",
+  "main": "src/index.ts",
+  "scripts": {
+    "download": "tsx scripts/download-emojis.ts",
+    "optimize": "tsx scripts/optimize-images.ts",
+    "build": "npm run download && npm run optimize"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "sharp": "^0.33.0"
+  }
+}

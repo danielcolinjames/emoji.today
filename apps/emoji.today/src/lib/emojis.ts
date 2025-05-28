@@ -1,3 +1,6 @@
+// Import from our local emoji assets package
+import { POPULAR_EMOJIS as CURATED_EMOJIS } from "@emoji.today/emoji-assets"
+
 export function getEmojiImageUrl(emoji: string) {
   if (!emoji || emoji === "") {
     return null
@@ -6,10 +9,9 @@ export function getEmojiImageUrl(emoji: string) {
     char.codePointAt(0)!.toString(16).padStart(4, "0")
   )
   const emojiCode = codePoints.join("-")
-  const root =
-    "https://raw.githubusercontent.com/iamcal/emoji-data/master/img-apple-160"
-  const string = `${root}/${emojiCode}.png`
-  return string
+
+  // Use local emoji assets instead of GitHub CDN
+  return `/emoji-assets/apple-160/${emojiCode}.png`
 }
 
 // Large array of emojis (1000+ emojis)
@@ -354,7 +356,7 @@ export const emojiArray = [
   "👼",
   "🎅",
   "🤶",
-  "🧑‍🎄",
+  "🧑‍🍼",
   "🦸",
   "🦸‍♂️",
   "🦸‍♀️",
@@ -962,7 +964,7 @@ export const emojiArray = [
   "🌗",
   "🌘",
   "🌙",
-  "��",
+  "🌚",
   "🌛",
   "🌜",
   "🌡️",
@@ -1740,9 +1742,34 @@ export const emojiArray = [
 ]
 
 export function getRandomEmojis(count: number = 100): string[] {
-  const emojis = new Set<string>()
-  while (emojis.size < count) {
-    emojis.add(emojiArray[Math.floor(Math.random() * emojiArray.length)])
+  // Use our curated emoji list instead of the full array
+  const emojis = getCuratedEmojis()
+  const result: string[] = []
+  const usedIndices = new Set<number>()
+
+  while (result.length < count && result.length < emojis.length) {
+    const randomIndex = Math.floor(Math.random() * emojis.length)
+    if (!usedIndices.has(randomIndex)) {
+      usedIndices.add(randomIndex)
+      result.push(emojis[randomIndex])
+    }
   }
-  return Array.from(emojis)
+
+  console.log("Selected emojis:", result)
+  return result
+}
+
+/**
+ * Get the curated list of emojis that we have assets for
+ */
+export function getCuratedEmojis(): string[] {
+  // Use the curated list from our emoji-assets package
+  return CURATED_EMOJIS
+}
+
+/**
+ * Get all available emojis (legacy - kept for compatibility)
+ */
+export function getAllEmojis(): string[] {
+  return emojiArray
 }

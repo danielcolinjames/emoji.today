@@ -56,6 +56,15 @@ const Emoji: React.FC<EmojiProps> = ({
     return Math.floor(containerSize * EMOJI_TO_CONTAINER_RATIO);
   }, [containerSize]);
 
+  // Debug logging
+  useEffect(() => {
+    if (emojiImageUrl) {
+      console.log('Emoji URL:', emojiImageUrl);
+      console.log('Container size:', containerSize);
+      console.log('Display size:', emojiDisplaySize);
+    }
+  }, [emojiImageUrl, containerSize, emojiDisplaySize]);
+
   const componentStyle: React.CSSProperties = {
     width: `${containerSize}px`,
     height: `${containerSize}px`,
