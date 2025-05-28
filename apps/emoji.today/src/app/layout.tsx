@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({
       <meta name="msapplication-TileColor" content="#000000" />
       <meta name="theme-color" content="#000000" />
       <body>
+        <GoogleAnalytics />
         <main className="min-h-dvh bg-[#050505] relative pb-10 sm:pb-24">
           <Navbar />
           <div className="w-full">{children}</div>
