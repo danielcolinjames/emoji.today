@@ -1,0 +1,51 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Notes
+
+## Current tasks
+- [ ] authentication
+
+## Notes
+
+### Unicode 16.0 Emoji Update (Done)
+- Added all Unicode 16.0 emojis to the emoji array:
+  - 🫩 Face with Bags Under Eyes
+  - 🫆 Fingerprint
+  - 🫟 Splatter
+  - 🫜 Root Vegetable
+  - 🪾 Leafless Tree
+  - 🪉 Harp
+  - 🪏 Shovel
+- Note: These emojis don't have images in the iamcal/emoji-data repository yet since it hasn't been updated for Unicode 16.0
+- The download script returns 404 errors for these emojis
+
+### Unicode 15.1 Emoji Update (Done)
+- Added missing Unicode 15.0 emojis: 🫠, 🫢, 🫣, 🫤, 🫥, 🫡, 🫰, 🫱, 🫲, 🫳, 🫴, 🫵, 🫶, 🫷, 🫸, 🫟 (splatter), 🫧 (bubbles)
+- Added Unicode 15.1 emojis:
+  - 🙂‍↔️ (head shaking horizontally)
+  - 🙂‍↕️ (head shaking vertically)
+  - 🐦‍🔥 (phoenix)
+  - 🍄‍🟫 (brown mushroom)
+  - ⛓️‍💥 (broken chain)
+  - Note: Lime emoji (🍋‍🟩) had encoding issues and wasn't added successfully
+- These emojis are in the emoji array but may not have images yet since we're using iamcal/emoji-data which might not have Unicode 15.1 support
+
+## Unanswered questions
+- Do we need to find a different emoji image source that supports Unicode 15.1 and 16.0?
+- Should we update the download script to use a different source?
+
+## Completed tasks
+- [x] Migrate emoji assets from GitHub CDN to local storage
+  - Downloaded 1,723 emoji images (~35-40MB)
+  - Created symlink from Next.js public folder to emoji assets
+  - Updated getEmojiImageUrl() to use local paths
+  - 99.7% coverage of emojis in our list
+- [x] Add Unicode 15.1 emojis to emoji list
+- [x] Add Unicode 16.0 emojis to emoji list
+
+## Things to come back to later
+- Find emoji images for Unicode 15.1 emojis (current source may not have them)
+- Add the lime emoji properly once encoding issues are resolved

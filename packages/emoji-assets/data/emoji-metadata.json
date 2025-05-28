@@ -45,6 +45,16 @@
     "filename": "1f642.png"
   },
   {
+    "emoji": "🙂‍↔️",
+    "codePoint": "1f642-200d-2194-fe0f",
+    "filename": "1f642-200d-2194-fe0f.png"
+  },
+  {
+    "emoji": "🙂‍↕️",
+    "codePoint": "1f642-200d-2195-fe0f",
+    "filename": "1f642-200d-2195-fe0f.png"
+  },
+  {
     "emoji": "🙃",
     "codePoint": "1f643",
     "filename": "1f643.png"
@@ -1008,6 +1018,81 @@
     "emoji": "🫦",
     "codePoint": "1fae6",
     "filename": "1fae6.png"
+  },
+  {
+    "emoji": "🫠",
+    "codePoint": "1fae0",
+    "filename": "1fae0.png"
+  },
+  {
+    "emoji": "🫢",
+    "codePoint": "1fae2",
+    "filename": "1fae2.png"
+  },
+  {
+    "emoji": "🫣",
+    "codePoint": "1fae3",
+    "filename": "1fae3.png"
+  },
+  {
+    "emoji": "🫤",
+    "codePoint": "1fae4",
+    "filename": "1fae4.png"
+  },
+  {
+    "emoji": "🫥",
+    "codePoint": "1fae5",
+    "filename": "1fae5.png"
+  },
+  {
+    "emoji": "🫡",
+    "codePoint": "1fae1",
+    "filename": "1fae1.png"
+  },
+  {
+    "emoji": "🫰",
+    "codePoint": "1faf0",
+    "filename": "1faf0.png"
+  },
+  {
+    "emoji": "🫱",
+    "codePoint": "1faf1",
+    "filename": "1faf1.png"
+  },
+  {
+    "emoji": "🫲",
+    "codePoint": "1faf2",
+    "filename": "1faf2.png"
+  },
+  {
+    "emoji": "🫳",
+    "codePoint": "1faf3",
+    "filename": "1faf3.png"
+  },
+  {
+    "emoji": "🫴",
+    "codePoint": "1faf4",
+    "filename": "1faf4.png"
+  },
+  {
+    "emoji": "🫵",
+    "codePoint": "1faf5",
+    "filename": "1faf5.png"
+  },
+  {
+    "emoji": "🫶",
+    "codePoint": "1faf6",
+    "filename": "1faf6.png"
+  },
+  {
+    "emoji": "🫷",
+    "codePoint": "1faf7",
+    "filename": "1faf7.png"
+  },
+  {
+    "emoji": "🫸",
+    "codePoint": "1faf8",
+    "filename": "1faf8.png"
   },
   {
     "emoji": "👶",
@@ -2940,6 +3025,11 @@
     "filename": "1f99c.png"
   },
   {
+    "emoji": "🐦‍🔥",
+    "codePoint": "1f426-200d-1f525",
+    "filename": "1f426-200d-1f525.png"
+  },
+  {
     "emoji": "🐸",
     "codePoint": "1f438",
     "filename": "1f438.png"
@@ -3383,6 +3473,11 @@
     "emoji": "🍄",
     "codePoint": "1f344",
     "filename": "1f344.png"
+  },
+  {
+    "emoji": "🍄‍🟫",
+    "codePoint": "1f344-200d-1f7eb",
+    "filename": "1f344-200d-1f7eb.png"
   },
   {
     "emoji": "🥜",
@@ -3833,6 +3928,16 @@
     "emoji": "🧊",
     "codePoint": "1f9ca",
     "filename": "1f9ca.png"
+  },
+  {
+    "emoji": "🫟",
+    "codePoint": "1fadf",
+    "filename": "1fadf.png"
+  },
+  {
+    "emoji": "🫧",
+    "codePoint": "1fae7",
+    "filename": "1fae7.png"
   },
   {
     "emoji": "🥢",
@@ -6268,6 +6373,11 @@
     "emoji": "⛓️",
     "codePoint": "26d3-fe0f",
     "filename": "26d3-fe0f.png"
+  },
+  {
+    "emoji": "⛓️‍💥",
+    "codePoint": "26d3-fe0f-200d-1f4a5",
+    "filename": "26d3-fe0f-200d-1f4a5.png"
   },
   {
     "emoji": "🪝",
