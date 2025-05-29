@@ -6,6 +6,7 @@ import { Button } from "./ui/Button";
 import { SignIn } from "./SignIn";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -38,7 +39,7 @@ export function AuthWrapper({
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-[#050505] text-white">
-        <div className="animate-pulse text-brand-yellow">Loading...</div>
+        <LoadingSpinner size={64} />
       </div>
     );
   }
@@ -47,7 +48,7 @@ export function AuthWrapper({
   if (status === "unauthenticated") {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-[#050505] text-white">
-        <div className="animate-pulse text-brand-yellow">Loading...</div>
+        <LoadingSpinner size={64} />
       </div>
     );
   }
