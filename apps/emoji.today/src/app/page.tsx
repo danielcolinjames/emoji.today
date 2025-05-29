@@ -4,32 +4,40 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from "react";
 import Emoji from '@/components/Emoji';
-import { getRandomEmojis } from "@/lib/emojis";
+import { getRandomEmoji, type DatabaseEmoji } from "@/lib/emojis";
 
 const FADE_DURATION_MS = 500;
-const MAX_ECHOES = 30;
-const MAX_ECHO_OPACITY = 0.5;
-const MIN_ECHO_OPACITY = 0.0; // Last echo will be 0% opacity
 
 export default function Home() {
   const [showEmoji, setShowEmoji] = useState(false);
   const [emojiOpacity, setEmojiOpacity] = useState(0); // For emoji fade-in
-  const [currentAnimatedEmoji, setCurrentAnimatedEmoji] = useState<string>("");
-  const [animatedItemSize, setAnimatedItemSize] = useState({ container: 250, border: 15 });
-  const [echoCount, setEchoCount] = useState(MAX_ECHOES);
+  const [currentAnimatedEmoji, setCurrentAnimatedEmoji] = useState<DatabaseEmoji | null>(null);
+  const [animatedItemSize, setAnimatedItemSize] = useState({ container: 350, border: 20 });
   const [mainLogoOpacity, setMainLogoOpacity] = useState(1); // For fading out the main logo
   const [isEmojiCycling, setIsEmojiCycling] = useState(false); // To start emoji cycling
   const [clientMounted, setClientMounted] = useState(false);
   const [emojiColor, setEmojiColor] = useState('#ff6b35'); // Default color for CTA button
 
+  const loadRandomEmoji = async () => {
+    try {
+      const emoji = await getRandomEmoji();
+      if (emoji) {
+        setCurrentAnimatedEmoji(emoji);
+        setEmojiColor(emoji.accent_color);
+      }
+    } catch (error) {
+      console.error('Error loading random emoji:', error);
+    }
+  };
+
   useEffect(() => {
     setClientMounted(true);
-    const initialWait = 4500; // Time before emoji starts to appear
+    const initialWait = 300; // Time before emoji starts to appear
     const pauseBeforeFadeIn = 1000; // 1 second pause with 0% opacity
 
     // Phase 1: Emoji becomes present (0% opacity)
     const emojiPresentTimer = setTimeout(() => {
-      setCurrentAnimatedEmoji(getRandomEmojis(1)[0]);
+      loadRandomEmoji();
       setShowEmoji(true);    // Make Emoji component render
       setEmojiOpacity(0);    // Start at 0% opacity
     }, initialWait);
@@ -57,15 +65,30 @@ export default function Home() {
     };
   }, []);
 
-  const negativeOffsetPx = -30; // This is used for horizontal offset
+  // Cycle emojis from database
+  useEffect(() => {
+    if (isEmojiCycling) {
+      const interval = setInterval(() => {
+        loadRandomEmoji();
+      }, 1500);
+      return () => clearInterval(interval);
+    }
+  }, [isEmojiCycling]);
 
   return (
-    <div className="flex flex-col items-center justify-center text-white bg-[#050505] min-h-screen overflow-y-hidden pt-4 sm:pt-10 md:pt-12 lg:pt-16">
+    <div className="flex flex-col items-center justify-center text-white bg-[#050505] overflow-y-hidden pt-4 sm:pt-10 md:pt-12 lg:pt-16">
+      {/* Centered Top Logo */}
+      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-50">
+        <Link href="/" className="opacity-80 hover:opacity-100 transition-opacity">
+          <Image src="/images/logo-white.svg" alt="emoji.today" width={48} height={48} />
+        </Link>
+      </div>
+
       {/* Main Content Area */}
       <main className="flex flex-col items-center justify-center flex-grow w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
 
-        {/* Top Text Block */}
-        <div className="text-center w-full mb-8 md:mb-10 lg:mb-16">
+        {/* Top Text Block - Added more padding */}
+        <div className="text-center w-full mb-12 md:mb-16 lg:mb-20 mt-16 md:mt-20 lg:mt-24">
           <h1 className="text-4xl font-light tracking-tighter sm:text-5xl md:text-6xl lg:text-8xl leading-tight">
             What emoji is today?
           </h1>
@@ -74,16 +97,16 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Container for the rightmost item and its echoes */}
+        {/* Centered Emoji Container */}
         <div
           className="relative flex items-center justify-center w-full"
           style={{
             height: `${animatedItemSize.container}px`,
           }}
         >
-          {/* Rightmost animated item container */}
+          {/* Centered animated item container */}
           <div
-            className="absolute right-0"
+            className="relative flex items-center justify-center"
             style={{
               width: `${animatedItemSize.container}px`,
               height: `${animatedItemSize.container}px`,
@@ -107,7 +130,7 @@ export default function Home() {
             </div>
 
             {/* 2. Emoji that fades in on top (top layer) */}
-            {showEmoji && (
+            {showEmoji && currentAnimatedEmoji && (
               <div
                 className="absolute inset-0 z-40"
                 style={{
@@ -116,69 +139,21 @@ export default function Home() {
                 }}
               >
                 <Emoji
-                  emoji={currentAnimatedEmoji}
+                  emoji={currentAnimatedEmoji.emoji}
                   containerSize={animatedItemSize.container}
                   borderWidth={animatedItemSize.border}
-                  animate={isEmojiCycling} // Controlled by new state
+                  accentColor={currentAnimatedEmoji.accent_color}
                 />
               </div>
             )}
           </div>
-
-          {/* Echoes Container */}
-          <div
-            style={{
-              position: 'absolute',
-              right: 0,
-              width: '100%',
-              height: `${animatedItemSize.container}px`,
-              zIndex: 20,
-            }}
-          >
-            {clientMounted && Array.from({ length: echoCount }).map((_, i) => {
-              let opacity;
-              if (echoCount <= 1) {
-                opacity = (echoCount === 1) ? MAX_ECHO_OPACITY : MIN_ECHO_OPACITY;
-              } else {
-                const progress = i / (echoCount - 1);
-                opacity = MIN_ECHO_OPACITY + (MAX_ECHO_OPACITY - MIN_ECHO_OPACITY) * Math.pow(1 - progress, 3);
-              }
-              opacity = Math.max(MIN_ECHO_OPACITY, Math.min(MAX_ECHO_OPACITY, opacity));
-              if (i === 0 && echoCount > 0) {
-                opacity = MAX_ECHO_OPACITY;
-              }
-
-              const rightPosition = (i + 1) * Math.abs(negativeOffsetPx);
-
-              return (
-                <div
-                  key={`echo-${i}`}
-                  className="absolute"
-                  style={{
-                    right: `${rightPosition}px`,
-                    opacity: opacity,
-                    zIndex: echoCount - i,
-                    width: `${animatedItemSize.container}px`,
-                    height: `${animatedItemSize.container}px`,
-                  }}
-                >
-                  <Image
-                    src="/images/logo-white-with-solid-bg.svg"
-                    alt={`emoji.today logo echo ${i + 1}`}
-                    layout="fill"
-                    objectFit="contain"
-                  />
-                </div>
-              );
-            })}
-          </div>
         </div>
 
-        {/* CTA Button */}
-        <div className="mt-8 md:mt-12 mb-12">
+        {/* CTA Button - Made wider, more padding, rounded-full */}
+        <div className="mt-16 md:mt-20 lg:mt-24 mb-12">
           <Link href="/vote" className="inline-block">
             <button
-              className="font-semibold py-4 px-8 rounded-lg text-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              className="py-5 px-12 rounded-full text-2xl transition-all duration-300 min-w-[200px]"
               style={{
                 backgroundColor: emojiColor,
                 color: 'white'

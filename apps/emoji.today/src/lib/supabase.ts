@@ -42,6 +42,84 @@ export type Database = {
         }
         Relationships: []
       }
+      emojis: {
+        Row: {
+          id: string
+          emoji: string
+          unified: string
+          non_qualified: string | null
+          name: string
+          short_name: string
+          short_names: string[]
+          keywords: string[]
+          category: string
+          subcategory: string | null
+          sort_order: number
+          added_in: string
+          unicode_version: string
+          accent_color: string | null
+          skin_variations: Json | null
+          filename: string
+          has_img_apple: boolean | null
+          has_img_google: boolean | null
+          has_img_twitter: boolean | null
+          has_img_facebook: boolean | null
+          search_text: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          emoji: string
+          unified: string
+          non_qualified?: string | null
+          name: string
+          short_name: string
+          short_names?: string[]
+          keywords?: string[]
+          category: string
+          subcategory?: string | null
+          sort_order: number
+          added_in: string
+          unicode_version: string
+          accent_color?: string | null
+          skin_variations?: Json | null
+          filename: string
+          has_img_apple?: boolean | null
+          has_img_google?: boolean | null
+          has_img_twitter?: boolean | null
+          has_img_facebook?: boolean | null
+          search_text?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          emoji?: string
+          unified?: string
+          non_qualified?: string | null
+          name?: string
+          short_name?: string
+          short_names?: string[]
+          keywords?: string[]
+          category?: string
+          subcategory?: string | null
+          sort_order?: number
+          added_in?: string
+          unicode_version?: string
+          accent_color?: string | null
+          skin_variations?: Json | null
+          filename?: string
+          has_img_apple?: boolean | null
+          has_img_google?: boolean | null
+          has_img_twitter?: boolean | null
+          has_img_facebook?: boolean | null
+          search_text?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string

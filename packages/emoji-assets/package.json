@@ -4,7 +4,8 @@
   "description": "Emoji assets and utilities for emoji.today",
   "main": "src/index.ts",
   "scripts": {
-    "download": "tsx scripts/download-emojis.ts",
+    "analyze": "tsx scripts/analyze-and-populate-emoji-database.ts",
+    "sync": "tsx scripts/sync-to-apps.ts",
     "build": "echo 'No build needed for emoji-assets'"
   },
   "devDependencies": {
