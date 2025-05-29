@@ -67,18 +67,64 @@ export function getEmojiImageUrl(filename: string): string {
 }
 
 /**
- * Search emojis in the database by keyword
+ * Search emojis in the database by keyword or direct emoji
  */
 export async function searchEmojis(query: string): Promise<DatabaseEmoji[]> {
   try {
+    const trimmedQuery = query.trim()
+
+    // First, always try exact emoji match
+    const { data: exactMatch, error: exactError } = await supabase
+      .from("emojis")
+      .select(
+        "emoji, name, accent_color, filename, keywords, category, is_votable"
+      )
+      .eq("emoji", trimmedQuery)
+      .not("accent_color", "is", null)
+      .not("is_votable", "is", false)
+      .limit(1)
+
+    if (!exactError && exactMatch && exactMatch.length > 0) {
+      const validEmojis = exactMatch.filter(
+        (emoji): emoji is DatabaseEmoji =>
+          emoji.accent_color !== null && emoji.is_votable !== false
+      )
+      if (validEmojis.length > 0) {
+        // If we found an exact match, return it first, then do a keyword search for related emojis
+        const { data: relatedEmojis, error: relatedError } = await supabase
+          .from("emojis")
+          .select(
+            "emoji, name, accent_color, filename, keywords, category, is_votable"
+          )
+          .or(`name.ilike.%${trimmedQuery}%, keywords.cs.{${trimmedQuery}}`)
+          .neq("emoji", trimmedQuery) // Exclude the exact match we already have
+          .not("accent_color", "is", null)
+          .not("is_votable", "is", false)
+          .limit(49) // Since we already have 1 result
+
+        if (!relatedError && relatedEmojis) {
+          const validRelated = relatedEmojis.filter(
+            (emoji): emoji is DatabaseEmoji =>
+              emoji.accent_color !== null && emoji.is_votable !== false
+          )
+          return [...validEmojis, ...validRelated]
+        }
+
+        return validEmojis
+      }
+    }
+
+    // If not an exact match, do regular keyword search
     const { data, error } = await supabase
       .from("emojis")
       .select(
         "emoji, name, accent_color, filename, keywords, category, is_votable"
       )
-      .or(`name.ilike.%${query}%, keywords.cs.{${query}}`)
+      .or(
+        `name.ilike.%${trimmedQuery}%, keywords.cs.{${trimmedQuery}}, emoji.eq.${trimmedQuery}`
+      )
       .not("accent_color", "is", null)
-      .not("is_votable", "is", false) // Exclude explicitly non-votable emojis
+      .not("is_votable", "is", false)
       .limit(50)
 
     if (error) {

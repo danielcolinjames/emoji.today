@@ -60,7 +60,7 @@ export default async function RootLayout({
       <body>
         <GoogleAnalytics />
         <Providers session={session}>
-          <main className="min-h-dvh bg-[#050505] relative pb-4 sm:pb-24">
+          <main className="bg-[#050505]">
             <Navbar />
             <div className="w-full">{children}</div>
             <Footer />

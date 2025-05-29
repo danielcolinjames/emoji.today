@@ -12,6 +12,7 @@ import { getRandomEmoji, type DatabaseEmoji } from "@/lib/emojis";
 import { getContrastTextColor } from "@/lib/utils";
 import { useFrame } from "@/components/providers/FrameProvider";
 import { getVotingResults } from "@/lib/actions";
+import { ArrowRight } from 'lucide-react';
 
 const FADE_DURATION_MS = 500;
 
@@ -78,14 +79,13 @@ export default function Home() {
         redirect: false,
       });
 
-      // After successful sign in, redirect to vote page
-      router.push('/vote');
+      // No automatic redirect - user stays on home page after sign in
     } catch (e) {
       console.error('Sign in error:', e);
     } finally {
       setIsSigningIn(false);
     }
-  }, [getNonce, context, router]);
+  }, [getNonce, context]);
 
   // Check if user has voted today (only when authenticated)
   useEffect(() => {
@@ -181,7 +181,7 @@ export default function Home() {
 
   const getButtonText = () => {
     if (status === "authenticated") {
-      return hasVoted ? "View voting results" : "Cast your vote";
+      return hasVoted ? "View results" : "Cast your vote";
     } else if (context) {
       return "Sign in to vote";
     }
@@ -201,7 +201,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center text-white bg-[#050505] pt-4 sm:pt-10 md:pt-12 lg:pt-16">
       {/* Main Content Area */}
-      <main className="flex flex-col items-center justify-center flex-grow w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
+      <main className="flex flex-col items-center justify-start flex-grow w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
 
         {/* Top Text Block - Updated with new title and subtitle */}
         <div className="text-center w-full mb-8 md:mb-10 lg:mb-20 mt-12 md:mt-20 lg:mt-24 flex flex-col">
@@ -296,17 +296,37 @@ export default function Home() {
               />
             ) : (
               <div className="flex items-center gap-3">
-                <img
-                  src="/images/farcaster-white.svg"
-                  alt="Farcaster"
-                  className="h-4 w-4 sm:h-6 sm:w-6"
-                  style={{
-                    filter: textColor === 'black' ? 'invert(1)' : 'none'
-                  }}
-                />
+                {status !== "authenticated" && context && (
+                  <img
+                    src="/images/farcaster-white.svg"
+                    alt="Farcaster"
+                    className="h-4 w-4 sm:h-6 sm:w-6"
+                    style={{
+                      filter: textColor === 'black' ? 'invert(1)' : 'none'
+                    }}
+                  />
+                )}
+                {status !== "authenticated" && !context && (
+                  <img
+                    src="/images/farcaster-white.svg"
+                    alt="Farcaster"
+                    className="h-4 w-4 sm:h-6 sm:w-6"
+                    style={{
+                      filter: textColor === 'black' ? 'invert(1)' : 'none'
+                    }}
+                  />
+                )}
                 <p className="text-base sm:text-lg md:text-xl text-center">
                   {getButtonText()}
                 </p>
+                {status === "authenticated" && (
+                  <ArrowRight
+                    className="h-4 w-4 sm:h-6 sm:w-6"
+                    style={{
+                      color: textColor
+                    }}
+                  />
+                )}
               </div>
             )}
           </button>

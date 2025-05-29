@@ -128,6 +128,8 @@ export type Database = {
           created_at: string
           fid: number
           id: string
+          last_updated: string | null
+          previous_usernames: string[] | null
           updated_at: string
           username: string | null
         }
@@ -135,6 +137,8 @@ export type Database = {
           created_at?: string
           fid: number
           id?: string
+          last_updated?: string | null
+          previous_usernames?: string[] | null
           updated_at?: string
           username?: string | null
         }
@@ -142,6 +146,8 @@ export type Database = {
           created_at?: string
           fid?: number
           id?: string
+          last_updated?: string | null
+          previous_usernames?: string[] | null
           updated_at?: string
           username?: string | null
         }

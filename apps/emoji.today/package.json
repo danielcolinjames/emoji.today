@@ -9,7 +9,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "cleanup": "lsof -ti :3000 | xargs kill -9"
+    "cleanup": "lsof -ti :3000 | xargs kill -9",
+    "clear-vote": "node scripts/clear-votes.js clear",
+    "clear-all-votes": "node scripts/clear-votes.js clear-all",
+    "reassign-vote": "node scripts/clear-votes.js reassign",
+    "migrate-db": "node scripts/migrate-add-fid-and-usernames.js"
   },
   "dependencies": {
     "@date-fns/utc": "^2.1.0",

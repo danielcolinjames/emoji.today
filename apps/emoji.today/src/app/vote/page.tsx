@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { AuthWrapper } from "@/components/AuthWrapper";
-import { VotingInterface } from "@/components/VotingInterface";
-import { VoteConfirmation } from "@/components/VoteConfirmation";
+import { PageLayout } from "@/components/PageLayout";
+import { SelectEmoji } from "@/components/voting/SelectEmoji";
+import { ConfirmEmoji } from "@/components/voting/ConfirmEmoji";
 import { VotingResults } from "@/components/VotingResults";
 import { submitVote, getVotingResults } from "@/lib/actions";
 import { useFrame } from "@/components/providers/FrameProvider";
@@ -47,12 +48,6 @@ function VotePageContent() {
   const checkVotingStatus = async () => {
     try {
       // Testing override: if username is "emojitoday", always allow fresh voting
-      console.log('Debug - context:', context);
-      console.log('Debug - context.user:', context?.user);
-      console.log('Debug - username:', context?.user?.username);
-      console.log('Debug - session:', session);
-      console.log('Debug - session.user.fid:', session?.user?.fid);
-
       // Check multiple ways to identify the testing user
       const isTestUser =
         context?.user?.username === "emojitoday" ||
@@ -60,7 +55,6 @@ function VotePageContent() {
         (typeof window !== 'undefined' && window.location.hostname === 'localhost');
 
       if (isTestUser) {
-        console.log('Debug - Testing override activated');
         setStep('select');
         setIsLoading(false);
         return;
@@ -93,7 +87,12 @@ function VotePageContent() {
     setError(null);
 
     try {
-      await submitVote(selectedEmoji);
+      // Pass username and displayName from Frame context to track user info
+      await submitVote(
+        selectedEmoji,
+        context?.user?.username,
+        context?.user?.displayName
+      );
       // After successful vote, fetch results
       await checkVotingStatus();
     } catch (error) {
@@ -110,10 +109,34 @@ function VotePageContent() {
   };
 
   const getPageTitle = () => {
-    if (step === 'results') {
-      return "You've voted";
+    switch (step) {
+      case 'select':
+        return undefined;
+      case 'confirm':
+        return "Confirm your vote";
+      case 'results':
+        return "You've voted";
+      default:
+        return "What emoji is today?";
     }
-    return "What emoji is today?";
+  };
+
+  const getPageSubtitle = () => {
+    switch (step) {
+      case 'select':
+        return undefined;
+      case 'confirm':
+        return "This is your moment to make history.";
+      case 'results':
+        return new Date().toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        }).toUpperCase();
+      default:
+        return undefined;
+    }
   };
 
   // Show loading while checking auth status
@@ -126,47 +149,43 @@ function VotePageContent() {
   }
 
   return (
-    <div className="bg-[#050505]">
-      <div className="max-w-2xl mx-auto p-6 pt-20">
-        {/* Only show title for non-results steps */}
-        {step !== 'results' && (
-          <h1 className="text-4xl font-bold mb-8 text-center tracking-branded text-white">
-            {getPageTitle()}
-          </h1>
-        )}
-
-        {error ? (
-          <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg mb-6">
-            <p className="text-sm text-red-400">{error}</p>
-            <button
-              onClick={() => {
-                setError(null);
-                setStep('select');
-              }}
-              className="mt-2 text-red-400 hover:text-red-300 underline text-sm"
-            >
-              Try again
-            </button>
-          </div>
-        ) : step === 'results' && results ? (
-          <VotingResults
-            results={results.results}
-            totalVotes={results.totalVotes}
-            userVote={results.userVote}
-            voteDate={results.voteDate}
-          />
-        ) : step === 'confirm' && selectedEmoji ? (
-          <VoteConfirmation
-            emoji={selectedEmoji}
-            onConfirm={handleConfirmVote}
-            onBack={handleBackToSelect}
-            isLoading={isSubmitting}
-          />
-        ) : (
-          <VotingInterface onContinue={handleContinueToConfirm} />
-        )}
-      </div>
-    </div>
+    <PageLayout
+      title={getPageTitle()}
+      subtitle={getPageSubtitle()}
+      showBackButton={step === 'confirm'}
+      onBack={step === 'confirm' ? handleBackToSelect : undefined}
+    >
+      {error ? (
+        <div className="p-6 bg-red-900/20 border border-red-500/30 rounded-xl mb-8">
+          <p className="text-lg text-red-400 mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setStep('select');
+            }}
+            className="text-red-400 hover:text-red-300 underline text-lg"
+          >
+            Try again
+          </button>
+        </div>
+      ) : step === 'results' && results ? (
+        <VotingResults
+          results={results.results}
+          totalVotes={results.totalVotes}
+          userVote={results.userVote}
+          voteDate={results.voteDate}
+        />
+      ) : step === 'confirm' && selectedEmoji ? (
+        <ConfirmEmoji
+          emoji={selectedEmoji}
+          onConfirm={handleConfirmVote}
+          onBack={handleBackToSelect}
+          isLoading={isSubmitting}
+        />
+      ) : (
+        <SelectEmoji onContinue={handleContinueToConfirm} />
+      )}
+    </PageLayout>
   );
 }
 

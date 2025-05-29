@@ -49,33 +49,15 @@ export function VotingResults({ results, totalVotes, userVote, voteDate }: Votin
   // Sort results by count descending
   const sortedResults = [...displayResults].sort((a, b) => b.count - a.count);
 
-  // Format the date
-  const formattedDate = new Date(voteDate).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  }).toUpperCase();
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tighter text-white">
-          What emoji is today?
-        </h1>
-        <p className="text-lg sm:text-xl text-neutral-500 font-light">
-          {formattedDate}
-        </p>
-      </div>
-
+    <div className="space-y-12">
       {/* Countdown Timer */}
       <div className="text-center">
         <VotingCountdown />
       </div>
 
       {/* Results */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {sortedResults.map((result, index) => {
           const isUserVote = result.emoji === displayUserVote;
           const color = emojiColors[result.emoji] || "#6B7280";
@@ -84,24 +66,24 @@ export function VotingResults({ results, totalVotes, userVote, voteDate }: Votin
           return (
             <div
               key={result.emoji}
-              className="flex items-center justify-between py-4 px-6 rounded-2xl transition-all duration-300"
+              className="flex items-center justify-between py-6 px-8 rounded-2xl transition-all duration-300"
               style={{
                 background: `linear-gradient(90deg, ${color}15 0%, ${color}05 100%)`,
                 border: `1px solid ${color}30`,
               }}
             >
               {/* Left side - Emoji and info */}
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-6">
                 <div className="relative">
                   <Emoji
                     emoji={result.emoji}
-                    containerSize={64}
+                    containerSize={80}
                     borderWidth={0}
                     accentColor={color}
                   />
                   {isWinning && (
                     <div
-                      className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                      className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
                       style={{ backgroundColor: color, color: 'white' }}
                     >
                       1
@@ -110,21 +92,21 @@ export function VotingResults({ results, totalVotes, userVote, voteDate }: Votin
                 </div>
 
                 <div className="flex flex-col">
-                  <span className="text-lg font-medium text-white">
+                  <span className="text-xl font-medium text-white">
                     {emojiNames[result.emoji] || result.emoji}
                   </span>
                   {isUserVote && (
-                    <span className="text-sm text-neutral-400">Your vote</span>
+                    <span className="text-base text-neutral-400">Your vote</span>
                   )}
                 </div>
               </div>
 
               {/* Right side - Stats */}
               <div className="text-right space-y-1">
-                <div className="text-2xl font-bold text-white">
+                <div className="text-3xl font-bold text-white">
                   {result.percentage}%
                 </div>
-                <div className="text-sm text-neutral-400">
+                <div className="text-base text-neutral-400">
                   {result.count.toLocaleString()} {result.count === 1 ? 'vote' : 'votes'}
                 </div>
               </div>
@@ -134,21 +116,21 @@ export function VotingResults({ results, totalVotes, userVote, voteDate }: Votin
       </div>
 
       {/* Progress Bars Section */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {sortedResults.map((result) => {
           const color = emojiColors[result.emoji] || "#6B7280";
           const isUserVote = result.emoji === displayUserVote;
 
           return (
-            <div key={`bar-${result.emoji}`} className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">{result.emoji}</span>
+            <div key={`bar-${result.emoji}`} className="space-y-3">
+              <div className="flex items-center justify-between text-base">
+                <div className="flex items-center space-x-3">
+                  <span className="text-xl">{result.emoji}</span>
                   <span className="text-white font-medium">
                     {emojiNames[result.emoji] || result.emoji}
                   </span>
                   {isUserVote && (
-                    <span className="text-neutral-400 text-xs">• Your vote</span>
+                    <span className="text-neutral-400 text-sm">• Your vote</span>
                   )}
                 </div>
                 <span className="text-white font-bold">
@@ -157,9 +139,9 @@ export function VotingResults({ results, totalVotes, userVote, voteDate }: Votin
               </div>
 
               {/* Dynamic Progress Bar */}
-              <div className="w-full bg-neutral-800 rounded-full h-3">
+              <div className="w-full bg-neutral-800 rounded-full h-4">
                 <div
-                  className="h-3 rounded-full transition-all duration-1000 ease-out"
+                  className="h-4 rounded-full transition-all duration-1000 ease-out"
                   style={{
                     width: `${result.percentage}%`,
                     backgroundColor: color,
@@ -172,14 +154,14 @@ export function VotingResults({ results, totalVotes, userVote, voteDate }: Votin
       </div>
 
       {/* Total votes indicator */}
-      <div className="text-center text-neutral-500">
-        <p className="text-lg">
+      <div className="text-center text-neutral-400">
+        <p className="text-xl">
           {displayTotalVotes.toLocaleString()} total {displayTotalVotes === 1 ? 'vote' : 'votes'}
         </p>
       </div>
 
       {/* Footer message */}
-      <div className="text-center text-neutral-400 text-sm space-y-2">
+      <div className="text-center text-neutral-400 text-lg space-y-3">
         <p>Results update in real-time as votes come in.</p>
         <p>Share this page to get more people voting!</p>
       </div>
