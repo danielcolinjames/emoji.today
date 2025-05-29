@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import sdk, { type Context, type FrameNotificationDetails, AddMiniApp } from "@farcaster/frame-sdk";
 import { createStore } from "mipd";
 import React from "react";
+import Image from "next/image";
 
 interface FrameContextType {
   isSDKLoaded: boolean;
@@ -154,7 +155,13 @@ export function FrameProvider({ children }: { children: React.ReactNode }) {
   if (!frameContext.isSDKLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#050505]">
-        <div className="animate-pulse text-white">Loading...</div>
+        <Image
+          src="/images/logo-white.svg"
+          alt="Loading"
+          width={48}
+          height={48}
+          className="animate-spin"
+        />
       </div>
     );
   }

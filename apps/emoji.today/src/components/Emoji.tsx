@@ -1,9 +1,11 @@
 "use client"
 
 import { useMemo } from "react";
+import Image from "next/image";
 
 interface EmojiProps {
   emoji: string;
+  filename?: string;
   containerSize?: number;
   borderWidth?: number;
   accentColor?: string;
@@ -11,13 +13,16 @@ interface EmojiProps {
 
 const Emoji: React.FC<EmojiProps> = ({
   emoji,
+  filename,
   containerSize = 300,
   borderWidth = 18,
   accentColor = '#FFFFFF'
 }) => {
-  const EMOJI_TO_CONTAINER_RATIO = 166.6667 / 500;
-  const emojiDisplaySize = useMemo(() => {
-    return Math.floor(containerSize * EMOJI_TO_CONTAINER_RATIO);
+  const imageSize = useMemo(() => {
+    // Use the specific aspect ratio requested: 166.667
+    // This maintains consistency with the original design
+    const ratio = 166.667 / 500; // Original ratio for 500px container
+    return Math.floor(containerSize * ratio);
   }, [containerSize]);
 
   const componentStyle: React.CSSProperties = {
@@ -36,15 +41,41 @@ const Emoji: React.FC<EmojiProps> = ({
     transition: 'border-color 0.5s ease-in-out, opacity 0.5s ease-in-out',
   };
 
-  const emojiTextStyle: React.CSSProperties = {
-    fontSize: `${emojiDisplaySize}px`,
-    lineHeight: '1',
-    textAlign: 'center',
-  };
-
   return (
     <div style={componentStyle}>
-      <span style={emojiTextStyle}>{emoji}</span>
+      {filename ? (
+        <Image
+          src={`/emoji-assets/apple-160/${filename}`}
+          alt={emoji}
+          width={imageSize}
+          height={imageSize}
+          style={{
+            objectFit: 'contain',
+          }}
+          onError={(e) => {
+            // Fallback to text emoji if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              const fallbackSpan = document.createElement('span');
+              fallbackSpan.textContent = emoji;
+              fallbackSpan.style.fontSize = `${Math.floor(containerSize * 0.4)}px`;
+              fallbackSpan.style.lineHeight = '1';
+              parent.appendChild(fallbackSpan);
+            }
+          }}
+        />
+      ) : (
+        // Fallback to text if no filename provided
+        <span style={{
+          fontSize: `${Math.floor(containerSize * 0.4)}px`,
+          lineHeight: '1',
+          textAlign: 'center',
+        }}>
+          {emoji}
+        </span>
+      )}
     </div>
   );
 };

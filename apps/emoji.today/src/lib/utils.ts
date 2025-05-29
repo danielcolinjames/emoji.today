@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { mnemonicToAccount } from "viem/accounts"
+import { hex as wcagHex } from "wcag-contrast"
 import {
   APP_BUTTON_TEXT,
   APP_DESCRIPTION,
@@ -421,4 +422,78 @@ interface EmojiRange {
   start: number
   end: number
   description: string
+}
+
+/**
+ * Determine if text should be black or white based on background color
+ * Returns 'black' or 'white' based on WCAG contrast guidelines
+ * Strongly favors white text - only uses black when white contrast is poor
+ */
+export function getContrastTextColor(
+  backgroundColor: string
+): "black" | "white" {
+  try {
+    // Test contrast with white text
+    const contrastWithWhite = wcagHex(backgroundColor, "#ffffff")
+
+    // WCAG AA standard requires 4.5:1 contrast ratio for normal text
+    // We'll be even more lenient and only switch to black if white is below 3:1
+    const minimumAcceptableContrast = 3.0
+
+    // Strongly favor white - only use black if white contrast is really poor
+    if (contrastWithWhite >= minimumAcceptableContrast) {
+      return "white"
+    }
+
+    // If white is too poor, check if black is significantly better
+    const contrastWithBlack = wcagHex(backgroundColor, "#000000")
+
+    // Only use black if it's significantly better than white (at least 2x better)
+    // This ensures we really need black text
+    if (contrastWithBlack > contrastWithWhite * 1.5) {
+      return "black"
+    }
+
+    // Default to white even if contrast isn't great
+    return "white"
+  } catch (error) {
+    console.error(
+      "Error calculating contrast for color:",
+      backgroundColor,
+      error
+    )
+    return "white" // fallback for invalid colors
+  }
+}
+
+// Voting countdown utility
+export function getRemainingTimeToMidnightUTC(): {
+  hours: number
+  minutes: number
+  seconds: number
+  totalMs: number
+} {
+  const now = new Date()
+  const tomorrow = new Date(now)
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
+  tomorrow.setUTCHours(0, 0, 0, 0)
+
+  const totalMs = tomorrow.getTime() - now.getTime()
+
+  const hours = Math.floor(totalMs / (1000 * 60 * 60))
+  const minutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((totalMs % (1000 * 60)) / 1000)
+
+  return { hours, minutes, seconds, totalMs }
+}
+
+export function formatCountdown(time: {
+  hours: number
+  minutes: number
+  seconds: number
+}): string {
+  const h = time.hours.toString().padStart(2, "0")
+  const m = time.minutes.toString().padStart(2, "0")
+  const s = time.seconds.toString().padStart(2, "0")
+  return `${h}:${m}:${s}`
 }

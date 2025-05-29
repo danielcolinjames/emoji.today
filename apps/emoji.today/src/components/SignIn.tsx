@@ -55,13 +55,13 @@ export function SignIn() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pt-8">
       {status !== "authenticated" && (
         <>
           <Button
             onClick={handleSignIn}
             disabled={signingIn}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+            className="w-full bg-white hover:bg-gray-100 text-black rounded-full py-4 px-8 text-lg font-medium transition-all duration-300"
             isLoading={signingIn}
           >
             Sign In with Farcaster

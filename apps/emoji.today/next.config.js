@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["node-vibrant", "@emoji.today/emoji-assets"],
+  transpilePackages: ["node-vibrant", "@emoji.today/emoji-assets", "geist"],
   images: {
     remotePatterns: [
       {

@@ -13,8 +13,8 @@ export default function GlobalError({
   return (
     <html>
       <body>
-        <div className="flex flex-col items-center justify-center text-white px-4 text-center py-10">
-          <div className="mb-8">
+        <div className="flex flex-col items-center justify-center text-white px-4 text-center">
+          <div className="mb-8 pt-20">
             <Image
               src="/images/sad.svg"
               alt="Sad face"
@@ -22,9 +22,9 @@ export default function GlobalError({
               height={200}
             />
           </div>
-          <h1 className="text-6xl font-bold mb-6">Something went wrong!</h1>
-          <p className="text-xl text-gray-400 mb-10">
-            We encountered an unexpected error. Please try again.
+          <h1 className="text-2xl font-bold">Something went wrong!</h1>
+          <p className="text-xl text-neutral-400 mb-10">
+            Sorry about that. Please take a screenshot and send this to us.
           </p>
           {/* Render the error message in development for debugging */}
           {process.env.NODE_ENV === 'development' && error?.message && (
@@ -35,7 +35,7 @@ export default function GlobalError({
           <div className="flex space-x-4">
             <button
               onClick={() => reset()}
-              className="inline-flex items-center text-white bg-blue-600 hover:bg-blue-700 font-medium transition-colors duration-150 ease-in-out group focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md px-6 py-3"
+              className="inline-flex items-center text-white bg-neutral-900 hover:bg-neutral-800 font-medium transition-colors duration-150 ease-in-out group focus:outline-none focus:ring-2 focus:ring-neutral-500 px-6 py-3 rounded-full"
             >
               Try again
             </button>

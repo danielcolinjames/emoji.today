@@ -7,6 +7,8 @@ import { VotingInterface } from "@/components/VotingInterface";
 import { VoteConfirmation } from "@/components/VoteConfirmation";
 import { VotingResults } from "@/components/VotingResults";
 import { submitVote, getVotingResults } from "@/lib/actions";
+import { useFrame } from "@/components/providers/FrameProvider";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface EmojiVoteCount {
   emoji: string;
@@ -25,6 +27,7 @@ type VotingStep = 'select' | 'confirm' | 'results';
 
 function VotePageContent() {
   const { data: session, status } = useSession();
+  const { context } = useFrame();
   const [step, setStep] = useState<VotingStep>('select');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [results, setResults] = useState<VotingResultsData | null>(null);
@@ -43,6 +46,26 @@ function VotePageContent() {
 
   const checkVotingStatus = async () => {
     try {
+      // Testing override: if username is "emojitoday", always allow fresh voting
+      console.log('Debug - context:', context);
+      console.log('Debug - context.user:', context?.user);
+      console.log('Debug - username:', context?.user?.username);
+      console.log('Debug - session:', session);
+      console.log('Debug - session.user.fid:', session?.user?.fid);
+
+      // Check multiple ways to identify the testing user
+      const isTestUser =
+        context?.user?.username === "emojitoday" ||
+        session?.user?.fid === 1234 || // Replace with your actual FID
+        (typeof window !== 'undefined' && window.location.hostname === 'localhost');
+
+      if (isTestUser) {
+        console.log('Debug - Testing override activated');
+        setStep('select');
+        setIsLoading(false);
+        return;
+      }
+
       const data = await getVotingResults();
       if (data) {
         setResults(data);
@@ -96,22 +119,21 @@ function VotePageContent() {
   // Show loading while checking auth status
   if (status === "loading" || (status === "authenticated" && isLoading)) {
     return (
-      <div className="bg-[#050505]">
-        <div className="max-w-2xl mx-auto p-6 pt-8">
-          <div className="text-center py-12">
-            <div className="animate-pulse text-gray-500">Loading...</div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-[#050505] text-white">
+        <LoadingSpinner size={64} />
       </div>
     );
   }
 
   return (
     <div className="bg-[#050505]">
-      <div className="max-w-2xl mx-auto p-6 pt-8">
-        <h1 className="text-4xl font-bold mb-8 text-center tracking-branded text-white">
-          {getPageTitle()}
-        </h1>
+      <div className="max-w-2xl mx-auto p-6 pt-20">
+        {/* Only show title for non-results steps */}
+        {step !== 'results' && (
+          <h1 className="text-4xl font-bold mb-8 text-center tracking-branded text-white">
+            {getPageTitle()}
+          </h1>
+        )}
 
         {error ? (
           <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg mb-6">
@@ -127,14 +149,12 @@ function VotePageContent() {
             </button>
           </div>
         ) : step === 'results' && results ? (
-          <div className="bg-gray-900 rounded-lg shadow-lg p-8">
-            <VotingResults
-              results={results.results}
-              totalVotes={results.totalVotes}
-              userVote={results.userVote}
-              voteDate={results.voteDate}
-            />
-          </div>
+          <VotingResults
+            results={results.results}
+            totalVotes={results.totalVotes}
+            userVote={results.userVote}
+            voteDate={results.voteDate}
+          />
         ) : step === 'confirm' && selectedEmoji ? (
           <VoteConfirmation
             emoji={selectedEmoji}

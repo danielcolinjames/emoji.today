@@ -4,6 +4,8 @@ import { useSession } from "next-auth/react";
 import { useFrame } from "./providers/FrameProvider";
 import { Button } from "./ui/Button";
 import { SignIn } from "./SignIn";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -18,6 +20,14 @@ export function AuthWrapper({
 }: AuthWrapperProps) {
   const { data: session, status } = useSession();
   const { context } = useFrame();
+  const router = useRouter();
+
+  // Handle redirect when unauthenticated and auth is required
+  useEffect(() => {
+    if (requireAuth && status === "unauthenticated") {
+      router.push('/');
+    }
+  }, [requireAuth, status, router]);
 
   // If auth is not required, always show children
   if (!requireAuth) {
@@ -27,36 +37,17 @@ export function AuthWrapper({
   // Loading state
   if (status === "loading") {
     return (
-      <div className="flex items-center justify-center p-8 min-h-screen bg-[#050505]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-[#050505] text-white">
         <div className="animate-pulse text-brand-yellow">Loading...</div>
       </div>
     );
   }
 
-  // Not authenticated
+  // Not authenticated - show loading spinner while redirecting
   if (status === "unauthenticated") {
-    if (fallback) {
-      return <>{fallback}</>;
-    }
-
     return (
-      <div className="max-w-md mx-auto p-6 text-center bg-[#050505] flex flex-col justify-center">
-        <h2 className="text-2xl font-bold mb-4 text-white">Sign in to vote</h2>
-        <p className="text-gray-400 mb-6">
-          {context
-            ? "Connect your Farcaster account to participate in today's emoji vote."
-            : "Open this page in Farcaster to vote on today's emoji."}
-        </p>
-        {context ? (
-          <SignIn />
-        ) : (
-          <Button
-            onClick={() => window.open("https://warpcast.com/~/add/emoji.today", "_blank")}
-            className="bg-brand-yellow hover:bg-brand-yellow"
-          >
-            Open in Farcaster
-          </Button>
-        )}
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-[#050505] text-white">
+        <div className="animate-pulse text-brand-yellow">Loading...</div>
       </div>
     );
   }

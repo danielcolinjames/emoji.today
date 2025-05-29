@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 };
 
 import localFont from "next/font/local";
+import { Geist, Geist_Mono } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
@@ -29,6 +30,16 @@ const satoshiFont = localFont({
   src: "../assets/fonts/Satoshi-Variable.ttf",
   display: "swap",
   variable: "--font-satoshi",
+});
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export default async function RootLayout({
@@ -39,7 +50,7 @@ export default async function RootLayout({
   const session = await getSession();
 
   return (
-    <html lang="en" className={`${satoshiFont.variable} dark`}>
+    <html lang="en" className={`${satoshiFont.variable} ${geistSans.variable} ${geistMono.variable} dark`}>
       <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
       <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
@@ -49,7 +60,7 @@ export default async function RootLayout({
       <body>
         <GoogleAnalytics />
         <Providers session={session}>
-          <main className="min-h-dvh bg-[#050505] relative pb-10 sm:pb-24">
+          <main className="min-h-dvh bg-[#050505] relative pb-4 sm:pb-24">
             <Navbar />
             <div className="w-full">{children}</div>
             <Footer />
@@ -58,6 +69,6 @@ export default async function RootLayout({
         <SpeedInsights />
         <Analytics />
       </body>
-    </html>
+    </html >
   );
 }

@@ -35,6 +35,16 @@ const sharedConfig: Partial<Config> = {
           "-apple-system",
           "sans-serif",
         ],
+        "geist-mono": [
+          "var(--font-geist-mono)",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Monaco",
+          "Consolas",
+          "Liberation Mono",
+          "Courier New",
+          "monospace",
+        ],
       },
       letterSpacing: {
         branded: "-0.07em", // -7% converted to em

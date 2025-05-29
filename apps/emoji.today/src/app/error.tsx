@@ -11,8 +11,8 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center text-white px-4 text-center py-10">
-      <div className="mb-8">
+    <div className="flex flex-col items-center justify-center text-white px-4 text-center">
+      <div className="mb-8 pt-20">
         <Image
           src="/images/sad.svg"
           alt="Sad face"
@@ -20,7 +20,7 @@ export default function ErrorPage({
           height={200}
         />
       </div>
-      <h1 className="text-6xl font-bold mb-6">Oops, something went wrong!</h1>
+      <h1 className="text-2xl font-bold">Something went wrong!</h1>
       {/* Render the error message in development for debugging */}
       {process.env.NODE_ENV === 'development' && error?.message && (
         <p className="text-sm text-red-400 mb-6">
@@ -30,13 +30,13 @@ export default function ErrorPage({
       <div className="flex space-x-4">
         <button
           onClick={() => reset()}
-          className="inline-flex items-center text-white border border-white font-medium transition-colors duration-150 ease-in-out group focus:outline-none px-6 py-3"
+          className="inline-flex items-center text-white border border-white font-medium transition-colors duration-150 ease-in-out group focus:outline-none px-6 py-3 rounded-full"
         >
           Try again
         </button>
         <Link
           href="/"
-          className="inline-flex items-center text-gray-400 hover:text-white border border-gray-400 font-medium transition-colors duration-150 ease-in-out group focus:outline-none px-6 py-3"
+          className="inline-flex items-center text-gray-400 hover:text-white border border-gray-400 font-medium transition-colors duration-150 ease-in-out group focus:outline-none px-6 py-3 rounded-full"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

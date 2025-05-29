@@ -7,6 +7,7 @@ export interface DatabaseEmoji {
   filename: string
   keywords: string[]
   category: string
+  is_votable: boolean | null
 }
 
 /**
@@ -18,8 +19,11 @@ export async function getRandomEmojis(
   try {
     const { data, error } = await supabase
       .from("emojis")
-      .select("emoji, name, accent_color, filename, keywords, category")
+      .select(
+        "emoji, name, accent_color, filename, keywords, category, is_votable"
+      )
       .not("accent_color", "is", null) // Only get emojis with accent colors
+      .not("is_votable", "is", false) // Exclude explicitly non-votable emojis
       .order("created_at", { ascending: false }) // Get a consistent order first
       .limit(1000) // Get a large pool to randomize from
 
@@ -32,9 +36,10 @@ export async function getRandomEmojis(
       return []
     }
 
-    // Filter out any emojis with null accent_color (extra safety) and type properly
+    // Filter out any emojis with null accent_color and ensure votable (extra safety)
     const validEmojis = data.filter(
-      (emoji): emoji is DatabaseEmoji => emoji.accent_color !== null
+      (emoji): emoji is DatabaseEmoji =>
+        emoji.accent_color !== null && emoji.is_votable !== false
     )
 
     // Randomize the selection
@@ -68,9 +73,12 @@ export async function searchEmojis(query: string): Promise<DatabaseEmoji[]> {
   try {
     const { data, error } = await supabase
       .from("emojis")
-      .select("emoji, name, accent_color, filename, keywords, category")
+      .select(
+        "emoji, name, accent_color, filename, keywords, category, is_votable"
+      )
       .or(`name.ilike.%${query}%, keywords.cs.{${query}}`)
       .not("accent_color", "is", null)
+      .not("is_votable", "is", false) // Exclude explicitly non-votable emojis
       .limit(50)
 
     if (error) {
@@ -78,9 +86,10 @@ export async function searchEmojis(query: string): Promise<DatabaseEmoji[]> {
       return []
     }
 
-    // Filter out any emojis with null accent_color and type properly
+    // Filter out any emojis with null accent_color and ensure votable
     const validEmojis = (data || []).filter(
-      (emoji): emoji is DatabaseEmoji => emoji.accent_color !== null
+      (emoji): emoji is DatabaseEmoji =>
+        emoji.accent_color !== null && emoji.is_votable !== false
     )
 
     return validEmojis
@@ -99,9 +108,12 @@ export async function getEmojisByCategory(
   try {
     const { data, error } = await supabase
       .from("emojis")
-      .select("emoji, name, accent_color, filename, keywords, category")
+      .select(
+        "emoji, name, accent_color, filename, keywords, category, is_votable"
+      )
       .eq("category", category)
       .not("accent_color", "is", null)
+      .not("is_votable", "is", false) // Exclude explicitly non-votable emojis
       .limit(100)
 
     if (error) {
@@ -109,9 +121,10 @@ export async function getEmojisByCategory(
       return []
     }
 
-    // Filter out any emojis with null accent_color and type properly
+    // Filter out any emojis with null accent_color and ensure votable
     const validEmojis = (data || []).filter(
-      (emoji): emoji is DatabaseEmoji => emoji.accent_color !== null
+      (emoji): emoji is DatabaseEmoji =>
+        emoji.accent_color !== null && emoji.is_votable !== false
     )
 
     return validEmojis

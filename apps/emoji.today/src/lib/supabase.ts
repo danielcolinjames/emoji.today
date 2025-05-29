@@ -65,6 +65,7 @@ export type Database = {
           has_img_twitter: boolean | null
           has_img_facebook: boolean | null
           search_text: string | null
+          is_votable: boolean | null
           created_at: string
           updated_at: string
         }
@@ -90,6 +91,7 @@ export type Database = {
           has_img_twitter?: boolean | null
           has_img_facebook?: boolean | null
           search_text?: string | null
+          is_votable?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -115,6 +117,7 @@ export type Database = {
           has_img_twitter?: boolean | null
           has_img_facebook?: boolean | null
           search_text?: string | null
+          is_votable?: boolean | null
           created_at?: string
           updated_at?: string
         }
