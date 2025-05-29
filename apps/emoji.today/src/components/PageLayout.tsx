@@ -13,23 +13,21 @@ export function PageLayout({ title, subtitle, children, showBackButton, onBack }
     <div className="flex flex-col items-center justify-start text-white bg-[#050505] pt-4 sm:pt-10 md:pt-12 lg:pt-16 min-h-screen">
       {/* Main Content Area */}
       <main className="flex flex-col items-center justify-start w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
+        {/* Back Button - absolutely positioned under navbar */}
+        {showBackButton && onBack && (
+          <button
+            onClick={onBack}
+            className="absolute left-5 top-20 flex items-center gap-2 text-neutral-400 hover:text-white transition-colors duration-200 z-40"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+        )}
+
         {/* Top Text Block - only show if title is provided */}
         {title && (
           <div className="text-center w-full mb-4 md:mb-8 lg:mb-20 mt-12 md:mt-20 lg:mt-24 flex flex-col">
-            {showBackButton && onBack && (
-              <div className="w-full flex justify-start mb-6">
-                <button
-                  onClick={onBack}
-                  className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors duration-200"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="m15 18-6-6 6-6" />
-                  </svg>
-                  Back
-                </button>
-              </div>
-            )}
-
             <h1 className="text-4xl font-light tracking-tighter sm:text-5xl md:text-6xl lg:text-8xl leading-tight">
               {title}
             </h1>

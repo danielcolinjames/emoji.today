@@ -16,23 +16,11 @@ async function clearUserVote(fid) {
 
     const today = new Date().toISOString().split("T")[0]
 
-    // Get user by FID
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("fid", fid)
-      .single()
-
-    if (userError) {
-      console.log("User not found in database - no vote to clear")
-      return
-    }
-
-    // Delete today's vote for this user
+    // Delete today's vote for this FID directly
     const { data, error } = await supabase
       .from("votes")
       .delete()
-      .eq("user_id", user.id)
+      .eq("fid", fid)
       .eq("vote_date", today)
 
     if (error) {

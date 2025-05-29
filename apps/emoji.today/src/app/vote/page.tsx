@@ -6,6 +6,7 @@ import { AuthWrapper } from "@/components/AuthWrapper";
 import { PageLayout } from "@/components/PageLayout";
 import { SelectEmoji } from "@/components/voting/SelectEmoji";
 import { ConfirmEmoji } from "@/components/voting/ConfirmEmoji";
+import { ReviewVote } from "@/components/voting/ReviewVote";
 import { VotingResults } from "@/components/VotingResults";
 import { submitVote, getVotingResults } from "@/lib/actions";
 import { useFrame } from "@/components/providers/FrameProvider";
@@ -24,7 +25,7 @@ interface VotingResultsData {
   voteDate: string;
 }
 
-type VotingStep = 'select' | 'confirm' | 'results';
+type VotingStep = 'select' | 'confirm' | 'review' | 'results';
 
 function VotePageContent() {
   const { data: session, status } = useSession();
@@ -35,15 +36,22 @@ function VotePageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasInitiallyChecked, setHasInitiallyChecked] = useState(false);
 
   // Only check voting status when user is authenticated
   useEffect(() => {
+    // Don't re-check if we're in review step or if we've already checked
+    if (step === 'review' || hasInitiallyChecked) {
+      return;
+    }
+
     if (status === "authenticated" && session?.user?.fid) {
       checkVotingStatus();
+      setHasInitiallyChecked(true);
     } else if (status === "unauthenticated") {
       setIsLoading(false);
     }
-  }, [status, session]);
+  }, [status, session, step, hasInitiallyChecked]);
 
   const checkVotingStatus = async () => {
     try {
@@ -63,7 +71,10 @@ function VotePageContent() {
       const data = await getVotingResults();
       if (data) {
         setResults(data);
-        setStep('results');
+        // Don't jump straight to results if we haven't set it explicitly
+        if (step === 'select') {
+          setStep('results');
+        }
       } else {
         setStep('select');
       }
@@ -93,8 +104,9 @@ function VotePageContent() {
         context?.user?.username,
         context?.user?.displayName
       );
-      // After successful vote, fetch results
-      await checkVotingStatus();
+      // After successful vote, go to review step
+      // selectedEmoji is already set, so the review screen will have it
+      setStep('review');
     } catch (error) {
       console.error('Error submitting vote:', error);
       setError(error instanceof Error ? error.message : 'Failed to submit vote');
@@ -108,12 +120,35 @@ function VotePageContent() {
     setStep('select');
   };
 
+  const handleShareToFarcaster = () => {
+    // This is called after the user clicks "Tell the world"
+    // The actual sharing is handled in ReviewVote component
+  };
+
+  const handleViewResults = async () => {
+    // Fetch results and explicitly move to results step
+    setIsLoading(true);
+    try {
+      const data = await getVotingResults();
+      if (data) {
+        setResults(data);
+        setStep('results');
+      }
+    } catch (error) {
+      console.error('Error fetching results:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getPageTitle = () => {
     switch (step) {
       case 'select':
         return undefined;
       case 'confirm':
-        return "Confirm your vote";
+        return "Are you sure?";
+      case 'review':
+        return "Nice.";
       case 'results':
         return "You've voted";
       default:
@@ -126,7 +161,13 @@ function VotePageContent() {
       case 'select':
         return undefined;
       case 'confirm':
-        return "This is your moment to make history.";
+        return `Lock in your vote for ${new Date().toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        })}`;
+      case 'review':
+        return "Now let's hope nothing crazy happens";
       case 'results':
         return new Date().toLocaleDateString('en-US', {
           weekday: 'long',
@@ -174,6 +215,12 @@ function VotePageContent() {
           totalVotes={results.totalVotes}
           userVote={results.userVote}
           voteDate={results.voteDate}
+        />
+      ) : step === 'review' && selectedEmoji ? (
+        <ReviewVote
+          emoji={selectedEmoji}
+          onShareToFarcaster={handleShareToFarcaster}
+          onViewResults={handleViewResults}
         />
       ) : step === 'confirm' && selectedEmoji ? (
         <ConfirmEmoji

@@ -3,13 +3,12 @@
 import { useState, useEffect } from "react";
 import Emoji from "@/components/Emoji";
 import { searchEmojis, type DatabaseEmoji } from "@/lib/emojis";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import { ArrowRight } from "lucide-react";
 
-interface ConfirmEmojiProps {
+interface ReviewVoteProps {
   emoji: string;
-  onConfirm: () => Promise<void>;
-  onBack: () => void;
-  isLoading?: boolean;
+  onShareToFarcaster: () => void;
+  onViewResults: () => void;
 }
 
 // Function to determine if text should be white or black based on background color
@@ -26,7 +25,7 @@ function getContrastColor(hexColor: string): string {
   return luminance > 0.5 ? '#000000' : '#FFFFFF';
 }
 
-export function ConfirmEmoji({ emoji, onConfirm, onBack, isLoading = false }: ConfirmEmojiProps) {
+export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewVoteProps) {
   const [emojiData, setEmojiData] = useState<DatabaseEmoji | null>(null);
 
   // Fetch emoji data to get filename and accent color
@@ -43,10 +42,24 @@ export function ConfirmEmoji({ emoji, onConfirm, onBack, isLoading = false }: Co
   const accentColor = emojiData?.accent_color || "#6B7280";
   const textColor = getContrastColor(accentColor);
 
+  const handleShare = () => {
+    // Create the share text and URL
+    const shareText = `Just voted for ${emoji} to be the emoji.today`;
+
+    // Farcaster compose URL with pre-filled text
+    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(shareText)}`;
+
+    // Open in new window
+    window.open(farcasterUrl, '_blank');
+
+    // Call the callback as well
+    onShareToFarcaster();
+  };
+
   return (
     <div className="space-y-8">
 
-      {/* Big Emoji Preview - exactly like home page with 300px container and 18px border */}
+      {/* Big Emoji Preview - exactly like confirm page with 300px container and 18px border */}
       <div className="flex justify-center py-8">
         {emojiData ? (
           <Emoji
@@ -62,27 +75,27 @@ export function ConfirmEmoji({ emoji, onConfirm, onBack, isLoading = false }: Co
         )}
       </div>
 
-      {/* Confirm Button - full width, rounded-full, less thick */}
-      <div className="px-4">
+      {/* Action Buttons */}
+      <div className="space-y-4 px-4">
+        {/* Primary CTA - Tell the world */}
         <button
-          onClick={onConfirm}
-          disabled={isLoading || !emojiData}
-          className="w-full px-8 py-3 font-medium text-lg rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-3"
+          onClick={handleShare}
+          className="w-full px-8 py-3 font-medium text-lg rounded-full transition-all duration-200"
           style={{
             backgroundColor: accentColor,
             color: textColor
           }}
         >
-          {isLoading ? (
-            <>
-              <div style={{ filter: textColor === '#000000' ? 'invert(1)' : 'none' }}>
-                <LoadingSpinner size={20} />
-              </div>
-              <span>Confirming...</span>
-            </>
-          ) : (
-            'Confirm your vote'
-          )}
+          Tell the world
+        </button>
+
+        {/* Secondary CTA - View results */}
+        <button
+          onClick={onViewResults}
+          className="w-full px-8 py-3 font-medium text-lg rounded-full transition-all duration-200 bg-neutral-800 text-white hover:bg-neutral-700 flex items-center justify-center gap-2"
+        >
+          View results
+          <ArrowRight className="w-5 h-5" />
         </button>
       </div>
     </div>

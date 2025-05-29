@@ -47,7 +47,7 @@ export function Navbar() {
 
   // Authenticated state: logo on left, profile on right
   return (
-    <nav className="absolute top-4 sm:top-10 left-0 right-0 z-50 px-8 sm:px-8 lg:px-10">
+    <nav className="absolute top-4 sm:top-10 left-0 right-0 z-50 px-4 sm:px-8 lg:px-10">
       <div className="flex justify-between items-center">
         {/* Logo - Left Side */}
         <Link href="/" className="opacity-80 hover:opacity-100 transition-opacity">

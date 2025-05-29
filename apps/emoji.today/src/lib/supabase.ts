@@ -157,6 +157,7 @@ export type Database = {
         Row: {
           created_at: string
           emoji: string
+          fid: number
           id: string
           user_id: string
           vote_date: string
@@ -164,6 +165,7 @@ export type Database = {
         Insert: {
           created_at?: string
           emoji: string
+          fid: number
           id?: string
           user_id: string
           vote_date: string
@@ -171,6 +173,7 @@ export type Database = {
         Update: {
           created_at?: string
           emoji?: string
+          fid?: number
           id?: string
           user_id?: string
           vote_date?: string
