@@ -1,6 +1,7 @@
 "use client";
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from "react";
 import Emoji from '@/components/Emoji';
 import { getRandomEmojis } from "@/lib/emojis";
@@ -19,6 +20,7 @@ export default function Home() {
   const [mainLogoOpacity, setMainLogoOpacity] = useState(1); // For fading out the main logo
   const [isEmojiCycling, setIsEmojiCycling] = useState(false); // To start emoji cycling
   const [clientMounted, setClientMounted] = useState(false);
+  const [emojiColor, setEmojiColor] = useState('#ff6b35'); // Default color for CTA button
 
   useEffect(() => {
     setClientMounted(true);
@@ -58,24 +60,21 @@ export default function Home() {
   const negativeOffsetPx = -30; // This is used for horizontal offset
 
   return (
-    <div className="flex flex-col items-center justify-center text-white bg-[#050505] overflow-y-hidden pt-4 sm:pt-10 md:pt-12 lg:pt-16">
+    <div className="flex flex-col items-center justify-center text-white bg-[#050505] min-h-screen overflow-y-hidden pt-4 sm:pt-10 md:pt-12 lg:pt-16">
       {/* Main Content Area */}
       <main className="flex flex-col items-center justify-center flex-grow w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
 
         {/* Top Text Block */}
         <div className="text-center w-full mb-8 md:mb-10 lg:mb-16">
           <h1 className="text-4xl font-light tracking-tighter sm:text-5xl md:text-6xl lg:text-8xl leading-tight">
-            Launching Friday.
+            What emoji is today?
           </h1>
-          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-neutral-500 leading-tight font-light">
-            And Saturday.
-          </p>
-          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-neutral-500 leading-tight font-light">
-            And every day after that.
+          <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-neutral-500 leading-tight font-light mt-4">
+            Only one emoji can win. Every day. Forever.
           </p>
         </div>
 
-        {/* Container for the rightmost item and its echoes - Reverted to original */}
+        {/* Container for the rightmost item and its echoes */}
         <div
           className="relative flex items-center justify-center w-full"
           style={{
@@ -174,8 +173,25 @@ export default function Home() {
             })}
           </div>
         </div>
+
+        {/* CTA Button */}
+        <div className="mt-8 md:mt-12 mb-12">
+          <Link href="/vote" className="inline-block">
+            <button
+              className="font-semibold py-4 px-8 rounded-lg text-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              style={{
+                backgroundColor: emojiColor,
+                color: 'white'
+              }}
+            >
+              Vote now
+            </button>
+          </Link>
+        </div>
       </main>
-      <footer className="flex flex-col items-center justify-center w-full pt-10 md:pt-20 gap-4 md:gap-6">
+
+      {/* Footer */}
+      <footer className="flex flex-col items-center justify-center w-full pt-10 md:pt-20 gap-4 md:gap-6 pb-8">
         <div className="flex space-x-4 sm:space-x-8 items-center">
           <a href="https://farcaster.xyz/emojitoday" target="_blank" rel="noopener noreferrer">
             <img src="/images/farcaster-white.svg" alt="Farcaster" className="h-[26px] sm:h-[42px] w-auto" />
@@ -184,7 +200,9 @@ export default function Home() {
             <img src="/images/x-white.svg" alt="X" className="h-[24px] sm:h-[40px]" />
           </a>
         </div>
-        <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-neutral-500 font-light">Notifications on.</div>
+        <div className="text-lg sm:text-xl md:text-2xl text-neutral-500 font-light">
+          One vote. Every day. Forever.
+        </div>
       </footer>
     </div>
   );

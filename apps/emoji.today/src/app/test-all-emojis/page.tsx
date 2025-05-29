@@ -10,7 +10,7 @@ export default function TestAllEmojis() {
   const displayEmojis = allEmojis.slice(0, showCount);
 
   return (
-    <div className="p-8 bg-black min-h-screen">
+    <div className="p-8 bg-black">
       <div className="text-white mb-6">
         <h1 className="text-3xl font-bold mb-4">All Emojis Test - Full Coverage! 🎉</h1>
         <p className="text-lg mb-2">Total emojis available: {allEmojis.length}</p>
