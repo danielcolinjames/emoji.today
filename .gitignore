@@ -70,3 +70,5 @@ packages/*/.env.*
 
 # Copied emoji assets (generated during build)
 apps/emoji.today/public/emoji-assets
+
+.cursor/mcp.json

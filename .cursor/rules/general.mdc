@@ -3,11 +3,127 @@ description:
 globs: 
 alwaysApply: true
 ---
+# general
+
+## Important Note
+**ALWAYS keep `to_do.mdc` and `notes.mdc` files up to date as work progresses. These are the source of truth for current priorities and ongoing work.**
+
+## Project Overview
 In the project.mdc file, you will see a description of the project. If we ever seem to be building features that don't adhere to the described project principles in that document, please let me know. Make sure everything we're building fits that. Sometimes it might be off because of sample code with the wrong text or something, so it's your job to keep us on track, and use that document as the source of truth for what we're building here.
 
+Always check the to_do.mdc file in the .cursor/rules directory to understand current priorities, pending tasks, and architectural decisions. This file contains the master list of everything that needs to be built and should guide our work priorities.
+
+## Development Philosophy
 I want you to always be careful to explain your moves before you start modifying things. Ideally we can write good tests and stuff too—I want to make this as maintainable a project as possible. I want to be able to have you and other agents come in here and immediately understand the lay of the land. I want us to document all our decisions in the notes.mdc file. As we go, we should always update what we're working on. Assume a chat could get cut short at any moment, and we should always be updating the notes.mdc file, and reviewing it to see what the latest is.
 
-There's also a /docs directory which has notes from the Farcaster docs which this repo is kind of based on. I want you to reference those where relevant, but not overly rely on them.
+## Resources
+- `/docs` directory contains notes from the Farcaster docs which this repo is based on. Reference these where relevant, but don't overly rely on them.
+- MCP server for Supabase powers the backend
+- Neynar MCP helps understand the Neynar docs (Neynar has some functionality that Farcaster's template apps don't)
+- Highlight any discrepancies between Farcaster and Neynar, and ask if not 100% sure about something
 
-You should also have access to an MCP server for Supabase, which is what will power the backend. And you should also have access to a Neynar MCP which can help us understand the Neynar docs. We are kind of using Neynar as well as Farcaster, and I think their docs are a bit more comprehensive. Neynar has some functionality that Farcaster's template apps don't, I think. It's kind of confusing. So make sure you highlight any discrepancies, and ask me if you're not 100% sure about something. I'm still learning how to build mini apps.
+## Product Vision & Launch Plan
+
+### Core Concept
+emoji.today is a daily social voting platform where users vote for the emoji that best represents the day. Think of it as Wordle's daily ritual meets Twitter's social sharing meets crypto's onchain mechanics.
+
+### Key Principles
+- **Playable by anyone on earth** - accessibility is key
+- **Friday launch deadline** for MVP
+- Initial version is a Farcaster mini app
+- Future vision includes full iOS app and content engine
+
+### Phase 1 (MVP for Friday Launch)
+**Core Features:**
+- Farcaster authentication
+- One vote per person per day
+- Live (or pseudo-live via cron) results viewing after voting
+- Dynamic share cards
+- Automated social posts on X and Farcaster
+
+**No payment in Phase 1** - just free voting to test the core loop
+
+### Phase 2 (Post-Launch)
+- Optional $1 "mint your vote" collectible
+- "Cultural curation rewards pool"
+- Auto-minting 1/1 NFT of winning emoji
+- 24-hour auction with transparent distribution rules
+- More sophisticated social posts
+
+## Technical Architecture
+
+### Stack
+- **Database**: Supabase
+- **Cron Jobs**: Railway (in `/apps/jobs` folder in monorepo)
+- **Mini App**: vote.emoji.today (separate domain from marketing site)
+- **Marketing Site**: emoji.today
+
+### Domain Strategy
+- `emoji.today` - Marketing site with "Open in Farcaster" button
+- `vote.emoji.today` - Mini app website (cleaner separation for v1)
+- Eventually merge into one site
+
+## User Flow
+
+### 1. Landing
+User lands on emoji.today → "Open in Farcaster" button → redirects to vote.emoji.today
+
+### 2. Authentication
+Mini app prompts to sign in and add the mini app immediately
+
+### 3. Voting Screen
+**Hero Text**: "What emoji is today?"
+**Subtitle**: Encouraging thoughtful consideration
+- "What big story happened today?"
+- "When humans in 2125 look back, will they think the right one won?"
+
+**UI Elements**:
+- Hours remaining to vote
+- Clear date display (e.g., "Wednesday, May 28, 2025")
+- Current pot size (Phase 1: maybe skip, Phase 2: definitely show)
+- Emoji search input
+- Horizontal scrollable emoji selector
+- "Confirm selection" button only appears after selection
+
+**Important**: Users select from predefined emoji list, no arbitrary symbols
+
+### 4. Confirmation Screen
+**Title**: "Confirm your vote"
+**Subtitle**: "You only get one vote per day, so make sure it counts"
+- Frame as dramatic, historical social experiment
+- Phase 2: Explain $1 cost and raffle mechanics
+
+### 5. Success Screen
+- Shows confirmed vote
+- Share options (triggered by default?)
+- "You must vote to see results" mechanic creates FOMO
+
+### 6. Daily Reset (Midnight ET or UTC?)
+- New voting period opens
+- Previous day's winner determined
+- Phase 2: NFT minted, auction started
+
+## Emoji Management
+Need to determine:
+- Consistent emoji list source
+- Searchability (type "smile" → get all smile emojis)
+- Images and colors consistency
+- Database table vs. code-based solution
+
+## Social Mechanics
+- Can't see results without voting (FOMO driver)
+- Share cards show you voted, not what you voted for (mystery/intrigue)
+- Dynamic conversations about which emoji should win
+
+## Immediate Action Items
+
+1. **Backup current mini app**: Create `mini-app-reference` folder before modifying vote.emoji.today
+2. **Update to_do.mdc**: Refine based on this new clarity
+3. **Focus on Phase 1 MVP**: Strip down to core voting loop for Friday launch
+
+## Questions to Resolve
+- Exact timezone for daily reset (ET vs UTC)
+- Emoji list management approach
+- Share card design and copy
+- Automated post schedule and copy
 

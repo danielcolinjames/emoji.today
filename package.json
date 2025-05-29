@@ -13,8 +13,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "vote-app": "turbo run dev --filter=vote.emoji.today",
-    "vote-app:build": "turbo run build --filter=vote.emoji.today",
+    "staging": "turbo run dev --filter=staging.emoji.today",
+    "staging:build": "turbo run build --filter=staging.emoji.today",
     "site": "turbo run dev --filter=emoji.today",
     "site:build": "turbo run build --filter=emoji.today"
   },

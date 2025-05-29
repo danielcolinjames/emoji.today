@@ -1,0 +1,216 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# To-Do List for emoji.today
+
+## PHASE 1: MVP FOR FRIDAY LAUNCH
+Focus: Core voting loop without payments
+
+### Immediate Setup Tasks
+- [ ] Create backup of current `vote.emoji.today` as `mini-app-reference`
+- [ ] Set up Supabase project
+- [ ] Create basic database schema (simplified for Phase 1)
+
+### Phase 1 Database Tables (Supabase)
+- [ ] **users** table
+  - id (uuid, primary key)
+  - fid (unique, from Farcaster)
+  - username (from Farcaster)
+  - created_at
+  - updated_at
+
+- [ ] **votes** table
+  - id (uuid, primary key)
+  - user_id (foreign key to users)
+  - emoji (string)
+  - vote_date (date)
+  - created_at
+  - UNIQUE constraint on (user_id, vote_date)
+
+- [ ] **daily_results** table
+  - id (uuid, primary key)
+  - vote_date (date, unique)
+  - emoji_votes (jsonb - {emoji: count})
+  - winning_emoji
+  - total_votes
+  - finalized_at
+  - created_at
+
+### Phase 1 Mini App Development (vote.emoji.today)
+- [ ] **Core Authentication**
+  - [ ] Farcaster sign-in integration
+  - [ ] User creation/retrieval in database
+  - [ ] Basic session management
+
+- [ ] **Essential UI Screens**
+  - [ ] Splash screen with emoji.today branding
+  - [ ] Main voting screen
+    - [ ] "What emoji is today?" hero text
+    - [ ] Thoughtful subtitle copy
+    - [ ] Time remaining display
+    - [ ] Current date display
+    - [ ] Emoji search and selection
+    - [ ] "Confirm selection" button
+  - [ ] Vote confirmation screen
+  - [ ] Vote success screen with share option
+  - [ ] Results view (after voting only)
+  - [ ] Clean up terms of service page (add back to home button, improve content)
+
+- [ ] **Emoji System**
+  - [ ] Define emoji list/library to use
+  - [ ] Implement search functionality
+  - [ ] Ensure consistent display across platforms
+
+### Phase 1 Cron Jobs (Railway)
+- [ ] Create `/apps/jobs` folder structure
+- [ ] **Results Updater** (runs every 5 minutes)
+  - [ ] Calculate current vote tallies
+  - [ ] Update daily_results table
+- [ ] **Daily Reset Job** (runs at midnight ET/UTC - TBD)
+  - [ ] Finalize previous day's results
+  - [ ] Determine winning emoji
+  - [ ] Create new day's voting period
+
+### Phase 1 Social Features
+- [ ] **Share Cards**
+  - [ ] Dynamic OG image generation
+  - [ ] "I voted on emoji.today" messaging (without revealing choice)
+  - [ ] Implement share to Farcaster
+  
+- [ ] **Automated Posts**
+  - [ ] X/Twitter bot setup
+  - [ ] Farcaster bot setup
+  - [ ] Daily opening post: "Today's voting period is now open..."
+  - [ ] Daily closing post: "🔥 has won!"
+  - [ ] Link to historical results page
+
+### Phase 1 Landing Page (emoji.today)
+- [ ] Simple marketing page
+- [ ] "Open in Farcaster" button
+- [ ] Brief explanation of concept
+- [ ] Link to results/history
+
+### Phase 1 Testing & Polish
+- [ ] End-to-end voting flow testing
+- [ ] Mobile responsiveness
+- [ ] Error handling
+- [ ] Loading states
+- [ ] Deploy to production
+
+---
+
+## PHASE 2: POST-LAUNCH ENHANCEMENTS
+Focus: Monetization, NFTs, and sophisticated features
+
+### Phase 2 Additional Database Tables
+- [ ] **payments** table
+  - id (uuid, primary key)
+  - user_id (foreign key)
+  - vote_id (foreign key)
+  - amount (decimal)
+  - transaction_hash
+  - created_at
+
+- [ ] **participation_streaks** table
+  - id (uuid, primary key)
+  - user_id (foreign key)
+  - current_streak (integer)
+  - longest_streak (integer)
+  - last_vote_date (date)
+
+- [ ] **nft_auctions** table
+  - id (uuid, primary key)
+  - daily_result_id (foreign key)
+  - nft_contract_address
+  - auction_contract_address
+  - start_time
+  - end_time
+  - winning_bid
+  - winner_address
+
+- [ ] **raffle_entries** table
+  - id (uuid, primary key)
+  - user_id (foreign key)
+  - vote_id (foreign key)
+  - entry_count (float - includes multipliers)
+  - won (boolean)
+
+### Phase 2 Features
+- [ ] **Payment Integration**
+  - [ ] $1 "mint your vote" option
+  - [ ] Payment processor selection and integration
+  - [ ] Receipt/confirmation system
+
+- [ ] **Smart Contracts**
+  - [ ] Daily NFT minting contract
+  - [ ] 24-hour auction contract
+  - [ ] Pot distribution contract
+  - [ ] Transparent raffle mechanism
+
+- [ ] **Enhanced Social Features**
+  - [ ] Streak tracking and display
+  - [ ] Leaderboards
+  - [ ] Share bonus mechanics (1.1x raffle odds)
+  - [ ] More sophisticated automated posts
+
+- [ ] **NFT & Auction System**
+  - [ ] Auto-generate NFT artwork (using Next.js OG)
+  - [ ] Mint winning emoji as 1/1 NFT
+  - [ ] Auto-start 24-hour auction
+  - [ ] Handle bid tracking
+  - [ ] Distribute proceeds
+
+### Phase 2 Advanced Cron Jobs
+- [ ] **NFT Minting Job** (runs after daily winner determined)
+- [ ] **Auction Management Job** (monitors and finalizes auctions)
+- [ ] **Pot Distribution Job** (handles raffle and payouts)
+- [ ] **Streak Calculator Job** (updates user streaks)
+
+---
+
+## Technical Decisions for Phase 1
+
+### Priority Decisions (Need answers ASAP)
+1. **Timezone**: Midnight ET or UTC for daily reset?
+2. **Emoji Library**: Which source? How to ensure consistency?
+3. **Results Display**: Live updates or refresh button?
+4. **Share Copy**: Exact wording for share cards?
+
+### Can Defer to Phase 2
+- Payment provider selection
+- Smart contract architecture
+- Raffle legal considerations
+- Auction platform choice
+- Fund distribution percentages
+
+---
+
+## Success Metrics
+
+### Phase 1 Metrics
+- Daily active voters
+- Share rate
+- User retention (day 2+ return rate)
+- Time to vote (user flow efficiency)
+
+### Phase 2 Metrics
+- Payment conversion rate
+- Average pot size
+- NFT auction participation
+- Streak lengths
+- Revenue per user
+
+---
+
+## Friday Launch Checklist
+- [ ] Core voting flow working end-to-end
+- [ ] Farcaster authentication functional
+- [ ] Database storing votes correctly
+- [ ] Daily reset working
+- [ ] Share cards generating properly
+- [ ] Automated social posts configured
+- [ ] Basic error handling in place
+- [ ] Deployed and accessible via vote.emoji.today
+- [ ] Marketing page live at emoji.today

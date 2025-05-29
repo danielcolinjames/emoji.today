@@ -1,0 +1,9 @@
+{
+  "name": "@emoji-today/tailwind-config",
+  "version": "1.0.0",
+  "main": "tailwind.config.ts",
+  "license": "MIT",
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

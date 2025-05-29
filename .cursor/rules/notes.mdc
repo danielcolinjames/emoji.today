@@ -5,13 +5,151 @@ alwaysApply: false
 ---
 # Notes
 
+## Important Development Guidelines
+- **Always use yarn** for package management (not npm)
+- **Always use workspace commands** for installing packages:
+  - Example: `yarn workspace staging.emoji.today add [package]`
+  - This maintains consistency in the monorepo structure
+
 ## Current tasks
-- [ ] authentication
+- [x] Create backup of current mini app as `mini-app-reference` - Done: Renamed vote.emoji.today to staging.emoji.today
+- [x] Set up Supabase project with Phase 1 schema - Done: Created tables and TypeScript types
+- [x] Set up shared Tailwind config - Done: Created @emoji-today/tailwind-config package
+- [x] Build authentication components - Done: Created AuthWrapper, SignIn, and UserWelcome components
+- [x] Replace Demo component with emoji.today UI - Done: Updated app.tsx with proper homepage
+- [ ] Build emoji selector component
+- [ ] Implement voting flow
+- [ ] Create results display (must vote to see)
+- [ ] Build share functionality
 
 ## Notes
 
+### 2025-01-28: Development Progress
+
+#### Architecture Update
+Decided to consolidate into single app architecture:
+- Wednesday: Build on staging.emoji.today
+- Thursday: Merge everything into single app, create staging branch
+- Friday: Deploy to production
+
+Single app will handle:
+- Public pages (homepage, date archives)
+- Protected actions (voting requires auth)
+- Auth handled at component level with AuthWrapper
+
+#### Components Built
+1. **AuthWrapper**: Handles auth state and shows sign-in UI when needed
+2. **SignIn**: Farcaster authentication flow
+3. **UserWelcome**: Shows welcome message for authenticated users
+4. **Shared Tailwind Config**: Consistent styling across apps
+
+#### UI/UX Decisions
+- Using emoji.today's existing UI (spent time perfecting it)
+- Satoshi font for consistent branding
+- Dark theme with brand colors
+- Smooth animations and transitions
+
+#### Technical Implementation
+- Fixed FrameProvider context access issue
+- Set up proper TypeScript types for Supabase
+- Configured shared Tailwind with brand colors
+- Copied assets (images, fonts) from emoji.today
+
+### 2025-01-27: Major Product Refinement
+
+#### Phase 1/Phase 2 Split Decision
+Due to Friday launch deadline, splitting into two phases:
+
+**Phase 1 (MVP - Launch Friday):**
+- Free voting only (no payments)
+- Core voting loop with Farcaster auth
+- One vote per person per day
+- Must vote to see results (FOMO mechanic)
+- Basic share cards
+- Automated social posts
+
+**Phase 2 (Post-Launch):**
+- $1 "mint your vote" option
+- NFT minting of winning emoji
+- 24-hour auctions
+- Raffle/rewards pool
+- Streak tracking
+- Enhanced social features
+
+#### Key Product Insights
+- "You must vote to see results" creates FOMO and engagement
+- Share cards show you voted but not what (mystery/intrigue)
+- Frame as historical social experiment
+- Make voting feel dramatic and important
+
+#### Technical Architecture
+- Separate domains: emoji.today (marketing) and vote.emoji.today (mini app)
+- Supabase for database
+- Railway for cron jobs in /apps/jobs
+- Pseudo-live results (cron job updates every 5 mins)
+
+#### User Flow Summary
+1. Land on emoji.today → "Open in Farcaster" → vote.emoji.today
+2. Auth → Voting screen with thoughtful prompts
+3. Confirmation screen emphasizing one vote per day
+4. Success screen with share trigger
+5. Results visible only after voting
+
+### 2025-01-27: Technical Setup Progress
+
+#### Completed Setup Tasks
+1. Created backup of vote.emoji.today as mini-app-reference
+2. Fixed workspace naming conflict (changed backup package name)
+3. Connected to existing Supabase project (lgkbapfskatvfrsnxcys)
+4. Verified Phase 1 database schema already exists
+5. Installed @supabase/supabase-js using yarn workspace
+6. Created Supabase client with generated TypeScript types
+
+#### Supabase Credentials (for .env.local)
+- URL: https://lgkbapfskatvfrsnxcys.supabase.co
+- Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxna2JhcGZza2F0dmZyc254Y3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzMDA3MTIsImV4cCI6MjA2Mzg3NjcxMn0.Wt6RfLApFJ0emn3PeY9gQfagXsL9uht7O7rm8evWjbg
+
+#### Next Steps
+- Examine current Farcaster auth implementation
+- Plan UI flow modifications for voting screens
+- Implement emoji selection system
+
+### 2025-01-27: Deployment Strategy & App Architecture
+
+#### App Structure Decision
+Moving to a **single app architecture** where emoji.today handles everything:
+- Public pages: homepage, date archives (/2025/05/30), about, etc.
+- Protected actions: voting (requires Farcaster auth)
+- "Must vote to see results" mechanic stays
+
+#### This Week's Deployment Plan
+- **Wednesday**: Rename vote.emoji.today → staging.emoji.today (DONE)
+- **Thursday**: Consolidate apps, create proper staging branch
+- **Friday**: Deploy staging branch to production emoji.today
+
+#### Route Structure
+```
+app/
+├── layout.tsx              # Root layout with auth
+├── page.tsx                # Homepage
+├── (public)/              # Public pages group
+│   └── [year]/
+│       └── [month]/
+│           └── [day]/page.tsx
+└── (auth)/                # Auth-required pages
+    └── vote/page.tsx      
+```
 
 ## Unanswered questions
-
+- Timezone for daily reset (ET vs UTC?)
+- Which emoji library/source to use?
+- Exact share card copy and design
+- Automated social post schedule
 
 ## Things to come back to later
+- Payment processing integration
+- Smart contract development
+- NFT minting and auction mechanics
+- Legal review for raffle mechanics
+- iOS app development
+- Full content engine strategy
