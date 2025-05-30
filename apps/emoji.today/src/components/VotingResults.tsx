@@ -50,7 +50,26 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const { results, totalVotes, userVote } = data;
 
   // Find the user's emoji data to get the accent color
-  const userEmojiData = results.find(result => result.emoji === userVote);
+  // Handle variation selector mismatches by checking multiple formats
+  const findUserEmojiData = (userVote: string, results: EmojiVoteCount[]) => {
+    // First try exact match
+    let userData = results.find(result => result.emoji === userVote);
+    if (userData) return userData;
+
+    // Try with variation selector normalized
+    const baseUserVote = userVote.replace(/\uFE0F/g, "");
+    const withVariationSelector = baseUserVote + "\uFE0F";
+
+    userData = results.find(result =>
+      result.emoji === baseUserVote ||
+      result.emoji === withVariationSelector ||
+      result.emoji.replace(/\uFE0F/g, "") === baseUserVote
+    );
+
+    return userData;
+  };
+
+  const userEmojiData = findUserEmojiData(userVote, results);
   const userAccentColor = userEmojiData?.accent_color || '#FFFFFF';
 
   // Sort results by count descending
