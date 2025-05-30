@@ -14,6 +14,12 @@ import {
   APP_URL,
   APP_WEBHOOK_URL,
   APP_SPLASH_URL,
+  APP_SUBTITLE,
+  APP_HERO_IMAGE_URL,
+  APP_TAGLINE,
+  APP_OG_TITLE,
+  APP_OG_DESCRIPTION,
+  APP_OG_IMAGE_URL_FINAL,
 } from "./constants"
 
 interface FrameMetadata {
@@ -26,9 +32,15 @@ interface FrameMetadata {
   splashImageUrl?: string
   splashBackgroundColor?: string
   webhookUrl?: string
+  subtitle?: string
   description?: string
   primaryCategory?: string
   tags?: string[]
+  heroImageUrl?: string
+  tagline?: string
+  ogTitle?: string
+  ogDescription?: string
+  ogImageUrl?: string
 }
 
 interface FrameManifest {
@@ -144,17 +156,22 @@ export async function getFarcasterMetadata(): Promise<FrameManifest> {
     accountAssociation,
     frame: {
       version: "1",
-      name: APP_NAME ?? "Frames v2 Demo",
+      name: APP_NAME ?? "emoji.today",
       iconUrl: APP_ICON_URL,
       homeUrl: APP_URL,
       imageUrl: APP_OG_IMAGE_URL,
-      buttonTitle: APP_BUTTON_TEXT ?? "Launch Frame",
+      buttonTitle: APP_BUTTON_TEXT ?? "Launch Mini App",
       splashImageUrl: APP_SPLASH_URL,
       splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR,
-      webhookUrl: APP_WEBHOOK_URL,
+      subtitle: APP_SUBTITLE,
       description: APP_DESCRIPTION,
       primaryCategory: APP_PRIMARY_CATEGORY,
       tags: APP_TAGS,
+      heroImageUrl: APP_HERO_IMAGE_URL,
+      tagline: APP_TAGLINE,
+      ogTitle: APP_OG_TITLE,
+      ogDescription: APP_OG_DESCRIPTION,
+      ogImageUrl: APP_OG_IMAGE_URL_FINAL,
     },
   }
 }
