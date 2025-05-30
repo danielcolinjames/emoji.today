@@ -49,6 +49,10 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
   const { results, totalVotes, userVote } = data;
 
+  // Find the user's emoji data to get the accent color
+  const userEmojiData = results.find(result => result.emoji === userVote);
+  const userAccentColor = userEmojiData?.accent_color || '#FFFFFF';
+
   // Sort results by count descending
   const sortedResults = [...results].sort((a, b) => b.count - a.count);
 
@@ -56,33 +60,13 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const visibleResults = showAll ? sortedResults : sortedResults.slice(0, 10);
   const hasMore = sortedResults.length > 10;
 
-  const handleShare = async () => {
-    const shareData = {
-      title: 'emoji.today - I voted!',
-      text: `I just voted for today's emoji on emoji.today!`,
-      url: window.location.href,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback - copy to clipboard
-        await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-        alert('Link copied to clipboard!');
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
-  };
-
   const handleShareX = async () => {
     if (!userVote) return;
 
     const today = new Date().toISOString().split('T')[0];
-    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}`;
-    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today! 🗳️\n\nWhat emoji do you think best represents today?`);
-    const xUrl = `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`;
+    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
+    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`);
+    const xUrl = `https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`;
 
     window.open(xUrl, '_blank', 'width=550,height=420');
   };
@@ -91,8 +75,8 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
     if (!userVote) return;
 
     const today = new Date().toISOString().split('T')[0];
-    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}`;
-    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today! 🗳️\n\nWhat emoji do you think best represents today?\n\n${shareUrl}`);
+    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
+    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?\n\n${shareUrl}`);
     const farcasterUrl = `https://warpcast.com/~/compose?text=${text}`;
 
     window.open(farcasterUrl, '_blank', 'width=550,height=420');
@@ -102,7 +86,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
     if (!userVote) return;
 
     const today = new Date().toISOString().split('T')[0];
-    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}`;
+    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
 
     try {
       await navigator.clipboard.writeText(shareUrl);
