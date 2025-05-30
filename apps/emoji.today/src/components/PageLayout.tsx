@@ -10,7 +10,7 @@ interface PageLayoutProps {
 
 export function PageLayout({ title, subtitle, children, showBackButton, onBack }: PageLayoutProps) {
   return (
-    <div className="flex flex-col items-center justify-start text-white bg-[#050505] pt-4 sm:pt-10 md:pt-12 lg:pt-16 min-h-screen">
+    <div className="flex flex-col items-center justify-start text-white bg-[#050505] pt-4 sm:pt-10 md:pt-12 lg:pt-16">
       {/* Main Content Area */}
       <main className="flex flex-col items-center justify-start w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
         {/* Back Button - absolutely positioned under navbar */}

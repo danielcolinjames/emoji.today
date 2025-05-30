@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Emoji from "@/components/Emoji";
 import { searchEmojis, type DatabaseEmoji } from "@/lib/emojis";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Twitter, Share2, Copy, CheckCircle } from "lucide-react";
 
 interface ReviewVoteProps {
   emoji: string;
@@ -27,6 +27,7 @@ function getContrastColor(hexColor: string): string {
 
 export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewVoteProps) {
   const [emojiData, setEmojiData] = useState<DatabaseEmoji | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Fetch emoji data to get filename and accent color
   useEffect(() => {
@@ -42,18 +43,56 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
   const accentColor = emojiData?.accent_color || "#6B7280";
   const textColor = getContrastColor(accentColor);
 
-  const handleShare = () => {
-    // Create the share text and URL
-    const shareText = `Just voted for ${emoji} to be the emoji.today`;
+  // Get current date for sharing
+  const currentDate = new Date().toISOString().split('T')[0];
 
-    // Farcaster compose URL with pre-filled text
-    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(shareText)}`;
+  // Create share URLs with all necessary parameters
+  const shareUrl = `https://emoji.today/share?emoji=${encodeURIComponent(emoji)}&date=${currentDate}&accentColor=${encodeURIComponent(accentColor)}`;
+  const participationImageUrl = `https://emoji.today/api/participation?emoji=${encodeURIComponent(emoji)}&date=${currentDate}&accentColor=${encodeURIComponent(accentColor)}`;
 
-    // Open in new window
+  const handleTwitterShare = () => {
+    const tweetText = `Just voted ${emoji} for ${new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    })} on emoji.today`;
+
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
+    window.open(twitterUrl, '_blank');
+  };
+
+  const handleFarcasterShare = () => {
+    const castText = `Just voted ${emoji} for ${new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    })} on emoji.today`;
+
+    // Farcaster compose URL with pre-filled text and embedded frame
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(shareUrl)}`;
     window.open(farcasterUrl, '_blank');
 
     // Call the callback as well
     onShareToFarcaster();
+  };
+
+  const handleCopyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
@@ -75,24 +114,54 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-4 px-4">
-        {/* Primary CTA - Tell the world */}
-        <button
-          onClick={handleShare}
-          className="w-full px-8 py-3 font-medium text-lg rounded-full transition-all duration-200"
-          style={{
-            backgroundColor: accentColor,
-            color: textColor
-          }}
-        >
-          Tell the world
-        </button>
+      {/* Share Section */}
+      <div className="space-y-6 px-4">
+        {/* Share Title */}
+        <div className="text-center">
+          <h3 className="text-xl font-medium text-white mb-2">Tell the world</h3>
+          <p className="text-neutral-400 text-sm">Share your vote and show others what today means to you</p>
+        </div>
 
-        {/* Secondary CTA - View results */}
+        {/* Share Buttons */}
+        <div className="grid grid-cols-3 gap-3">
+          {/* Twitter/X Share */}
+          <button
+            onClick={handleTwitterShare}
+            className="flex flex-col items-center justify-center p-4 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-all duration-200 group"
+          >
+            <Twitter className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-sm text-neutral-300 font-medium">Twitter</span>
+          </button>
+
+          {/* Farcaster Share */}
+          <button
+            onClick={handleFarcasterShare}
+            className="flex flex-col items-center justify-center p-4 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-all duration-200 group"
+          >
+            <Share2 className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-sm text-neutral-300 font-medium">Farcaster</span>
+          </button>
+
+          {/* Copy Link */}
+          <button
+            onClick={handleCopyToClipboard}
+            className="flex flex-col items-center justify-center p-4 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-all duration-200 group"
+          >
+            {copied ? (
+              <CheckCircle className="w-6 h-6 text-green-400 mb-2" />
+            ) : (
+              <Copy className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform" />
+            )}
+            <span className={`text-sm font-medium ${copied ? 'text-green-400' : 'text-neutral-300'}`}>
+              {copied ? 'Copied!' : 'Copy Link'}
+            </span>
+          </button>
+        </div>
+
+        {/* View Results Button */}
         <button
           onClick={onViewResults}
-          className="w-full px-8 py-3 font-medium text-lg rounded-full transition-all duration-200 bg-neutral-800 text-white hover:bg-neutral-700 flex items-center justify-center gap-2"
+          className="w-full px-8 py-3 font-medium text-lg rounded-full transition-all duration-200 bg-neutral-800 text-white hover:bg-neutral-700 flex items-center justify-center gap-2 mt-6"
         >
           View results
           <ArrowRight className="w-5 h-5" />

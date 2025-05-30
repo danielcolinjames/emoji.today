@@ -219,15 +219,137 @@ async function postToSocialMedia(
   totalVotes: number
 ) {
   const dateString = formatDateForDisplay(votingDate)
+  const voteDate = formatDateForDB(votingDate)
 
-  // TODO: Implement actual social media posting
-  console.log(`\n📱 Social media posts:`)
-  console.log(
-    `Twitter/X: "${winningEmoji} has won ${dateString}! ${totalVotes} people voted. What emoji will win tomorrow? Vote at emoji.today"`
-  )
-  console.log(
-    `Farcaster: "${winningEmoji} is the emoji of the day! Cast your vote for tomorrow in the emoji.today mini app"`
-  )
+  try {
+    // Get emoji data for accent color
+    const { data: emojiData } = await supabase
+      .from("emojis")
+      .select("accent_color")
+      .eq("emoji", winningEmoji)
+      .single()
+
+    const accentColor = emojiData?.accent_color || "#FFFFFF"
+
+    // Create the share URL for the winning emoji
+    const shareUrl = `https://emoji.today/share?emoji=${encodeURIComponent(
+      winningEmoji
+    )}&date=${voteDate}&winner=true&totalVotes=${totalVotes}&accentColor=${encodeURIComponent(
+      accentColor
+    )}`
+
+    // Post to Twitter/X
+    await postToTwitter(winningEmoji, dateString, totalVotes, shareUrl)
+
+    // Post to Farcaster
+    await postToFarcaster(winningEmoji, dateString, totalVotes, shareUrl)
+
+    console.log(`\n✅ Social media posts sent successfully`)
+  } catch (error) {
+    console.error(`\n❌ Error posting to social media:`, error)
+    // Don't throw - social media posting failure shouldn't break vote tallying
+  }
+}
+
+/**
+ * Post to Twitter/X
+ */
+async function postToTwitter(
+  winningEmoji: string,
+  dateString: string,
+  totalVotes: number,
+  shareUrl: string
+) {
+  // Check if Twitter credentials are configured
+  if (
+    !process.env.TWITTER_API_KEY ||
+    !process.env.TWITTER_API_SECRET ||
+    !process.env.TWITTER_ACCESS_TOKEN ||
+    !process.env.TWITTER_ACCESS_TOKEN_SECRET
+  ) {
+    console.log(`📱 Twitter posting skipped - credentials not configured`)
+    return
+  }
+
+  try {
+    const tweetText = `${winningEmoji} has won ${dateString}! ${totalVotes} people voted. What emoji will win tomorrow? Vote at emoji.today`
+
+    // For now, log what would be posted
+    // TODO: Implement actual Twitter API call when credentials are set up
+    console.log(`📱 Twitter/X: "${tweetText}"`)
+    console.log(`   Share URL: ${shareUrl}`)
+
+    // Example implementation (uncomment when ready to use):
+    /*
+    const response = await fetch('https://api.twitter.com/2/tweets', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: tweetText + ' ' + shareUrl,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Twitter API error: ${response.status} ${response.statusText}`)
+    }
+
+    console.log(`✅ Posted to Twitter/X successfully`)
+    */
+  } catch (error) {
+    console.error(`❌ Failed to post to Twitter/X:`, error)
+  }
+}
+
+/**
+ * Post to Farcaster
+ */
+async function postToFarcaster(
+  winningEmoji: string,
+  dateString: string,
+  totalVotes: number,
+  shareUrl: string
+) {
+  // Check if Farcaster credentials are configured
+  if (!process.env.FARCASTER_SIGNER_UUID || !process.env.NEYNAR_API_KEY) {
+    console.log(`🟣 Farcaster posting skipped - credentials not configured`)
+    return
+  }
+
+  try {
+    const castText = `${winningEmoji} is the emoji of ${dateString}! ${totalVotes} people voted. What will win tomorrow?`
+
+    // For now, log what would be posted
+    // TODO: Implement actual Farcaster API call when credentials are set up
+    console.log(`🟣 Farcaster: "${castText}"`)
+    console.log(`   Embedded URL: ${shareUrl}`)
+
+    // Example implementation using Neynar API (uncomment when ready to use):
+    /*
+    const response = await fetch('https://api.neynar.com/v2/farcaster/cast', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.NEYNAR_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        signer_uuid: process.env.FARCASTER_SIGNER_UUID,
+        text: castText,
+        embeds: [{ url: shareUrl }],
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Farcaster API error: ${response.status} ${response.statusText}`)
+    }
+
+    console.log(`✅ Posted to Farcaster successfully`)
+    */
+  } catch (error) {
+    console.error(`❌ Failed to post to Farcaster:`, error)
+  }
 }
 
 // Run the script if called directly

@@ -25,15 +25,11 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const emoji = searchParams.get("emoji");
   const date = searchParams.get("date");
-  const username = searchParams.get("username");
-  const userId = searchParams.get("userId");
   const accentColor = searchParams.get("accentColor");
 
   // Default values
   const displayEmoji = emoji || "🗳️";
   const displayDate = date || new Date().toISOString().split('T')[0];
-  const displayUsername = username || "Anonymous";
-  const displayUserId = userId || "000000";
 
   // Use normalized emoji lookup to handle variation selectors
   const emojiFilename = getEmojiFilenameNormalized(displayEmoji);
