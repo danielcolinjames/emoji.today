@@ -103,12 +103,6 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
 
       {/* Share Section */}
       <div className="space-y-6 px-4">
-        {/* Share Title */}
-        <div className="text-center">
-          <h3 className="text-xl font-medium text-white mb-2">Tell the world</h3>
-          <p className="text-neutral-400 text-sm">Share your vote and show others what today means to you</p>
-        </div>
-
         {/* Share Buttons - Using same style as VotingResults component */}
         <div className="flex flex-row items-center justify-center gap-4">
           {/* Farcaster Share */}
