@@ -1,6 +1,7 @@
 {
   "name": "emoji.today",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.js",
@@ -57,6 +58,8 @@
     "autoprefixer": "^10.4.21",
     "eslint": "^9.27.0",
     "eslint-config-next": "^14.2.5",
+    "eslint-plugin-tailwindcss": "^3.18.0",
+    "eslint-plugin-unicorn": "^59.0.1",
     "localtunnel": "^2.0.2",
     "pino-pretty": "^13.0.0",
     "postcss": "^8",
