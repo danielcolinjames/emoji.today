@@ -3,15 +3,16 @@ import { getSession } from '@/auth';
 import { Metadata } from 'next';
 
 interface SharePageProps {
-  searchParams: {
+  searchParams: Promise<{
     emoji?: string;
     date?: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ searchParams }: SharePageProps): Promise<Metadata> {
-  const emoji = searchParams.emoji || '🗳️';
-  const date = searchParams.date || new Date().toISOString().split('T')[0];
+  const params = await searchParams;
+  const emoji = params.emoji || '🗳️';
+  const date = params.date || new Date().toISOString().split('T')[0];
 
   // Format date for display
   const formattedDate = new Date(date).toLocaleDateString('en-US', {
