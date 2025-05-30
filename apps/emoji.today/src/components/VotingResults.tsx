@@ -15,6 +15,13 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const [showAll, setShowAll] = useState(false);
   const { data, error, isLoading, isValidating, refresh, getTimeSinceUpdate } = useLiveVotingResults();
 
+  // Helper function to convert number to ordinal
+  const getOrdinal = (num: number): string => {
+    const suffix = ['th', 'st', 'nd', 'rd'];
+    const v = num % 100;
+    return num + (suffix[(v - 20) % 10] || suffix[v] || suffix[0]);
+  };
+
   // Handle loading state
   if (isLoading) {
     return (
@@ -80,16 +87,16 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const visibleResults = showAll ? sortedResults : sortedResults.slice(0, 10);
   const hasMore = sortedResults.length > 10;
 
-  const handleShareX = async () => {
-    if (!userVote) return;
+  // const handleShareX = async () => {
+  //   if (!userVote) return;
 
-    const today = new Date().toISOString().split('T')[0];
-    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
-    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`);
-    const xUrl = `https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`;
+  //   const today = new Date().toISOString().split('T')[0];
+  //   const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
+  //   const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`);
+  //   const xUrl = `https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`;
 
-    window.open(xUrl, '_blank', 'width=550,height=420');
-  };
+  //   window.open(xUrl, '_blank', 'width=550,height=420');
+  // };
 
   const handleShareFarcaster = async () => {
     if (!userVote) return;
@@ -119,17 +126,21 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
   return (
     <div className="space-y-1 pb-20">
-      <p className="text-white text-base text-center font-geist-mono mb-2">
+      <p
+        className="text-base text-center font-geist-mono mb-2"
+        style={{ color: userAccentColor }}
+      >
         Now it's time to campaign.
       </p>
       <div className="flex flex-row items-center justify-center mb-4 gap-4">
-        <button
+        {/* Twitter/X Share - Commented out for now */}
+        {/* <button
           onClick={handleShareX}
           className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
           title="Share on X"
         >
           <img src="/images/x-white.svg" alt="X" className="max-w-[16px] max-h-[16px]" />
-        </button>
+        </button> */}
         <button
           onClick={handleShareFarcaster}
           className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
@@ -208,25 +219,29 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                 width: `${finalWidth}px`,
               }}
             >
-              {/* User profile pic for their vote - smaller */}
-              {isUserVote && userProfileUrl && (
-                <div className="absolute left-2 flex items-center">
-                  <img
-                    src={userProfileUrl}
-                    alt="Your vote"
-                    className="w-4 h-4 rounded-full"
-                  />
-                </div>
-              )}
 
-              {/* Vote count - positioned on the left in black text */}
-              <div className="flex items-center text-black text-sm pl-4 flex-1">
+
+              {/* Position number - positioned on the left in black text */}
+              <div className="text-xs text-black font-bold font-geist-mono pl-3">
+                {getOrdinal(index + 1)}
+              </div>
+
+              {/* Vote count container - moved to center area */}
+              <div className="flex items-center text-black text-sm pl-4 flex-1 relative">
                 {isUserVote ? (
-                  <span className="ml-2 text-xs">
+                  <span className="text-xs">
                     {otherVoters > 0 ? (
                       `You & ${otherVoters} voter${otherVoters !== 1 ? 's' : ''}`
                     ) : (
-                      <span className="flex items-center gap-1 pl-1">
+                      <span className="flex items-center gap-1.5 -ml-1">
+                        {/* User profile pic for their vote - smaller */}
+                        {userProfileUrl && (
+                          <img
+                            src={userProfileUrl}
+                            alt="Your vote"
+                            className="w-4 h-4 rounded-full"
+                          />
+                        )}
                         <p className="text-xs">Just you</p>
                         <img
                           src="/images/sad.svg"
@@ -244,10 +259,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                 )}
               </div>
 
-              {/* Emoji container with small index positioned absolutely - rightmost with zero padding */}
-              <div className="text-xs text-black font-bold font-geist-mono pr-1">
-                {index + 1}
-              </div>
+              {/* Emoji container - rightmost with zero padding */}
               <div className="relative">
                 <Emoji
                   emoji={result.emoji}

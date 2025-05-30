@@ -56,61 +56,61 @@ async function clearAllVotesToday() {
   }
 }
 
-async function reassignUserVoteToRandomFid(fid) {
-  try {
-    console.log(`Reassigning vote from FID: ${fid} to random FID`)
+// async function reassignUserVoteToRandomFid(fid) {
+//   try {
+//     console.log(`Reassigning vote from FID: ${fid} to random FID`)
 
-    const today = new Date().toISOString().split("T")[0]
+//     const today = new Date().toISOString().split("T")[0]
 
-    // Get user by FID
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("fid", fid)
-      .single()
+//     // Get user by FID
+//     const { data: user, error: userError } = await supabase
+//       .from("users")
+//       .select("id")
+//       .eq("fid", fid)
+//       .single()
 
-    if (userError) {
-      console.log("User not found in database - no vote to reassign")
-      return
-    }
+//     if (userError) {
+//       console.log("User not found in database - no vote to reassign")
+//       return
+//     }
 
-    // Generate random FID between 1-999
-    const randomFid = Math.floor(Math.random() * 999) + 1
+//     // Generate random FID between 1-999
+//     const randomFid = Math.floor(Math.random() * 999) + 1
 
-    // Create or get random user
-    const { data: randomUser, error: randomUserError } = await supabase
-      .from("users")
-      .upsert({
-        fid: randomFid,
-        username: `test_user_${randomFid}`,
-      })
-      .select("id")
-      .single()
+//     // Create or get random user
+//     const { data: randomUser, error: randomUserError } = await supabase
+//       .from("users")
+//       .upsert({
+//         fid: randomFid,
+//         username: `test_user_${randomFid}`,
+//       })
+//       .select("id")
+//       .single()
 
-    if (randomUserError) {
-      console.error("Error creating random user:", randomUserError)
-      return
-    }
+//     if (randomUserError) {
+//       console.error("Error creating random user:", randomUserError)
+//       return
+//     }
 
-    // Update the vote to belong to the random user
-    const { data, error } = await supabase
-      .from("votes")
-      .update({ user_id: randomUser.id })
-      .eq("user_id", user.id)
-      .eq("vote_date", today)
+//     // Update the vote to belong to the random user
+//     const { data, error } = await supabase
+//       .from("votes")
+//       .update({ user_id: randomUser.id })
+//       .eq("user_id", user.id)
+//       .eq("vote_date", today)
 
-    if (error) {
-      console.error("Error reassigning vote:", error)
-      return
-    }
+//     if (error) {
+//       console.error("Error reassigning vote:", error)
+//       return
+//     }
 
-    console.log(
-      `✅ Reassigned vote from FID ${fid} to random FID ${randomFid} on ${today}`
-    )
-  } catch (error) {
-    console.error("Error:", error)
-  }
-}
+//     console.log(
+//       `✅ Reassigned vote from FID ${fid} to random FID ${randomFid} on ${today}`
+//     )
+//   } catch (error) {
+//     console.error("Error:", error)
+//   }
+// }
 
 // Parse command line arguments
 const command = process.argv[2]
@@ -137,27 +137,32 @@ async function main() {
       break
 
     case "reassign":
-      if (!fid) {
-        console.error("Usage: node scripts/clear-votes.js reassign <FID>")
-        process.exit(1)
-      }
-      await reassignUserVoteToRandomFid(parseInt(fid))
+      console.log(
+        "❌ Reassign function is disabled to prevent creation of fake users"
+      )
+      console.log("Use 'clear' instead to remove votes completely")
       break
+    // if (!fid) {
+    //   console.error("Usage: node scripts/clear-votes.js reassign <FID>")
+    //   process.exit(1)
+    // }
+    // await reassignUserVoteToRandomFid(parseInt(fid))
+    // break
 
     default:
       console.log("Available commands:")
       console.log("  clear <FID>     - Clear vote for specific FID")
       console.log("  clear-all       - Clear ALL votes for today (careful!)")
-      console.log("  reassign <FID>  - Reassign vote to random FID")
+      // console.log("  reassign <FID>  - Reassign vote to random FID (DISABLED)")
       console.log("")
       console.log("Examples:")
       console.log("  node scripts/clear-votes.js clear 1234")
-      console.log("  node scripts/clear-votes.js reassign 1234")
+      // console.log("  node scripts/clear-votes.js reassign 1234")
       console.log("  node scripts/clear-votes.js clear-all")
       console.log("")
       console.log("Or use yarn scripts:")
       console.log("  yarn clear-vote 1234")
-      console.log("  yarn reassign-vote 1234")
+      // console.log("  yarn reassign-vote 1234")
       console.log("  yarn clear-all-votes")
       break
   }
