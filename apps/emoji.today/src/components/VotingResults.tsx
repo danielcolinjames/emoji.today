@@ -14,6 +14,13 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const [showAll, setShowAll] = useState(false);
   const { data, error, isLoading, isValidating, refresh, getTimeSinceUpdate } = useLiveVotingResults();
 
+  // Helper function to convert number to ordinal
+  const getOrdinal = (num: number): string => {
+    const suffix = ['th', 'st', 'nd', 'rd'];
+    const v = num % 100;
+    return num + (suffix[(v - 20) % 10] || suffix[v] || suffix[0]);
+  };
+
   // Handle loading state
   if (isLoading) {
     return (
@@ -118,7 +125,10 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
   return (
     <div className="space-y-1 pb-20">
-      <p className="text-white text-base text-center font-geist-mono mb-2">
+      <p
+        className="text-base text-center font-geist-mono mb-2"
+        style={{ color: userAccentColor }}
+      >
         Now it's time to campaign.
       </p>
       <div className="flex flex-row items-center justify-center mb-4 gap-4">
@@ -204,7 +214,12 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                 </div>
               )}
 
-              {/* Vote count - positioned on the left in black text */}
+              {/* Position number - positioned on the left in black text */}
+              <div className="text-xs text-black font-bold font-geist-mono pl-3">
+                {getOrdinal(index + 1)}
+              </div>
+
+              {/* Vote count container - moved to center area */}
               <div className="flex items-center text-black text-sm pl-4 flex-1">
                 {isUserVote ? (
                   <span className="ml-2 text-xs">
@@ -229,10 +244,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                 )}
               </div>
 
-              {/* Emoji container with small index positioned absolutely - rightmost with zero padding */}
-              <div className="text-xs text-black font-bold font-geist-mono pr-1">
-                {index + 1}
-              </div>
+              {/* Emoji container - rightmost with zero padding */}
               <div className="relative">
                 <Emoji
                   emoji={result.emoji}

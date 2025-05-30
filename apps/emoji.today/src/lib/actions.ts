@@ -300,6 +300,42 @@ export async function getLiveVotingResults() {
     // Get unique emojis that have votes
     const uniqueEmojis = Object.keys(voteCounts)
 
+    // Fetch timing data for ranking - get all votes with timestamps for today
+    const { data: voteTimingData, error: timingError } = await supabase
+      .from("votes")
+      .select("emoji, created_at")
+      .eq("vote_date", today)
+
+    if (timingError) {
+      console.error("Error fetching vote timing data:", timingError)
+      // Fall back to count-based sorting if timing data fails
+    }
+
+    // Calculate average timestamps for each emoji (for ranking)
+    const emojiTimingMap = new Map()
+    if (voteTimingData) {
+      // Calculate day start for relative timing (similar to tally-votes.ts approach)
+      const dayStart = new Date(today + "T00:00:00.000Z").getTime()
+
+      // Group votes by emoji and calculate timing stats
+      const emojiTimings: { [key: string]: number[] } = {}
+      voteTimingData.forEach((vote) => {
+        if (!emojiTimings[vote.emoji]) {
+          emojiTimings[vote.emoji] = []
+        }
+        const voteTime = new Date(vote.created_at).getTime()
+        const secondsSinceStart = Math.floor((voteTime - dayStart) / 1000)
+        emojiTimings[vote.emoji].push(secondsSinceStart)
+      })
+
+      // Calculate average timestamp for each emoji
+      Object.entries(emojiTimings).forEach(([emoji, timestamps]) => {
+        const averageTimestamp =
+          timestamps.reduce((sum, ts) => sum + ts, 0) / timestamps.length
+        emojiTimingMap.set(emoji, averageTimestamp)
+      })
+    }
+
     // Fetch emoji data from database to get accent colors
     // Handle variation selector normalization
     const emojiVariants = uniqueEmojis
@@ -344,7 +380,23 @@ export async function getLiveVotingResults() {
           filename: emojiInfo?.filename || "",
         }
       })
-      .sort((a, b) => b.count - a.count)
+      // Sort by average timing (later votes ranked higher), then by count as secondary
+      .sort((a, b) => {
+        const aAvgTiming = emojiTimingMap.get(a.emoji) || 0
+        const bAvgTiming = emojiTimingMap.get(b.emoji) || 0
+
+        // If timing data is available, sort by latest average first
+        if (emojiTimingMap.size > 0) {
+          const timingDiff = bAvgTiming - aAvgTiming
+          if (Math.abs(timingDiff) > 1) {
+            // Only use timing if there's a meaningful difference
+            return timingDiff
+          }
+        }
+
+        // Fall back to count-based sorting if timing is very close or unavailable
+        return b.count - a.count
+      })
 
     return {
       results,
