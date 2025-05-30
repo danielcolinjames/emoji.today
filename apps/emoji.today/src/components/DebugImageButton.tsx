@@ -10,7 +10,7 @@ export function DebugImageButton() {
   const [emojiData, setEmojiData] = useState<DatabaseEmoji | null>(null);
 
   // Only show in development
-  if (process.env.NODE_ENV !== 'development') {
+  if (process.env.NODE_ENV !== 'development' || process.env.NEXT_PUBLIC_HIDE_DEBUG_BUTTON === 'true') {
     return null;
   }
 

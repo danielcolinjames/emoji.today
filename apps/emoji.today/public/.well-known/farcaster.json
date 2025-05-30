@@ -1,0 +1,19 @@
+{
+  "frame": {
+    "version": "1",
+    "name": "emoji.today",
+    "iconUrl": "https://emoji.today/icon-1024.png",
+    "homeUrl": "https://emoji.today",
+    "subtitle": "What emoji is today?",
+    "description": "A daily global vote to choose the emoji that best tells the story of every day.",
+    "primaryCategory": "games",
+    "tags": ["voting", "emoji", "daily", "social", "community"],
+    "splashImageUrl": "https://emoji.today/splash-200.png",
+    "splashBackgroundColor": "#050505",
+    "heroImageUrl": "https://emoji.today/og.png",
+    "tagline": "What emoji is today?",
+    "ogTitle": "emoji.today",
+    "ogDescription": "What emoji is today?",
+    "ogImageUrl": "https://emoji.today/og.png"
+  }
+}
