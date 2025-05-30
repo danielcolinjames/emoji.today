@@ -4,7 +4,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { Providers } from "./providers";
 import { getSession } from "@/auth";
-import { getFrameEmbedMetadata } from "@/lib/utils";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
     images: ["https://emoji.today/og.png"],
   },
   other: {
-    "fc:frame": JSON.stringify(getFrameEmbedMetadata()),
+    "fc:frame": "https://emoji.today/.well-known/farcaster.json",
   },
 };
 

@@ -64,7 +64,7 @@ export default function NewHomePage() {
   const handleSignIn = useCallback(async () => {
     if (!context) {
       // Not in Farcaster, open in Farcaster
-      window.open("https://farcaster.xyz/~/add/emoji.today", "_blank");
+      window.open("https://farcaster.xyz/~/mini-app/emoji.today", "_blank");
       return;
     }
 
