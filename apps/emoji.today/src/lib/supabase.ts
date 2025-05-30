@@ -42,6 +42,45 @@ export type Database = {
         }
         Relationships: []
       }
+      emoji_assets: {
+        Row: {
+          category: string | null
+          codepoint: string
+          created_at: string | null
+          emoji_char: string
+          id: number
+          image_url: string | null
+          keywords: string[] | null
+          name: string | null
+          storage_path: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          codepoint: string
+          created_at?: string | null
+          emoji_char: string
+          id?: number
+          image_url?: string | null
+          keywords?: string[] | null
+          name?: string | null
+          storage_path?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          codepoint?: string
+          created_at?: string | null
+          emoji_char?: string
+          id?: number
+          image_url?: string | null
+          keywords?: string[] | null
+          name?: string | null
+          storage_path?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       emojis: {
         Row: {
           accent_color: string | null
@@ -179,6 +218,53 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      vote_nfts: {
+        Row: {
+          created_at: string
+          id: string
+          mint_price_usdc: number
+          minted_at: string | null
+          signature: string
+          signature_payload: Json
+          transaction_hash: string | null
+          updated_at: string
+          vote_id: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mint_price_usdc: number
+          minted_at?: string | null
+          signature: string
+          signature_payload: Json
+          transaction_hash?: string | null
+          updated_at?: string
+          vote_id: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mint_price_usdc?: number
+          minted_at?: string | null
+          signature?: string
+          signature_payload?: Json
+          transaction_hash?: string | null
+          updated_at?: string
+          vote_id?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vote_nfts_vote_id_fkey"
+            columns: ["vote_id"]
+            isOneToOne: false
+            referencedRelation: "votes"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       votes: {
         Row: {

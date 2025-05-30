@@ -604,3 +604,53 @@ Due to Friday launch deadline, splitting into two phases:
 - Legal review for raffle mechanics
 - iOS app development
 - Full content engine strategy
+
+## Current Status
+Working on NFT minting functionality for emoji.today Farcaster mini-app.
+
+**JUST COMPLETED:**
+- ✅ Fixed staging database schema issues
+- ✅ Added missing `last_updated` and `previous_usernames` columns to users table  
+- ✅ Successfully populated staging database with 1,985 emojis
+- ✅ Voting functionality should now work properly
+- ✅ Ready to test full minting flow
+
+**CURRENT TASK:**
+Getting NFT minting functionality working with $1 USDC payment on Base blockchain.
+
+**NEXT IMMEDIATE STEPS:**
+1. Test voting on staging environment
+2. Test complete minting flow once voting works
+3. Fix any remaining issues with wallet connection/minting
+
+## Future Improvements
+
+### Database Schema Management (TODO)
+Implement proper database schema management workflow:
+- Use Supabase CLI for migration-first approach
+- Set up proper branch strategy (main/prod → staging → feature)
+- Version all schema changes through migrations
+- Add migration testing and rollback strategies
+- Set up CI/CD for automated schema deployments
+- Treat schema like code: versioned, reviewed, tested
+
+Tools to implement:
+```bash
+supabase migration new add_feature
+supabase db diff -f feature_name
+supabase db push
+```
+
+This will help maintain consistency across database branches and prevent manual schema drift.
+
+---
+
+## Technical Context
+- **Staging DB**: `rlhcjdxokgdzwxevqjtr.supabase.co` 
+- **Dev Server**: `https://crazy-cameras-try.loca.lt`
+- **Stack**: Next.js, Supabase, Thirdweb v5, Base blockchain
+- **Environment**: Using staging database for safe testing
+
+## Known Issues
+- WalletConnect import errors in console (but not blocking functionality)
+- Need to test full minting workflow once voting is confirmed working
