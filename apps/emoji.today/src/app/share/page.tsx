@@ -1,6 +1,6 @@
-import { redirect } from 'next/navigation';
 import { getSession } from '@/auth';
 import { Metadata } from 'next';
+import NewHomePage from '@/components/NewHomePage';
 
 interface SharePageProps {
   searchParams: Promise<{
@@ -44,7 +44,7 @@ export async function generateMetadata({ searchParams }: SharePageProps): Promis
   // Use participation image for individual user shares
   const ogImageUrl = isWinner
     ? `/api/og?emoji=${encodeURIComponent(emoji)}&date=${date}&accentColor=${encodeURIComponent(accentColor)}`
-    : `/api/participation?emoji=${encodeURIComponent(emoji)}&date=${date}&accentColor=${encodeURIComponent(accentColor)}`;
+    : `/api/og?emoji=${encodeURIComponent(emoji)}&date=${date}&accentColor=${encodeURIComponent(accentColor)}`;
 
   const fullOgImageUrl = `https://emoji.today${ogImageUrl}`;
   const imageSize = isWinner ? { width: 1200, height: 630 } : { width: 1000, height: 1000 };
@@ -76,14 +76,7 @@ export async function generateMetadata({ searchParams }: SharePageProps): Promis
 }
 
 export default async function SharePage({ searchParams }: SharePageProps) {
-  const session = await getSession();
-
-  // Redirect to home if not logged in
-  if (!session?.user) {
-    redirect('/');
-  }
-
-  // If user is logged in, redirect to the main app
-  // You could also render a special share page here if desired
-  redirect('/');
+  // Instead of redirecting, render the home page content
+  // This allows crawlers to read the meta tags while users see the familiar interface
+  return <NewHomePage />;
 } 

@@ -4,6 +4,7 @@ import Emoji from '@/components/Emoji';
 import { useState, useEffect } from 'react';
 import { useLiveVotingResults, type EmojiVoteCount } from '@/hooks/useLiveVotingResults';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { Copy } from 'lucide-react';
 
 interface VotingResultsProps {
   userProfileUrl?: string;
@@ -58,7 +59,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const handleShare = async () => {
     const shareData = {
       title: 'emoji.today - I voted!',
-      text: `I just voted for today's emoji on emoji.today! 🗳️`,
+      text: `I just voted for today's emoji on emoji.today!`,
       url: window.location.href,
     };
 
@@ -137,7 +138,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
           className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
           title="Copy share link"
         >
-          <span className="text-sm">🔗</span>
+          <Copy className="w-4 h-4" />
         </button>
       </div>
       {/* Results - Break out completely to full screen width with right padding */}
