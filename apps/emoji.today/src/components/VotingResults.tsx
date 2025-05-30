@@ -203,16 +203,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                 width: `${finalWidth}px`,
               }}
             >
-              {/* User profile pic for their vote - smaller */}
-              {isUserVote && userProfileUrl && (
-                <div className="absolute left-2 flex items-center">
-                  <img
-                    src={userProfileUrl}
-                    alt="Your vote"
-                    className="w-4 h-4 rounded-full"
-                  />
-                </div>
-              )}
+
 
               {/* Position number - positioned on the left in black text */}
               <div className="text-xs text-black font-bold font-geist-mono pl-3">
@@ -220,13 +211,21 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
               </div>
 
               {/* Vote count container - moved to center area */}
-              <div className="flex items-center text-black text-sm pl-4 flex-1">
+              <div className="flex items-center text-black text-sm pl-4 flex-1 relative">
                 {isUserVote ? (
-                  <span className="ml-2 text-xs">
+                  <span className="text-xs">
                     {otherVoters > 0 ? (
                       `You & ${otherVoters} voter${otherVoters !== 1 ? 's' : ''}`
                     ) : (
-                      <span className="flex items-center gap-1 pl-1">
+                      <span className="flex items-center gap-1.5 -ml-1">
+                        {/* User profile pic for their vote - smaller */}
+                        {userProfileUrl && (
+                          <img
+                            src={userProfileUrl}
+                            alt="Your vote"
+                            className="w-4 h-4 rounded-full"
+                          />
+                        )}
                         <p className="text-xs">Just you</p>
                         <img
                           src="/images/sad.svg"
