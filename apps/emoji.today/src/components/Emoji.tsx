@@ -20,9 +20,9 @@ const Emoji: React.FC<EmojiProps> = ({
   accentColor = '#FFFFFF'
 }) => {
   const imageSize = useMemo(() => {
-    // Use the specific aspect ratio requested: 166.667
+    // Use the specific aspect ratio requested: 250
     // This maintains consistency with the original design
-    const ratio = 166.667 / 500; // Original ratio for 500px container
+    const ratio = 250 / 500; // Updated ratio for 500px container
     return Math.floor(containerSize * ratio);
   }, [containerSize]);
 

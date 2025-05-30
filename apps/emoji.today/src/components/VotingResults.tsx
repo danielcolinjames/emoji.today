@@ -75,6 +75,43 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
     }
   };
 
+  const handleShareX = async () => {
+    if (!userVote) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}`;
+    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today! 🗳️\n\nWhat emoji do you think best represents today?`);
+    const xUrl = `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`;
+
+    window.open(xUrl, '_blank', 'width=550,height=420');
+  };
+
+  const handleShareFarcaster = async () => {
+    if (!userVote) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}`;
+    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today! 🗳️\n\nWhat emoji do you think best represents today?\n\n${shareUrl}`);
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${text}`;
+
+    window.open(farcasterUrl, '_blank', 'width=550,height=420');
+  };
+
+  const handleCopyLink = async () => {
+    if (!userVote) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}`;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Share link copied to clipboard!');
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      alert('Failed to copy link');
+    }
+  };
+
   return (
     <div className="space-y-1 pb-20">
       <p className="text-white text-base text-center font-geist-mono mb-2">
@@ -82,16 +119,25 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
       </p>
       <div className="flex flex-row items-center justify-center mb-4 gap-4">
         <button
-          onClick={handleShare}
-          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2"
+          onClick={handleShareX}
+          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+          title="Share on X"
         >
           <img src="/images/x-white.svg" alt="X" className="max-w-[16px] max-h-[16px]" />
         </button>
         <button
-          onClick={handleShare}
-          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2"
+          onClick={handleShareFarcaster}
+          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+          title="Share on Farcaster"
         >
           <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" />
+        </button>
+        <button
+          onClick={handleCopyLink}
+          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+          title="Copy share link"
+        >
+          <span className="text-sm">🔗</span>
         </button>
       </div>
       {/* Results - Break out completely to full screen width with right padding */}

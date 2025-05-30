@@ -177,3 +177,10 @@ export {
   getEmojiFilename,
   getEmojiImageUrl as getDefinitiveEmojiImageUrl,
 } from "./filename-mapping"
+
+// Export emoji utilities
+export {
+  normalizeEmoji,
+  getEmojiFilenameNormalized,
+  debugEmojiVariations,
+} from "./emoji-utils"

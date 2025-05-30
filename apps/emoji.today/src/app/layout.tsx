@@ -25,6 +25,7 @@ import localFont from "next/font/local";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { DebugImageButton } from "@/components/DebugImageButton";
 
 const satoshiFont = localFont({
   src: "../assets/fonts/Satoshi-Variable.ttf",
@@ -64,6 +65,7 @@ export default async function RootLayout({
             <Navbar />
             <div className="w-full">{children}</div>
             <Footer />
+            <DebugImageButton />
           </main>
         </Providers>
         <SpeedInsights />
