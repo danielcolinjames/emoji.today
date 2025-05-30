@@ -79,16 +79,16 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const visibleResults = showAll ? sortedResults : sortedResults.slice(0, 10);
   const hasMore = sortedResults.length > 10;
 
-  const handleShareX = async () => {
-    if (!userVote) return;
+  // const handleShareX = async () => {
+  //   if (!userVote) return;
 
-    const today = new Date().toISOString().split('T')[0];
-    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
-    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`);
-    const xUrl = `https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`;
+  //   const today = new Date().toISOString().split('T')[0];
+  //   const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
+  //   const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`);
+  //   const xUrl = `https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`;
 
-    window.open(xUrl, '_blank', 'width=550,height=420');
-  };
+  //   window.open(xUrl, '_blank', 'width=550,height=420');
+  // };
 
   const handleShareFarcaster = async () => {
     if (!userVote) return;
@@ -122,13 +122,14 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
         Now it's time to campaign.
       </p>
       <div className="flex flex-row items-center justify-center mb-4 gap-4">
-        <button
+        {/* Twitter/X Share - Commented out for now */}
+        {/* <button
           onClick={handleShareX}
           className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
           title="Share on X"
         >
           <img src="/images/x-white.svg" alt="X" className="max-w-[16px] max-h-[16px]" />
-        </button>
+        </button> */}
         <button
           onClick={handleShareFarcaster}
           className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Emoji from "@/components/Emoji";
 import { searchEmojis, type DatabaseEmoji } from "@/lib/emojis";
-import { ArrowRight, Twitter, Share2, Copy, CheckCircle } from "lucide-react";
+import { ArrowRight, Share2, Copy, CheckCircle } from "lucide-react";
 
 interface ReviewVoteProps {
   emoji: string;
@@ -41,25 +41,12 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
   }, [emoji]);
 
   const accentColor = emojiData?.accent_color || "#6B7280";
-  const textColor = getContrastColor(accentColor);
 
   // Get current date for sharing
   const currentDate = new Date().toISOString().split('T')[0];
 
   // Create share URLs with all necessary parameters
   const shareUrl = `https://emoji.today/share?emoji=${encodeURIComponent(emoji)}&date=${currentDate}&accentColor=${encodeURIComponent(accentColor)}`;
-  const participationImageUrl = `https://emoji.today/api/participation?emoji=${encodeURIComponent(emoji)}&date=${currentDate}&accentColor=${encodeURIComponent(accentColor)}`;
-
-  const handleTwitterShare = () => {
-    const tweetText = `Just voted ${emoji} for ${new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric'
-    })} on emoji.today`;
-
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
-    window.open(twitterUrl, '_blank');
-  };
 
   const handleFarcasterShare = () => {
     const castText = `Just voted ${emoji} for ${new Date().toLocaleDateString('en-US', {
@@ -122,39 +109,28 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
           <p className="text-neutral-400 text-sm">Share your vote and show others what today means to you</p>
         </div>
 
-        {/* Share Buttons */}
-        <div className="grid grid-cols-3 gap-3">
-          {/* Twitter/X Share */}
-          <button
-            onClick={handleTwitterShare}
-            className="flex flex-col items-center justify-center p-4 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-all duration-200 group"
-          >
-            <Twitter className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform" />
-            <span className="text-sm text-neutral-300 font-medium">Twitter</span>
-          </button>
-
+        {/* Share Buttons - Using same style as VotingResults component */}
+        <div className="flex flex-row items-center justify-center gap-4">
           {/* Farcaster Share */}
           <button
             onClick={handleFarcasterShare}
-            className="flex flex-col items-center justify-center p-4 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-all duration-200 group"
+            className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+            title="Share on Farcaster"
           >
-            <Share2 className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform" />
-            <span className="text-sm text-neutral-300 font-medium">Farcaster</span>
+            <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" />
           </button>
 
           {/* Copy Link */}
           <button
             onClick={handleCopyToClipboard}
-            className="flex flex-col items-center justify-center p-4 bg-neutral-800 hover:bg-neutral-700 rounded-xl transition-all duration-200 group"
+            className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+            title="Copy share link"
           >
             {copied ? (
-              <CheckCircle className="w-6 h-6 text-green-400 mb-2" />
+              <CheckCircle className="w-4 h-4 text-green-400" />
             ) : (
-              <Copy className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform" />
+              <Copy className="w-4 h-4" />
             )}
-            <span className={`text-sm font-medium ${copied ? 'text-green-400' : 'text-neutral-300'}`}>
-              {copied ? 'Copied!' : 'Copy Link'}
-            </span>
           </button>
         </div>
 
