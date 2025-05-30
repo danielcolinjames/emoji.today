@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import { getRemainingTimeToMidnightUTC, formatCountdown } from "@/lib/utils";
 
-export function VotingCountdown() {
+interface VotingCountdownProps {
+  verbose?: boolean;
+}
+
+export function VotingCountdown({ verbose = false }: VotingCountdownProps) {
   const [timeRemaining, setTimeRemaining] = useState(getRemainingTimeToMidnightUTC());
 
   useEffect(() => {
@@ -16,7 +20,7 @@ export function VotingCountdown() {
 
   return (
     <div className="text-center text-sm sm:text-base md:text-lg text-neutral-600 font-geist-mono">
-      {formatCountdown(timeRemaining)} LEFT TODAY (UTC)
+      {formatCountdown(timeRemaining, verbose)}
     </div>
   );
 } 

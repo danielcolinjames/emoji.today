@@ -44,82 +44,109 @@ export type Database = {
       }
       emojis: {
         Row: {
-          id: string
-          emoji: string
-          unified: string
-          non_qualified: string | null
-          name: string
-          short_name: string
-          short_names: string[]
-          keywords: string[]
-          category: string
-          subcategory: string | null
-          sort_order: number
-          added_in: string
-          unicode_version: string
           accent_color: string | null
-          skin_variations: Json | null
+          added_in: string
+          category: string
+          created_at: string
+          emoji: string
           filename: string
           has_img_apple: boolean | null
+          has_img_facebook: boolean | null
           has_img_google: boolean | null
           has_img_twitter: boolean | null
-          has_img_facebook: boolean | null
-          search_text: string | null
+          id: string
           is_votable: boolean | null
-          created_at: string
+          keywords: string[]
+          name: string
+          non_qualified: string | null
+          search_text: string | null
+          short_name: string
+          short_names: string[]
+          skin_variations: Json | null
+          sort_order: number
+          subcategory: string | null
+          unicode_version: string
+          unified: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          emoji: string
-          unified: string
-          non_qualified?: string | null
-          name: string
-          short_name: string
-          short_names?: string[]
-          keywords?: string[]
-          category: string
-          subcategory?: string | null
-          sort_order: number
-          added_in: string
-          unicode_version: string
           accent_color?: string | null
-          skin_variations?: Json | null
+          added_in: string
+          category: string
+          created_at?: string
+          emoji: string
           filename: string
           has_img_apple?: boolean | null
+          has_img_facebook?: boolean | null
           has_img_google?: boolean | null
           has_img_twitter?: boolean | null
-          has_img_facebook?: boolean | null
-          search_text?: string | null
+          id?: string
           is_votable?: boolean | null
-          created_at?: string
+          keywords?: string[]
+          name: string
+          non_qualified?: string | null
+          search_text?: string | null
+          short_name: string
+          short_names?: string[]
+          skin_variations?: Json | null
+          sort_order: number
+          subcategory?: string | null
+          unicode_version: string
+          unified: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          emoji?: string
-          unified?: string
-          non_qualified?: string | null
-          name?: string
-          short_name?: string
-          short_names?: string[]
-          keywords?: string[]
-          category?: string
-          subcategory?: string | null
-          sort_order?: number
-          added_in?: string
-          unicode_version?: string
           accent_color?: string | null
-          skin_variations?: Json | null
+          added_in?: string
+          category?: string
+          created_at?: string
+          emoji?: string
           filename?: string
           has_img_apple?: boolean | null
+          has_img_facebook?: boolean | null
           has_img_google?: boolean | null
           has_img_twitter?: boolean | null
-          has_img_facebook?: boolean | null
-          search_text?: string | null
+          id?: string
           is_votable?: boolean | null
-          created_at?: string
+          keywords?: string[]
+          name?: string
+          non_qualified?: string | null
+          search_text?: string | null
+          short_name?: string
+          short_names?: string[]
+          skin_variations?: Json | null
+          sort_order?: number
+          subcategory?: string | null
+          unicode_version?: string
+          unified?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      live_results: {
+        Row: {
+          created_at: string | null
+          emoji_counts: Json
+          id: string
+          last_updated_at: string | null
+          total_votes: number
+          vote_date: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji_counts?: Json
+          id?: string
+          last_updated_at?: string | null
+          total_votes?: number
+          vote_date: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji_counts?: Json
+          id?: string
+          last_updated_at?: string | null
+          total_votes?: number
+          vote_date?: string
         }
         Relationships: []
       }

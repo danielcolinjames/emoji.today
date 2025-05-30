@@ -7,12 +7,12 @@ import { useSession, getCsrfToken, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import sdk, { SignIn as SignInCore } from "@farcaster/frame-sdk";
 import Emoji from '@/components/Emoji';
-import { VotingCountdown } from '@/components/VotingCountdown';
 import { getRandomEmoji, type DatabaseEmoji } from "@/lib/emojis";
 import { getContrastTextColor } from "@/lib/utils";
 import { useFrame } from "@/components/providers/FrameProvider";
 import { getVotingResults } from "@/lib/actions";
 import { ArrowRight } from 'lucide-react';
+import { VotingCountdown } from '@/components/VotingCountdown';
 
 const FADE_DURATION_MS = 500;
 
@@ -266,13 +266,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Countdown Timer */}
-        <div className="mt-8 md:mt-12 lg:mt-16 mb-2 sm:mb-4">
-          <VotingCountdown />
-        </div>
-
         {/* CTA Button - Updated with authentication and dynamic text */}
-        <div className="mb-4 sm:mb-12">
+        <div className="my-4 sm:my-12">
+          {/* Countdown above the button */}
+          <div className="mb-4 sm:mb-6">
+            <VotingCountdown verbose />
+          </div>
+
           <button
             onClick={handleButtonClick}
             disabled={isSigningIn}
@@ -330,7 +330,9 @@ export default function Home() {
               </div>
             )}
           </button>
-          <p className="text-sm sm:text-base md:text-lg text-neutral-600 font-geist-mono mt-2 sm:mt-4 text-center max-w-[380px] mx-auto">
+
+          {/* Legacy text moved below the button */}
+          <p className="text-sm sm:text-base md:text-lg text-neutral-600 font-geist-mono mt-4 sm:mt-6 text-center max-w-[380px] mx-auto">
             Today&apos;s legacy is on the line.
           </p>
         </div>

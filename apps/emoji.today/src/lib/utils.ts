@@ -487,13 +487,17 @@ export function getRemainingTimeToMidnightUTC(): {
   return { hours, minutes, seconds, totalMs }
 }
 
-export function formatCountdown(time: {
-  hours: number
-  minutes: number
-  seconds: number
-}): string {
+export function formatCountdown(
+  time: {
+    hours: number
+    minutes: number
+    seconds: number
+  },
+  verbose?: boolean
+): string {
   const h = time.hours.toString().padStart(2, "0")
   const m = time.minutes.toString().padStart(2, "0")
   const s = time.seconds.toString().padStart(2, "0")
-  return `${h}:${m}:${s}`
+  const countdown = `${h}:${m}:${s}`
+  return verbose ? `${countdown} LEFT (UTC)` : countdown
 }

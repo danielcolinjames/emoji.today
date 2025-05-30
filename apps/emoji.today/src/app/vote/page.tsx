@@ -8,22 +8,9 @@ import { SelectEmoji } from "@/components/voting/SelectEmoji";
 import { ConfirmEmoji } from "@/components/voting/ConfirmEmoji";
 import { ReviewVote } from "@/components/voting/ReviewVote";
 import { VotingResults } from "@/components/VotingResults";
-import { submitVote, getVotingResults } from "@/lib/actions";
+import { submitVote, getLiveVotingResults } from "@/lib/actions";
 import { useFrame } from "@/components/providers/FrameProvider";
 import LoadingSpinner from "@/components/LoadingSpinner";
-
-interface EmojiVoteCount {
-  emoji: string;
-  count: number;
-  percentage: number;
-}
-
-interface VotingResultsData {
-  results: EmojiVoteCount[];
-  totalVotes: number;
-  userVote: string;
-  voteDate: string;
-}
 
 type VotingStep = 'select' | 'confirm' | 'review' | 'results';
 
@@ -32,7 +19,7 @@ function VotePageContent() {
   const { context } = useFrame();
   const [step, setStep] = useState<VotingStep>('select');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
-  const [results, setResults] = useState<VotingResultsData | null>(null);
+  const [hasVoted, setHasVoted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,22 +51,25 @@ function VotePageContent() {
 
       if (isTestUser) {
         setStep('select');
+        setHasVoted(false);
         setIsLoading(false);
         return;
       }
 
-      const data = await getVotingResults();
+      const data = await getLiveVotingResults();
       if (data) {
-        setResults(data);
+        setHasVoted(true);
         // Don't jump straight to results if we haven't set it explicitly
         if (step === 'select') {
           setStep('results');
         }
       } else {
+        setHasVoted(false);
         setStep('select');
       }
     } catch (error) {
       console.error('Error checking voting status:', error);
+      setHasVoted(false);
       setStep('select');
     } finally {
       setIsLoading(false);
@@ -104,8 +94,8 @@ function VotePageContent() {
         context?.user?.username,
         context?.user?.displayName
       );
-      // After successful vote, go to review step
-      // selectedEmoji is already set, so the review screen will have it
+      // After successful vote, update state and go to review step
+      setHasVoted(true);
       setStep('review');
     } catch (error) {
       console.error('Error submitting vote:', error);
@@ -125,20 +115,9 @@ function VotePageContent() {
     // The actual sharing is handled in ReviewVote component
   };
 
-  const handleViewResults = async () => {
-    // Fetch results and explicitly move to results step
-    setIsLoading(true);
-    try {
-      const data = await getVotingResults();
-      if (data) {
-        setResults(data);
-        setStep('results');
-      }
-    } catch (error) {
-      console.error('Error fetching results:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleViewResults = () => {
+    // Simply move to results step - VotingResults will handle data fetching
+    setStep('results');
   };
 
   const getPageTitle = () => {
@@ -150,7 +129,7 @@ function VotePageContent() {
       case 'review':
         return "Nice.";
       case 'results':
-        return "You've voted";
+        return "The race is on!";
       default:
         return "What emoji is today?";
     }
@@ -169,12 +148,11 @@ function VotePageContent() {
       case 'review':
         return "Now let's hope nothing crazy happens";
       case 'results':
-        return new Date().toLocaleDateString('en-US', {
-          weekday: 'long',
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric'
-        }).toUpperCase();
+        if (hasVoted) {
+          // Get a rough estimate for the subtitle - this will be more accurate in the live bar
+          return "You and others did your civic duty.";
+        }
+        return "Loading results...";
       default:
         return undefined;
     }
@@ -209,12 +187,9 @@ function VotePageContent() {
             Try again
           </button>
         </div>
-      ) : step === 'results' && results ? (
+      ) : step === 'results' ? (
         <VotingResults
-          results={results.results}
-          totalVotes={results.totalVotes}
-          userVote={results.userVote}
-          voteDate={results.voteDate}
+          userProfileUrl={context?.user?.pfpUrl}
         />
       ) : step === 'review' && selectedEmoji ? (
         <ReviewVote

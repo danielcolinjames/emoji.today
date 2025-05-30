@@ -8,6 +8,8 @@ interface EmojiVoteCount {
   emoji: string
   count: number
   percentage: number
+  accent_color: string
+  filename: string
 }
 
 // Function to upsert user with username tracking
@@ -187,13 +189,38 @@ export async function getVotingResults() {
       voteCounts[vote.emoji] = (voteCounts[vote.emoji] || 0) + 1
     })
 
-    // Convert to array with percentages
+    // Get unique emojis that have votes
+    const uniqueEmojis = Object.keys(voteCounts)
+
+    // Fetch emoji data from database to get accent colors
+    const { data: emojiData, error: emojiError } = await supabase
+      .from("emojis")
+      .select("emoji, accent_color, filename")
+      .in("emoji", uniqueEmojis)
+
+    if (emojiError) {
+      console.error("Error fetching emoji data:", emojiError)
+      throw new Error("Failed to fetch emoji data")
+    }
+
+    // Create a map for quick emoji data lookup
+    const emojiDataMap = new Map()
+    emojiData?.forEach((emoji) => {
+      emojiDataMap.set(emoji.emoji, emoji)
+    })
+
+    // Convert to array with percentages and emoji data
     const results: EmojiVoteCount[] = Object.entries(voteCounts)
-      .map(([emoji, count]) => ({
-        emoji,
-        count,
-        percentage: Math.round((count / totalVotes) * 100),
-      }))
+      .map(([emoji, count]) => {
+        const emojiInfo = emojiDataMap.get(emoji)
+        return {
+          emoji,
+          count,
+          percentage: Math.round((count / totalVotes) * 100),
+          accent_color: emojiInfo?.accent_color || "#FFFFFF",
+          filename: emojiInfo?.filename || "",
+        }
+      })
       .sort((a, b) => b.count - a.count)
 
     return {
@@ -204,6 +231,109 @@ export async function getVotingResults() {
     }
   } catch (error) {
     console.error("Error in getVotingResults:", error)
+    throw error
+  }
+}
+
+export async function getLiveVotingResults() {
+  try {
+    // Check authentication
+    const session = await getSession()
+    if (!session?.user?.fid) {
+      throw new Error("Authentication required")
+    }
+
+    const fid = session.user.fid
+    const today = new Date().toISOString().split("T")[0]
+
+    // Check if user has voted today (using fid directly for efficiency)
+    const { data: userVote } = await supabase
+      .from("votes")
+      .select("emoji")
+      .eq("fid", fid)
+      .eq("vote_date", today)
+      .single()
+
+    if (!userVote) {
+      return null // User hasn't voted yet
+    }
+
+    // Get live results for today
+    const { data: liveResult, error: liveResultError } = await supabase
+      .from("live_results")
+      .select("emoji_counts, total_votes, last_updated_at")
+      .eq("vote_date", today)
+      .single()
+
+    if (liveResultError) {
+      console.error("Error fetching live results:", liveResultError)
+      // Fall back to the original method if live_results doesn't exist
+      const fallbackResult = await getVotingResults()
+      if (fallbackResult) {
+        return {
+          ...fallbackResult,
+          lastUpdated: new Date().toISOString(),
+        }
+      }
+      return null
+    }
+
+    if (!liveResult || !liveResult.emoji_counts) {
+      return {
+        results: [],
+        totalVotes: 0,
+        userVote: userVote.emoji,
+        voteDate: today,
+        lastUpdated: new Date().toISOString(),
+      }
+    }
+
+    const voteCounts = liveResult.emoji_counts as { [key: string]: number }
+    const totalVotes = liveResult.total_votes
+
+    // Get unique emojis that have votes
+    const uniqueEmojis = Object.keys(voteCounts)
+
+    // Fetch emoji data from database to get accent colors
+    const { data: emojiData, error: emojiError } = await supabase
+      .from("emojis")
+      .select("emoji, accent_color, filename")
+      .in("emoji", uniqueEmojis)
+
+    if (emojiError) {
+      console.error("Error fetching emoji data:", emojiError)
+      throw new Error("Failed to fetch emoji data")
+    }
+
+    // Create a map for quick emoji data lookup
+    const emojiDataMap = new Map()
+    emojiData?.forEach((emoji) => {
+      emojiDataMap.set(emoji.emoji, emoji)
+    })
+
+    // Convert to array with percentages and emoji data
+    const results: EmojiVoteCount[] = Object.entries(voteCounts)
+      .map(([emoji, count]) => {
+        const emojiInfo = emojiDataMap.get(emoji)
+        return {
+          emoji,
+          count,
+          percentage: Math.round((count / totalVotes) * 100),
+          accent_color: emojiInfo?.accent_color || "#FFFFFF",
+          filename: emojiInfo?.filename || "",
+        }
+      })
+      .sort((a, b) => b.count - a.count)
+
+    return {
+      results,
+      totalVotes,
+      userVote: userVote.emoji,
+      voteDate: today,
+      lastUpdated: liveResult.last_updated_at || new Date().toISOString(),
+    }
+  } catch (error) {
+    console.error("Error in getLiveVotingResults:", error)
     throw error
   }
 }

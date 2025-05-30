@@ -1,4 +1,5 @@
 import { supabase } from "./supabase"
+import { getEmojiImageUrl as getEmojiImageUrlFromMapping } from "@emoji.today/emoji-assets/src/filename-mapping"
 
 export interface DatabaseEmoji {
   emoji: string
@@ -64,6 +65,13 @@ export async function getRandomEmoji(): Promise<DatabaseEmoji | null> {
  */
 export function getEmojiImageUrl(filename: string): string {
   return `/emoji-assets/apple-160/${filename}`
+}
+
+/**
+ * Get emoji image URL using the proper emoji mapping (preferred method)
+ */
+export function getEmojiImageUrlFromEmoji(emoji: string): string | null {
+  return getEmojiImageUrlFromMapping(emoji)
 }
 
 /**
