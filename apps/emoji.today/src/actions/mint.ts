@@ -170,9 +170,23 @@ export async function generateMintSignature(
 
     if (insertError) {
       console.error("Failed to store mint record:", insertError)
+      console.error("Error details:", JSON.stringify(insertError, null, 2))
+
+      // Check if it's a duplicate key error
+      if (
+        insertError.message?.includes("duplicate") ||
+        insertError.code === "23505"
+      ) {
+        return {
+          success: false,
+          error:
+            "Did you already mint today's vote? Each vote can only be minted once.",
+        }
+      }
+
       return {
         success: false,
-        error: "Failed to store mint record",
+        error: "Failed to store mint record. Please try again.",
       }
     }
 
@@ -182,6 +196,55 @@ export async function generateMintSignature(
     }
   } catch (error) {
     console.error("Error generating mint signature:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    }
+  }
+}
+
+// Development-only function to clean up failed mint records
+export async function cleanupFailedMint(
+  selectedEmoji: string,
+  voteDate: string
+): Promise<{ success: boolean; error?: string }> {
+  if (process.env.NODE_ENV === "production") {
+    return { success: false, error: "Cleanup only available in development" }
+  }
+
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.fid) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    // Find the vote
+    const { data: vote, error: voteError } = await supabase
+      .from("votes")
+      .select("*")
+      .eq("fid", session.user.fid)
+      .eq("emoji", selectedEmoji)
+      .eq("vote_date", voteDate)
+      .single()
+
+    if (voteError || !vote) {
+      return { success: false, error: "Vote not found" }
+    }
+
+    // Delete any existing mint records for this vote
+    const { error: deleteError } = await supabase
+      .from("vote_nfts")
+      .delete()
+      .eq("vote_id", vote.id)
+
+    if (deleteError) {
+      console.error("Failed to delete mint record:", deleteError)
+      return { success: false, error: "Failed to delete mint record" }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error cleaning up mint record:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

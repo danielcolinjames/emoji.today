@@ -1,5 +1,5 @@
 import { createConfig, http, WagmiProvider } from "wagmi";
-import { base } from "wagmi/chains";
+import { base, baseSepolia } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
 import { coinbaseWallet, metaMask } from 'wagmi/connectors';
@@ -7,6 +7,10 @@ import { APP_NAME, APP_ICON_URL, APP_URL } from "@/lib/constants";
 import { useEffect, useState } from "react";
 import { useConnect, useAccount } from "wagmi";
 import React from "react";
+
+// Use testnet in development, mainnet in production
+const isDev = process.env.NODE_ENV === 'development';
+const targetChain = isDev ? baseSepolia : base;
 
 // Custom hook for Coinbase Wallet detection and auto-connection
 function useCoinbaseWalletAutoConnect() {
@@ -42,9 +46,9 @@ function useCoinbaseWalletAutoConnect() {
 }
 
 export const config = createConfig({
-  chains: [base as any],
+  chains: [targetChain as any],
   transports: {
-    [base.id]: http(),
+    [targetChain.id]: http(),
   },
   connectors: [
     farcasterFrame(),

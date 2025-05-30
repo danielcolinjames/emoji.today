@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAccount, useConnect, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther } from "viem";
 import { useSession } from "next-auth/react";
-import { generateMintSignature } from "@/actions/mint";
+import { generateMintSignature, cleanupFailedMint } from "@/actions/mint";
 
 interface MintVoteButtonProps {
   emoji: string;
@@ -22,7 +22,7 @@ export function MintVoteButton({
   const { data: session } = useSession();
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
-  const { writeContract, data: writeData, isPending: isWritePending } = useWriteContract();
+  const { writeContract, data: writeData, isPending: isWritePending, error: writeError } = useWriteContract();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,11 +37,21 @@ export function MintVoteButton({
   // Handle transaction hash when writeData becomes available
   useEffect(() => {
     if (writeData && !txHash) {
+      console.log("Transaction hash received:", writeData);
       setTxHash(writeData);
       setSuccess(true);
       setIsLoading(false);
     }
   }, [writeData, txHash]);
+
+  // Handle writeContract errors
+  useEffect(() => {
+    if (writeError) {
+      console.error("WriteContract error:", writeError);
+      setError(`Transaction failed: ${writeError.message}`);
+      setIsLoading(false);
+    }
+  }, [writeError]);
 
   const handleConnectWallet = async () => {
     try {
@@ -72,7 +82,17 @@ export function MintVoteButton({
       setError(null);
 
       // Step 1: Get mint signature from server action
-      const result = await generateMintSignature(address, emoji, date);
+      let result = await generateMintSignature(address, emoji, date);
+
+      // In development, if we get "already minted" error, clean up and retry once
+      if (!result.success && result.error?.includes("already minted") && process.env.NODE_ENV === 'development') {
+        console.log("Cleaning up failed mint record and retrying...");
+        const cleanupResult = await cleanupFailedMint(emoji, date);
+        if (cleanupResult.success) {
+          // Retry after cleanup
+          result = await generateMintSignature(address, emoji, date);
+        }
+      }
 
       if (!result.success) {
         throw new Error(result.error || "Failed to generate mint signature");
@@ -80,6 +100,11 @@ export function MintVoteButton({
 
       // Step 2: Execute the mint transaction using wagmi
       const contractAddress = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS as `0x${string}`;
+
+      console.log("About to call writeContract with:");
+      console.log("Contract Address:", contractAddress);
+      console.log("Signature Payload:", result.signature.payload);
+      console.log("Signature:", result.signature.signature);
 
       writeContract({
         address: contractAddress,
@@ -113,7 +138,7 @@ export function MintVoteButton({
         value: parseEther("0.001"), // 0.001 ETH
       });
 
-      // Transaction will be handled by useEffect when writeData becomes available
+      console.log("writeContract called, waiting for user confirmation...");
 
     } catch (err) {
       console.error("Minting error:", err);
