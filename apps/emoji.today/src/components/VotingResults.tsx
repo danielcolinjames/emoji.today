@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useLiveVotingResults, type EmojiVoteCount } from '@/hooks/useLiveVotingResults';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Copy } from 'lucide-react';
+import { MintVoteButton } from '@/components/MintVoteButton';
 
 interface VotingResultsProps {
   userProfileUrl?: string;
@@ -144,6 +145,21 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
           <Copy className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Mint Your Vote Section */}
+      {userVote && (
+        <div className="border border-neutral-800 rounded-xl p-4 mb-6 bg-neutral-900/50">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-medium text-white mb-2">Mint your {userVote} vote</h3>
+            <p className="text-neutral-400 text-sm">Turn your vote into a permanent NFT collectible</p>
+          </div>
+          <MintVoteButton
+            emoji={userVote}
+            date={new Date().toISOString().split('T')[0]}
+          />
+        </div>
+      )}
+
       {/* Results - Break out completely to full screen width with right padding */}
       <div className="space-y-2 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4">
         {visibleResults.map((result, index) => {

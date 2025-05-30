@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Emoji from "@/components/Emoji";
 import { searchEmojis, type DatabaseEmoji } from "@/lib/emojis";
 import { ArrowRight, Twitter, Share2, Copy, CheckCircle } from "lucide-react";
+import { MintVoteButton } from "@/components/MintVoteButton";
 
 interface ReviewVoteProps {
   emoji: string;
@@ -156,6 +157,19 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
               {copied ? 'Copied!' : 'Copy Link'}
             </span>
           </button>
+        </div>
+
+        {/* Mint Your Vote Button */}
+        <div className="border-t border-neutral-800 pt-6">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-medium text-white mb-2">Make it permanent</h3>
+            <p className="text-neutral-400 text-sm">Mint your vote as an NFT to commemorate this moment</p>
+          </div>
+          <MintVoteButton
+            emoji={emoji}
+            date={currentDate}
+            className="mt-4"
+          />
         </div>
 
         {/* View Results Button */}

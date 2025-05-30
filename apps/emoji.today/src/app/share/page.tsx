@@ -22,7 +22,6 @@ export async function generateMetadata({ searchParams }: SharePageProps): Promis
 
   // Format date for display
   const formattedDate = new Date(date).toLocaleDateString('en-US', {
-    weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -37,7 +36,7 @@ export async function generateMetadata({ searchParams }: SharePageProps): Promis
     description = `${emoji} is the emoji of the day! ${totalVotes} people voted. What emoji will win tomorrow? Vote at emoji.today`;
   } else {
     title = `I voted ${emoji} for ${formattedDate} on emoji.today`;
-    description = `Join me in voting for today's emoji on emoji.today! What emoji best represents ${formattedDate}?`;
+    description = `Join me in performing our civic duty. What emoji best represents ${formattedDate}?`;
   }
 
   // Use the regular OG image for winners (cleaner look for automated posts)
