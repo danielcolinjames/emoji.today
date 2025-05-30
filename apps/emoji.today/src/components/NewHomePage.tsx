@@ -198,6 +198,13 @@ export default function NewHomePage() {
     }
   };
 
+  const currentDate = new Date();
+  const formattedDate = currentDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-between text-white bg-[#050505] pt-4 sm:pt-10 md:pt-12 lg:pt-16">
       {/* Main Content Area */}
@@ -209,7 +216,7 @@ export default function NewHomePage() {
             What emoji is today?
           </h1>
           <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-neutral-400 leading-tight font-light">
-            Let's make May 29, 2025 iconic.
+            Let's make {formattedDate} iconic.
           </p>
         </div>
 
