@@ -269,7 +269,7 @@ export default function Home() {
         {/* CTA Button - Updated with authentication and dynamic text */}
         <div className="my-4 sm:my-12">
           {/* Countdown above the button */}
-          <div className="mb-4 sm:mb-6">
+          <div className="mb-2 sm:mb-4">
             <VotingCountdown verbose />
           </div>
 
@@ -332,7 +332,7 @@ export default function Home() {
           </button>
 
           {/* Legacy text moved below the button */}
-          <p className="text-sm sm:text-base md:text-lg text-neutral-600 font-geist-mono mt-4 sm:mt-6 text-center max-w-[380px] mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-neutral-600 font-geist-mono mt-2 sm:mt-4 text-center max-w-[380px] mx-auto">
             Today&apos;s legacy is on the line.
           </p>
         </div>

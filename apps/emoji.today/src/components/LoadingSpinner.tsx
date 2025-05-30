@@ -10,7 +10,7 @@ interface LoadingSpinnerProps {
 export default function LoadingSpinner({ size = 48, className = "" }: LoadingSpinnerProps) {
   return (
     <div className={`flex items-center justify-center ${className}`}>
-      <div className="animate-spin-slow">
+      <div className="animate-spin">
         <Image
           src="/images/logo-white.svg"
           alt="Loading..."

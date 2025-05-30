@@ -203,10 +203,16 @@ export async function getVotingResults() {
       throw new Error("Failed to fetch emoji data")
     }
 
-    // Create a map for quick emoji data lookup
+    // Create a map for quick emoji data lookup (handle variation selectors)
     const emojiDataMap = new Map()
     emojiData?.forEach((emoji) => {
-      emojiDataMap.set(emoji.emoji, emoji)
+      // Map both the original emoji and its variation selector variants
+      const baseEmoji = emoji.emoji.replace(/\uFE0F/g, "") // Remove variation selector
+      const withVariationSelector = baseEmoji + "\uFE0F" // Add variation selector
+
+      emojiDataMap.set(emoji.emoji, emoji) // Original form
+      emojiDataMap.set(baseEmoji, emoji) // Base form
+      emojiDataMap.set(withVariationSelector, emoji) // With variation selector
     })
 
     // Convert to array with percentages and emoji data
@@ -295,20 +301,35 @@ export async function getLiveVotingResults() {
     const uniqueEmojis = Object.keys(voteCounts)
 
     // Fetch emoji data from database to get accent colors
+    // Handle variation selector normalization
+    const emojiVariants = uniqueEmojis
+      .flatMap((emoji) => [
+        emoji,
+        emoji + "\uFE0F", // Add variation selector
+        emoji.replace(/\uFE0F/g, ""), // Remove variation selector
+      ])
+      .filter((v, i, arr) => arr.indexOf(v) === i) // Remove duplicates
+
     const { data: emojiData, error: emojiError } = await supabase
       .from("emojis")
       .select("emoji, accent_color, filename")
-      .in("emoji", uniqueEmojis)
+      .in("emoji", emojiVariants)
 
     if (emojiError) {
       console.error("Error fetching emoji data:", emojiError)
       throw new Error("Failed to fetch emoji data")
     }
 
-    // Create a map for quick emoji data lookup
+    // Create a map for quick emoji data lookup (handle variation selectors)
     const emojiDataMap = new Map()
     emojiData?.forEach((emoji) => {
-      emojiDataMap.set(emoji.emoji, emoji)
+      // Map both the original emoji and its variation selector variants
+      const baseEmoji = emoji.emoji.replace(/\uFE0F/g, "") // Remove variation selector
+      const withVariationSelector = baseEmoji + "\uFE0F" // Add variation selector
+
+      emojiDataMap.set(emoji.emoji, emoji) // Original form
+      emojiDataMap.set(baseEmoji, emoji) // Base form
+      emojiDataMap.set(withVariationSelector, emoji) // With variation selector
     })
 
     // Convert to array with percentages and emoji data

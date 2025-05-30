@@ -20,6 +20,7 @@ function VotePageContent() {
   const [step, setStep] = useState<VotingStep>('select');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [totalVotes, setTotalVotes] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +53,7 @@ function VotePageContent() {
       if (isTestUser) {
         setStep('select');
         setHasVoted(false);
+        setTotalVotes(0);
         setIsLoading(false);
         return;
       }
@@ -59,17 +61,20 @@ function VotePageContent() {
       const data = await getLiveVotingResults();
       if (data) {
         setHasVoted(true);
+        setTotalVotes(data.totalVotes);
         // Don't jump straight to results if we haven't set it explicitly
         if (step === 'select') {
           setStep('results');
         }
       } else {
         setHasVoted(false);
+        setTotalVotes(0);
         setStep('select');
       }
     } catch (error) {
       console.error('Error checking voting status:', error);
       setHasVoted(false);
+      setTotalVotes(0);
       setStep('select');
     } finally {
       setIsLoading(false);
@@ -146,11 +151,15 @@ function VotePageContent() {
           year: 'numeric'
         })}`;
       case 'review':
-        return "Now let's hope nothing crazy happens";
+        return "Now let's hope nothing crazy happens.";
       case 'results':
-        if (hasVoted) {
-          // Get a rough estimate for the subtitle - this will be more accurate in the live bar
-          return "You and others did your civic duty.";
+        if (hasVoted && totalVotes > 0) {
+          const otherVoters = totalVotes - 1;
+          if (otherVoters === 0) {
+            return "You're the first voter today. Nice!";
+          } else {
+            return `You and ${otherVoters} other${otherVoters !== 1 ? 's' : ''} did your civic duty.`;
+          }
         }
         return "Loading results...";
       default:

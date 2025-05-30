@@ -81,16 +81,22 @@ export async function searchEmojis(query: string): Promise<DatabaseEmoji[]> {
   try {
     const trimmedQuery = query.trim()
 
-    // First, always try exact emoji match
+    // First, always try exact emoji match (both with and without variation selectors)
+    const searchVariants = [
+      trimmedQuery,
+      trimmedQuery + "\uFE0F", // Add variation selector
+      trimmedQuery.replace(/\uFE0F/g, ""), // Remove variation selector
+    ].filter((v, i, arr) => arr.indexOf(v) === i) // Remove duplicates
+
     const { data: exactMatch, error: exactError } = await supabase
       .from("emojis")
       .select(
         "emoji, name, accent_color, filename, keywords, category, is_votable"
       )
-      .eq("emoji", trimmedQuery)
+      .in("emoji", searchVariants)
       .not("accent_color", "is", null)
       .not("is_votable", "is", false)
-      .limit(1)
+      .limit(10)
 
     if (!exactError && exactMatch && exactMatch.length > 0) {
       const validEmojis = exactMatch.filter(
@@ -98,17 +104,21 @@ export async function searchEmojis(query: string): Promise<DatabaseEmoji[]> {
           emoji.accent_color !== null && emoji.is_votable !== false
       )
       if (validEmojis.length > 0) {
-        // If we found an exact match, return it first, then do a keyword search for related emojis
+        // If we found exact matches, return them first, then do a keyword search for related emojis
         const { data: relatedEmojis, error: relatedError } = await supabase
           .from("emojis")
           .select(
             "emoji, name, accent_color, filename, keywords, category, is_votable"
           )
           .or(`name.ilike.%${trimmedQuery}%, keywords.cs.{${trimmedQuery}}`)
-          .neq("emoji", trimmedQuery) // Exclude the exact match we already have
+          .not(
+            "emoji",
+            "in",
+            `(${searchVariants.map((v) => `"${v}"`).join(",")})`
+          ) // Exclude exact matches we already have
           .not("accent_color", "is", null)
           .not("is_votable", "is", false)
-          .limit(49) // Since we already have 1 result
+          .limit(49) // Since we already have some results
 
         if (!relatedError && relatedEmojis) {
           const validRelated = relatedEmojis.filter(
@@ -128,9 +138,7 @@ export async function searchEmojis(query: string): Promise<DatabaseEmoji[]> {
       .select(
         "emoji, name, accent_color, filename, keywords, category, is_votable"
       )
-      .or(
-        `name.ilike.%${trimmedQuery}%, keywords.cs.{${trimmedQuery}}, emoji.eq.${trimmedQuery}`
-      )
+      .or(`name.ilike.%${trimmedQuery}%, keywords.cs.{${trimmedQuery}}`)
       .not("accent_color", "is", null)
       .not("is_votable", "is", false)
       .limit(50)

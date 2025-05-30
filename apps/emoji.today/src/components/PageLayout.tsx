@@ -27,12 +27,12 @@ export function PageLayout({ title, subtitle, children, showBackButton, onBack }
 
         {/* Top Text Block - only show if title is provided */}
         {title && (
-          <div className="text-center w-full mb-4 md:mb-8 lg:mb-20 mt-12 md:mt-20 lg:mt-24 flex flex-col">
+          <div className="text-center w-full mb-2 md:mb-4 lg:mb-20 mt-12 md:mt-20 lg:mt-24 flex flex-col">
             <h1 className="text-4xl font-light tracking-tighter sm:text-5xl md:text-6xl lg:text-8xl leading-tight">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-neutral-400 leading-tight font-light">
+              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-neutral-400 leading-tight font-light">
                 {subtitle}
               </p>
             )}

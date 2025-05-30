@@ -8,6 +8,9 @@
     "daily-reset": "tsx src/daily-reset.ts",
     "populate-test": "tsx src/populate-test-votes.ts",
     "clear-test": "tsx src/clear-test-data.ts",
+    "simulate-votes": "tsx src/simulate-realistic-votes.ts",
+    "populate-missing-emojis": "tsx src/populate-missing-emojis.ts",
+    "debug-emoji-storage": "tsx src/debug-emoji-storage.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },

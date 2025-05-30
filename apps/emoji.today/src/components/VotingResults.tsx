@@ -29,7 +29,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
         <div className="text-red-400">Failed to load results</div>
         <button
           onClick={refresh}
-          className="text-blue-400 hover:text-blue-300 underline"
+          className="text-white"
         >
           Try again
         </button>
@@ -76,19 +76,26 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   };
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Share Button */}
-      <div className="text-center">
+    <div className="space-y-1 pb-20">
+      <p className="text-white text-base text-center font-geist-mono mb-2">
+        Now it's time to campaign.
+      </p>
+      <div className="flex flex-row items-center justify-center mb-4 gap-4">
         <button
           onClick={handleShare}
-          className="bg-white text-black font-semibold py-3 px-6 rounded-full transition-colors duration-200 w-full"
+          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2"
         >
-          Share my vote
+          <img src="/images/x-white.svg" alt="X" className="max-w-[16px] max-h-[16px]" />
+        </button>
+        <button
+          onClick={handleShare}
+          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2"
+        >
+          <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" />
         </button>
       </div>
-
       {/* Results - Break out completely to full screen width with right padding */}
-      <div className="space-y-3 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4">
+      <div className="space-y-2 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4">
         {visibleResults.map((result, index) => {
           // Calculate proportional width between 55% and 100% of viewport minus right padding
           const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 400;
@@ -151,7 +158,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                 {isUserVote ? (
                   <span className="ml-2 text-xs">
                     {otherVoters > 0 ? (
-                      `You & ${otherVoters} other${otherVoters !== 1 ? 's' : ''}`
+                      `You & ${otherVoters} voter${otherVoters !== 1 ? 's' : ''}`
                     ) : (
                       <span className="flex items-center gap-1 pl-1">
                         <p className="text-xs">Just you</p>
@@ -191,10 +198,10 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
       {/* View All Button */}
       {hasMore && !showAll && (
-        <div className="text-center">
+        <div className="text-center mt-4">
           <button
             onClick={() => setShowAll(true)}
-            className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200"
+            className="text-[#696969] font-medium transition-colors duration-200"
           >
             View all {sortedResults.length} results ↓
           </button>
@@ -206,7 +213,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
         <div className="text-center">
           <button
             onClick={() => setShowAll(false)}
-            className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200"
+            className="text-[#696969] font-medium transition-colors duration-200"
           >
             Show top 10 ↑
           </button>
