@@ -11,14 +11,14 @@ export const metadata: Metadata = {
   title: "emoji.today",
   description: "emoji.today",
   openGraph: {
-    images: "https://emoji.today/og-1.png",
+    images: "https://emoji.today/og.png",
   },
   twitter: {
     card: "summary_large_image",
     site: "emoji.today",
     description: `emoji.today`,
     title: `emoji.today`,
-    images: ["https://emoji.today/og-1.png"],
+    images: ["https://emoji.today/og.png"],
   },
   other: {
     "fc:frame": JSON.stringify(getFrameEmbedMetadata()),
