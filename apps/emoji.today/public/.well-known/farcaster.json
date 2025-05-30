@@ -1,4 +1,9 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjEwOTAzMjUsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhEYzZjMDU0N2UzNjdkODYzNjUxNzg1OTExY0M0NkZmMkJGMGViYWNlIn0",
+    "payload": "eyJkb21haW4iOiJlbW9qaS50b2RheSJ9",
+    "signature": "MHg4ODQ1NzcyYjQ2ZTY2NjBlZWRmNDQ3YmVjNjcwMWYzMDY3M2U2NmFjY2ZmNjg2ZmY2YWMwNjVkMDhmMTA1MTE5NTQyN2EwNzkwNTM3ZmYwMmQ2NjcyMmExMzg4OGE1YTg0NDRiOWZlMmM5MGYxNzVmMGZkMGZjZGQ4ZDY4MzM0YTFj"
+  },
   "frame": {
     "version": "1",
     "name": "emoji.today",
