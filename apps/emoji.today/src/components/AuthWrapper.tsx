@@ -1,0 +1,60 @@
+"use client";
+
+import { useSession } from "next-auth/react";
+import { useFrame } from "./providers/FrameProvider";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import LoadingSpinner from "./LoadingSpinner";
+
+interface AuthWrapperProps {
+  children: React.ReactNode;
+  requireAuth?: boolean;
+  fallback?: React.ReactNode;
+}
+
+export function AuthWrapper({
+  children,
+  requireAuth = false,
+  fallback
+}: AuthWrapperProps) {
+  const { data: session, status } = useSession();
+  const { context } = useFrame();
+  const router = useRouter();
+
+  // Handle redirect when unauthenticated and auth is required
+  useEffect(() => {
+    if (requireAuth && status === "unauthenticated") {
+      router.push('/');
+    }
+  }, [requireAuth, status, router]);
+
+  // If auth is not required, always show children
+  if (!requireAuth) {
+    return <>{children}</>;
+  }
+
+  // Loading state
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-[#050505] text-white">
+        <LoadingSpinner size={64} />
+      </div>
+    );
+  }
+
+  // Not authenticated - show loading spinner while redirecting
+  if (status === "unauthenticated") {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-[#050505] text-white">
+        <LoadingSpinner size={64} />
+      </div>
+    );
+  }
+
+  // Authenticated - show navbar and children
+  return (
+    <>
+      {children}
+    </>
+  );
+} 

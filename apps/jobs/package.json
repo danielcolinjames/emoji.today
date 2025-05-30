@@ -1,0 +1,29 @@
+{
+  "name": "emoji-today-jobs",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "tally-votes": "tsx src/tally-votes.ts",
+    "daily-reset": "tsx src/daily-reset.ts",
+    "populate-test": "tsx src/populate-test-votes.ts",
+    "clear-test": "tsx src/clear-test-data.ts",
+    "simulate-votes": "tsx src/simulate-realistic-votes.ts",
+    "populate-missing-emojis": "tsx src/populate-missing-emojis.ts",
+    "debug-emoji-storage": "tsx src/debug-emoji-storage.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@date-fns/utc": "^2.1.0",
+    "@supabase/supabase-js": "^2.38.4",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

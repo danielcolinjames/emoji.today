@@ -1,69 +1,35 @@
 "use client"
 
-import { getRandomEmojis, getEmojiImageUrl } from "@/lib/emojis";
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import Image from "next/image";
-import { useEmojiColor } from "../../../../lib/hooks/useEmojiColor";
+import { getEmojiImageUrl as getEmojiImageUrlFromMapping } from "@emoji.today/emoji-assets/src/filename-mapping";
 
 interface EmojiProps {
-  emoji?: string | null;
+  emoji: string;
+  filename?: string;
   containerSize?: number;
   borderWidth?: number;
-  animate?: boolean;
+  accentColor?: string;
 }
 
 const Emoji: React.FC<EmojiProps> = ({
-  emoji: initialEmoji = null,
+  emoji,
+  filename,
   containerSize = 300,
   borderWidth = 18,
-  animate = false
+  accentColor = '#FFFFFF'
 }) => {
-  const [currentEmoji, setCurrentEmoji] = useState<string | null>(initialEmoji);
-  const [isInitialAnimation, setIsInitialAnimation] = useState(animate && !initialEmoji);
-  const [hasLoadedFirstColor, setHasLoadedFirstColor] = useState(false);
-
-  useEffect(() => {
-    if (isInitialAnimation) {
-      setCurrentEmoji("🙂");
-      setIsInitialAnimation(false);
-    } else if (initialEmoji) {
-      setCurrentEmoji(initialEmoji);
-    }
-  }, [initialEmoji, animate, isInitialAnimation]);
-
-  const emojiToRender = currentEmoji || (animate ? getRandomEmojis(1)[0] : null);
-  const emojiImageUrl = useMemo(() => emojiToRender ? getEmojiImageUrl(emojiToRender) : null, [emojiToRender]);
-
-  const { color: accentColor, isLoading: isColorLoading, error: colorError } = useEmojiColor(emojiImageUrl);
-
-  useEffect(() => {
-    if (!isColorLoading && accentColor && !hasLoadedFirstColor) {
-      setHasLoadedFirstColor(true);
-    }
-  }, [isColorLoading, accentColor, hasLoadedFirstColor]);
-
-  useEffect(() => {
-    if (animate && !isInitialAnimation) {
-      const interval = setInterval(() => {
-        setCurrentEmoji(getRandomEmojis(1)[0]);
-      }, 1500);
-      return () => clearInterval(interval);
-    }
-  }, [animate, isInitialAnimation]);
-
-  const EMOJI_TO_CONTAINER_RATIO = 166.6667 / 500;
-  const emojiDisplaySize = useMemo(() => {
-    return Math.floor(containerSize * EMOJI_TO_CONTAINER_RATIO);
+  const imageSize = useMemo(() => {
+    // Use the specific aspect ratio requested: 250
+    // This maintains consistency with the original design
+    const ratio = 250 / 500; // Updated ratio for 500px container
+    return Math.floor(containerSize * ratio);
   }, [containerSize]);
 
-  // Debug logging
-  useEffect(() => {
-    if (emojiImageUrl) {
-      console.log('Emoji URL:', emojiImageUrl);
-      console.log('Container size:', containerSize);
-      console.log('Display size:', emojiDisplaySize);
-    }
-  }, [emojiImageUrl, containerSize, emojiDisplaySize]);
+  // Get the correct emoji image URL using the proper mapping
+  const emojiImageUrl = useMemo(() => {
+    return getEmojiImageUrlFromMapping(emoji);
+  }, [emoji]);
 
   const componentStyle: React.CSSProperties = {
     width: `${containerSize}px`,
@@ -73,40 +39,48 @@ const Emoji: React.FC<EmojiProps> = ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    borderColor: accentColor || '#FFFFFF',
+    borderColor: accentColor,
     borderStyle: 'solid',
     backgroundColor: 'rgba(0, 0, 0, 1)',
     overflow: 'hidden',
     position: 'relative',
     transition: 'border-color 0.5s ease-in-out, opacity 0.5s ease-in-out',
-    opacity: (isColorLoading && !hasLoadedFirstColor) ? 0 : 1,
   };
-
-  const emojiTextStyle: React.CSSProperties = {
-    fontSize: `${emojiDisplaySize}px`,
-    lineHeight: '1',
-    textAlign: 'center',
-  };
-
-  if (colorError) {
-    console.error("Error loading emoji color:", colorError);
-  }
 
   return (
     <div style={componentStyle}>
       {emojiImageUrl ? (
         <Image
           src={emojiImageUrl}
-          alt={currentEmoji || "emoji"}
-          width={emojiDisplaySize}
-          height={emojiDisplaySize}
-          style={{ objectFit: "contain" }}
-          priority
+          alt={emoji}
+          width={imageSize}
+          height={imageSize}
+          style={{
+            objectFit: 'contain',
+          }}
+          onError={(e) => {
+            // Fallback to text emoji if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              const fallbackSpan = document.createElement('span');
+              fallbackSpan.textContent = emoji;
+              fallbackSpan.style.fontSize = `${Math.floor(containerSize * 0.4)}px`;
+              fallbackSpan.style.lineHeight = '1';
+              parent.appendChild(fallbackSpan);
+            }
+          }}
         />
-      ) : currentEmoji ? (
-        <span style={emojiTextStyle}>{currentEmoji}</span>
       ) : (
-        <span style={emojiTextStyle}>⏳</span>
+        // Fallback to text if no image URL found
+        <span style={{
+          fontSize: `${Math.floor(containerSize * 0.4)}px`,
+          lineHeight: '1',
+          textAlign: 'center',
+        }}>
+          {emoji}
+        </span>
       )}
     </div>
   );

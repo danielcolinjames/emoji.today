@@ -57,3 +57,550 @@ alwaysApply: false
 - Hybrid authentication (email/password, other social logins).
 - Auto-creating Farcaster accounts for users.
 - Detailed smart contract design.
+
+## Brainstorming Session - Database Architecture & Mini App Planning (2025-01-27)
+
+### Database Schema Design
+
+#### Core Tables
+
+**users**
+- `id` (UUID, PK) - Internal identifier
+- `fid` (BIGINT, UNIQUE) - Farcaster ID
+- `username` (TEXT) - Farcaster username
+- `display_name` (TEXT) - Farcaster display name
+- `pfp_url` (TEXT) - Profile picture URL
+- `bio` (TEXT) - User bio
+- `signer_uuid` (TEXT) - Neynar signer UUID (secure)
+- `wallet_address` (TEXT) - Primary wallet address
+- `streak_count` (INT, DEFAULT 0) - Current voting streak
+- `longest_streak` (INT, DEFAULT 0) - Best streak record
+- `total_votes` (INT, DEFAULT 0) - Lifetime votes
+- `total_wins` (INT, DEFAULT 0) - Times voted for winning emoji
+- `total_winnings` (DECIMAL) - Total prize money won
+- `created_at` (TIMESTAMP)
+- `updated_at` (TIMESTAMP)
+
+**daily_contests**
+- `id` (UUID, PK)
+- `date` (DATE, UNIQUE) - Contest date
+- `status` (ENUM: 'active', 'voting_closed', 'completed') 
+- `winning_emoji` (TEXT) - The winning emoji character
+- `total_votes` (INT) - Total votes cast
+- `unique_voters` (INT) - Number of unique voters
+- `prize_pool` (DECIMAL) - Total prize pool amount
+- `vote_price` (DECIMAL) - Price per vote for this day
+- `nft_token_id` (TEXT) - Minted NFT token ID
+- `nft_auction_id` (TEXT) - Auction identifier
+- `created_at` (TIMESTAMP)
+- `completed_at` (TIMESTAMP)
+
+**votes**
+- `id` (UUID, PK)
+- `user_id` (UUID, FK -> users.id)
+- `contest_id` (UUID, FK -> daily_contests.id)
+- `emoji` (TEXT) - The emoji voted for
+- `vote_cost` (DECIMAL) - Amount paid for this vote
+- `transaction_hash` (TEXT) - Blockchain transaction hash
+- `voted_at` (TIMESTAMP)
+- UNIQUE constraint on (user_id, contest_id) - one vote per user per day
+
+**prize_distributions**
+- `id` (UUID, PK)
+- `contest_id` (UUID, FK -> daily_contests.id)
+- `user_id` (UUID, FK -> users.id)
+- `amount` (DECIMAL) - Prize amount won
+- `type` (ENUM: 'raffle', 'auction', 'bonus') 
+- `transaction_hash` (TEXT) - Payout transaction hash
+- `distributed_at` (TIMESTAMP)
+
+**participation_nfts**
+- `id` (UUID, PK)
+- `user_id` (UUID, FK -> users.id)
+- `token_id` (TEXT) - NFT token ID
+- `streak_level` (INT) - Streak count when minted
+- `metadata_uri` (TEXT) - IPFS metadata URI
+- `minted_at` (TIMESTAMP)
+
+**emoji_stats** (for analytics)
+- `id` (UUID, PK)
+- `emoji` (TEXT, UNIQUE)
+- `total_votes` (INT) - All-time votes
+- `win_count` (INT) - Times won
+- `last_won_date` (DATE)
+- `first_appearance` (DATE)
+
+### Key Design Decisions
+
+1. **One Vote Per Day**: Enforced by unique constraint on (user_id, contest_id)
+2. **Dynamic Pricing**: Store vote_price per contest for flexibility
+3. **Emoji Storage**: Store actual emoji characters, not codes (simpler)
+4. **Prize Types**: Track different distribution types (raffle vs auction proceeds)
+5. **Analytics Built-in**: emoji_stats table for trending/popular emojis
+
+### Mini App Integration Points
+
+1. **Authentication Flow**
+   - SIWN integration via Neynar
+   - Store signer_uuid securely
+   - Issue JWT tokens for session management
+
+2. **Voting Interface**
+   - Grid of emojis (curated selection)
+   - Real-time vote counts (hidden until user votes)
+   - Animated feedback on vote submission
+
+3. **Payment Flow**
+   - Use Farcaster SDK's ethereum provider
+   - Smart contract for vote payments
+   - Track transaction hashes
+
+4. **Notifications**
+   - Daily reminder to vote
+   - Winner announcement
+   - Prize distribution alerts
+
+5. **Social Sharing**
+   - Custom share cards via Farcaster frames
+   - "I Voted" badges without revealing choice
+   - Streak milestones
+
+### MVP Features for Friday Launch
+
+**Must Have:**
+- [ ] Basic voting interface with emoji grid
+- [ ] Farcaster authentication (SIWN)
+- [ ] Simple payment collection (even if manual)
+- [ ] Daily winner selection (manual if needed)
+- [ ] Basic share functionality
+
+**Nice to Have:**
+- [ ] Automated prize distribution
+- [ ] NFT minting
+- [ ] Streak tracking
+- [ ] Real-time vote updates
+
+**Can Wait:**
+- [ ] Participation NFTs
+- [ ] Complex auction mechanics
+- [ ] DAO governance features
+
+### Next Steps
+
+1. Set up Supabase project and create schema
+2. Initialize Farcaster Mini App with SDK
+3. Build basic voting UI
+4. Implement SIWN authentication
+5. Create share card generation
+6. Deploy and test in Farcaster client
+
+### Open Questions
+
+1. **Emoji Selection**: How many emojis per day? Curated or algorithmic?
+2. **Vote Timing**: When does daily voting open/close? Timezone handling?
+3. **Payment Method**: Start with testnet? Which chain for production?
+4. **Prize Distribution**: What percentage to winners vs team vs future pools?
+5. **Share Mechanics**: How to make sharing viral without revealing votes?
+
+### TODO Before Friday Launch (2025-01-27)
+
+**CRITICAL - Update Emoji List to Latest Unicode Standard:**
+- Current emoji array is missing newer emojis (e.g., 🫟 "jar" from Unicode 15.1)
+- Need to update the full emoji array with latest Unicode 15.1 emojis
+- Sources to check:
+  1. Unicode Consortium official emoji list: https://unicode.org/emoji/charts/full-emoji-list.html
+  2. Emojipedia's new emojis: https://emojipedia.org/emoji-15.1
+  3. The emoji-data repo might have updates we haven't pulled
+  
+**Missing Emoji Examples (need to add):**
+- 🫟 (jar)
+- 🫎 (moose) 
+- 🫏 (donkey)
+- 🪽 (wing)
+- 🪿 (goose)
+- 🪼 (jellyfish)
+- 🫚 (ginger root)
+- 🪻 (hyacinth)
+- 🫛 (pea pod)
+- 🪭 (folding hand fan)
+- 🪮 (hair pick)
+- 🪯 (khanda)
+- 🪇 (maracas)
+- 🪈 (flute)
+- 🪉 (coin)
+- 🪊 (identification card)
+
+**Action Items:**
+1. [ ] Check emoji-data repo for updates
+2. [ ] Cross-reference with Unicode 15.1 official list
+3. [ ] Update emojiArray in `apps/emoji.today/src/lib/emojis.ts`
+4. [ ] Run download script again for any new emojis
+5. [ ] Test that all new emojis render correctly
+
+**Note:** This is critical for launch - users will expect to see and vote for the latest emojis!
+
+### Emoji Asset Storage Architecture (2025-01-27)
+
+**Current Setup:**
+- Using `iamcal/emoji-data` GitHub repo as CDN via raw.githubusercontent.com
+- Loading Apple-style emoji images (160px) dynamically
+- URL pattern: `https://raw.githubusercontent.com/iamcal/emoji-data/master/img-apple-160/{emoji-code}.png`
+
+**Problems with Current Approach:**
+1. GitHub rate limits will kill us with traffic
+2. External dependency for core functionality
+3. No control over caching/optimization
+4. Potential CORS issues
+5. Can't customize or filter emoji set
+
+**Proposed Local Storage Solution:**
+
+**Option 1: Full Local Storage**
+- Clone emoji-data repo's image assets
+- Store in `packages/emoji-assets/`
+- Structure:
+  ```
+  packages/
+    emoji-assets/
+      images/
+        apple-160/  (all PNG files)
+      data/
+        emoji-list.json (curated list)
+        categories.json (for filtering)
+      index.ts (export utilities)
+  ```
+- Pros: Full control, no external deps, can optimize
+- Cons: Larger repo size (~50-100MB for images)
+
+**Option 2: Build-Time Optimization**
+- Download only emojis we need during build
+- Create optimized WebP versions
+- Generate sprite sheets for better performance
+- Store in `public/emojis/`
+
+**Option 3: Hybrid Approach**
+- Store curated subset locally (most popular ~500 emojis)
+- Lazy-load others from CDN as fallback
+- Use Next.js Image optimization
+
+**Recommended Approach: Option 1 + Optimizations**
+1. Clone emoji assets locally
+2. Create build script to:
+   - Convert to WebP for smaller size
+   - Generate multiple sizes (64px, 128px, 256px)
+   - Create sprite sheets for grid view
+3. Use Next.js static imports for better caching
+4. Implement emoji data service with:
+   - Category filtering
+   - Search functionality
+   - Popularity tracking
+
+**Implementation Steps:**
+1. Create `packages/emoji-assets` package
+2. Write script to download emoji-data images
+3. Set up image optimization pipeline
+4. Update `getEmojiImageUrl` to use local paths
+5. Add emoji metadata (categories, keywords, etc.)
+
+### Emoji Asset Migration Status (2025-01-27)
+
+**Completed:**
+1. ✅ Created `packages/emoji-assets` package structure
+2. ✅ Implemented download script for 587 popular emojis from emoji-data repo
+3. ✅ Downloaded all emoji images successfully (apple-160 style)
+4. ✅ Created emoji metadata JSON with emoji character, codepoint, and filename mappings
+5. ✅ Created symlink from Next.js public folder to emoji assets (`/emoji-assets/`)
+6. ✅ Updated `getEmojiImageUrl()` to use local paths instead of GitHub CDN
+7. ✅ Added emoji-assets package as dependency to main app
+8. ✅ Created utility functions: `getCuratedEmojis()`, `getRandomEmojis()` now uses curated list
+
+**Benefits Achieved:**
+- No more GitHub rate limiting concerns
+- Full control over emoji selection and curation
+- Faster loading times (local assets)
+- Can now optimize images (WebP, different sizes) in future
+- Foundation for category/search functionality
+
+**Next Steps for Emoji Assets:**
+- [ ] Implement image optimization (WebP conversion, multiple sizes)
+- [ ] Add emoji categories and keywords for filtering
+- [ ] Create sprite sheets for grid view performance
+- [ ] Add search functionality
+- [ ] Consider adding more emojis based on usage patterns
+
+### Emoji Asset Architecture Explained (2025-01-27)
+
+**Current Coverage:**
+- Downloaded: **1,723 emoji images** ✅
+- Full emoji array: 1,728 emojis total
+- Coverage: **99.7% of all possible emojis** 🎉
+
+**Full Coverage Achieved! (2025-01-27)**
+- Successfully downloaded ALL emojis from the emoji-data repository
+- Total download size: ~35-40MB (very reasonable)
+- Every emoji in the app now has a local image asset
+- Complete independence from GitHub CDN
+- No more rate limiting concerns ever!
+
+**What is a Symlink?**
+A symlink (symbolic link) is like a shortcut or alias that points to another file or folder. In our case:
+- The actual emoji images live in: `packages/emoji-assets/images/apple-160/`
+- We created a symlink at: `apps/emoji.today/public/emoji-assets`
+- This symlink points to the images folder, so when the browser requests `/emoji-assets/apple-160/1f600.png`, it actually serves the file from the packages folder
+
+**How the Architecture Works:**
+
+1. **Package Structure** (`packages/emoji-assets/`):
+   ```
+   emoji-assets/
+   ├── images/
+   │   └── apple-160/        # 566 PNG files (160x160px)
+   ├── data/
+   │   └── emoji-metadata.json  # Maps emoji → filename
+   ├── scripts/
+   │   └── download-emojis.ts   # Downloads from GitHub
+   └── src/
+       └── index.ts          # Exports POPULAR_EMOJIS array
+   ```
+
+2. **Image Path Resolution**:
+   - Emoji character: "😀"
+   - Convert to codepoint: "1f600"
+   - Image path: `/emoji-assets/apple-160/1f600.png`
+   - Served via symlink from packages folder
+
+3. **Current Limitations**:
+   - Only have ~566 emojis downloaded (the most popular ones)
+   - Missing ~1,162 emojis from the full set
+   - Will show broken images for emojis not in our curated list
+
+**To Get Full Coverage:**
+
+Option 1: Download ALL emojis (recommended for production):
+```bash
+# Modify download-emojis.ts to use the full emojiArray
+# This will download all 1,728 emoji images (~30-50MB total)
+```
+
+Option 2: Hybrid approach:
+```typescript
+// Fallback to native emoji rendering if image not found
+if (imageExists) {
+  return <Image src={localPath} />
+} else {
+  return <span>{emoji}</span>
+}
+```
+
+Option 3: On-demand downloading:
+- Keep popular emojis local
+- Fetch missing ones from CDN on first use
+- Cache them locally
+
+**Benefits of Current Architecture:**
+1. **No rate limiting** - GitHub won't throttle us
+2. **Faster loading** - Local assets, no network requests
+3. **Reliability** - No external dependencies
+4. **Customization** - Can optimize images, create sprite sheets
+5. **Control** - Choose exactly which emojis to support
+
+**Next Steps for Full Coverage:**
+1. Update `POPULAR_EMOJIS` in download script to use full `emojiArray`
+2. Run download script again (will take ~10-20 minutes)
+3. Test with edge case emojis (flags, compound emojis, etc.)
+4. Consider implementing fallback for missing emojis
+
+### Open Questions
+
+## Current tasks
+- [x] Create backup of current mini app as `mini-app-reference` - Done: Created backup
+- [x] Set up Supabase project with Phase 1 schema - Done: Created tables and TypeScript types
+- [x] Set up shared Tailwind config - Done: Created @emoji-today/tailwind-config package
+- [x] Build authentication components - Done: Created AuthWrapper, SignIn, and UserWelcome components
+- [x] Replace Demo component with emoji.today UI - Done: Updated app.tsx with proper homepage
+- [x] Build emoji selector component - Done: Created voting flow components
+- [x] Implement voting flow - Done: Full voting flow implemented
+- [x] Create jobs directory with vote tallying scripts - Done: Created robust, stateless vote tallying system
+- [ ] Create results display (must vote to see)
+- [ ] Build share functionality
+
+## Notes
+
+### 2025-01-30: Jobs System Complete - Stateless Architecture Insight
+
+#### Major Architectural Breakthrough
+Realized and implemented a **stateless, date-based architecture** for vote tallying:
+
+**Key Insight**: The system doesn't need "preparation" or state management. It's pure:
+- `SELECT * FROM votes WHERE vote_date = '2025-01-30'`
+- Scripts can run at any time and get identical results
+- No complex state, no preparation steps, no timing dependencies
+
+#### Completed Jobs System
+1. **Vote Tallying Script** (`tally-votes.ts`)
+   - Accepts date arguments: `npx tsx src/tally-votes.ts 2025-01-30`
+   - Smart tie-breaking: emoji with latest average vote time wins
+   - Stateless: can run anytime, gets same results
+   - UTC-based timestamp calculations
+
+2. **Daily Reset Script** (`daily-reset.ts`)
+   - Simplified to just finalize yesterday's votes
+   - Removed unnecessary "preparation" logic
+   - Runs at midnight UTC, processes the day that just ended
+
+3. **Tie-Breaking Logic** 
+   - Calculates average seconds since midnight UTC for tied emojis
+   - Awards victory to emoji whose votes came later in the day
+   - Clear logging shows timing breakdown
+   - Tested and working perfectly
+
+#### Technical Achievements
+- ✅ All dates use UTC for consistency across platform
+- ✅ Smart tie-breaking based on vote timing
+- ✅ Stateless scripts that are resilient to re-runs
+- ✅ Comprehensive testing with fake data generation
+- ✅ Clean, maintainable codebase
+
+#### Test Results
+- Created tie scenario: 🔥 (avg 4 AM) vs 😂 (avg 8 PM)
+- 😂 correctly won tie due to later average vote time
+- Daily reset correctly handles midnight UTC timing
+- Scripts work with any date argument
+
+### 2025-01-29: Consolidation to emoji.today
+
+#### Major Changes
+- Removed staging.emoji.today workspace
+- Consolidated everything into emoji.today app
+- Created jobs directory with vote tallying scripts
+
+#### Jobs Directory Created
+Created `/apps/jobs` with:
+1. **Vote Tallying Script** (`tally-votes.ts`)
+   - Counts votes for any given day
+   - Determines winning emoji
+   - Updates daily_results table
+   - Placeholder for social media posting
+   
+2. **Daily Reset Script** (`daily-reset.ts`)
+   - Runs at midnight UTC
+   - Finalizes previous day's voting
+   - Creates new voting period
+   - Announces winners
+
+3. **Date Utilities** (`lib/date-utils.ts`)
+   - Global UTC timezone for consistency
+   - Shared utilities for date handling
+   - Prevents timezone issues across the platform
+
+#### Key Technical Decisions
+- All dates use UTC timezone
+- Scripts can be run manually or via cron (Railway)
+- Service key needed for admin access in jobs
+
+### 2025-01-28: Development Progress
+
+#### Architecture Update
+Decided to consolidate into single app architecture:
+- Wednesday: Build on staging.emoji.today
+- Thursday: Merge everything into single app, create staging branch
+- Friday: Deploy to production
+
+Single app will handle:
+- Public pages (homepage, date archives)
+- Protected actions (voting requires auth)
+- Auth handled at component level with AuthWrapper
+
+#### Components Built
+1. **AuthWrapper**: Handles auth state and shows sign-in UI when needed
+2. **SignIn**: Farcaster authentication flow
+3. **UserWelcome**: Shows welcome message for authenticated users
+4. **Shared Tailwind Config**: Consistent styling across apps
+
+#### UI/UX Decisions
+- Using emoji.today's existing UI (spent time perfecting it)
+- Satoshi font for consistent branding
+- Dark theme with brand colors
+- Smooth animations and transitions
+
+#### Technical Implementation
+- Fixed FrameProvider context access issue
+- Set up proper TypeScript types for Supabase
+- Configured shared Tailwind with brand colors
+- Copied assets (images, fonts) from emoji.today
+
+### 2025-01-27: Major Product Refinement
+
+#### Phase 1/Phase 2 Split Decision
+Due to Friday launch deadline, splitting into two phases:
+
+**Phase 1 (MVP - Launch Friday):**
+- Free voting only (no payments)
+- Core voting loop with Farcaster auth
+- One vote per person per day
+- Must vote to see results (FOMO mechanic)
+- Basic share cards
+- Automated social posts
+
+**Phase 2 (Post-Launch):**
+- $1 "mint your vote" option
+- NFT minting of winning emoji
+- 24-hour auctions
+- Raffle/rewards pool
+- Streak tracking
+- Enhanced social features
+
+#### Key Product Insights
+- "You must vote to see results" creates FOMO and engagement
+- Share cards show you voted but not what (mystery/intrigue)
+- Frame as historical social experiment
+- Make voting feel dramatic and important
+
+#### Technical Architecture
+- Single domain: emoji.today (marketing + mini app)
+- Supabase for database
+- Railway for cron jobs in /apps/jobs
+- Pseudo-live results (cron job updates every 5 mins)
+
+#### User Flow Summary
+1. Land on emoji.today → Auth with Farcaster
+2. Voting screen with thoughtful prompts
+3. Confirmation screen emphasizing one vote per day
+4. Success screen with share trigger
+5. Results visible only after voting
+
+### 2025-01-27: Technical Setup Progress
+
+#### Completed Setup Tasks
+1. Created backup of vote.emoji.today as mini-app-reference
+2. Fixed workspace naming conflict (changed backup package name)
+3. Connected to existing Supabase project (lgkbapfskatvfrsnxcys)
+4. Verified Phase 1 database schema already exists
+5. Installed @supabase/supabase-js using yarn workspace
+6. Created Supabase client with generated TypeScript types
+
+#### Supabase Credentials (for .env.local)
+- URL: https://lgkbapfskatvfrsnxcys.supabase.co
+- Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxna2JhcGZza2F0dmZyc254Y3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzMDA3MTIsImV4cCI6MjA2Mzg3NjcxMn0.Wt6RfLApFJ0emn3PeY9gQfagXsL9uht7O7rm8evWjbg
+
+#### Next Steps
+- Build results display component
+- Implement share functionality
+- Deploy to Railway for cron jobs
+
+## Resolved questions
+- ~~Timezone for daily reset (ET vs UTC?)~~ **✅ UTC**
+- ~~Which emoji library/source to use?~~ **✅ Using existing emoji-assets package**
+- ~~Vote tallying system design~~ **✅ Stateless, date-based with smart tie-breaking**
+
+## Remaining questions
+- Exact share card copy and design
+- Automated social post schedule and copy
+
+## Things to come back to later
+- Payment processing integration
+- Smart contract development
+- NFT minting and auction mechanics
+- Legal review for raffle mechanics
+- iOS app development
+- Full content engine strategy

@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center text-white px-4 text-center py-10">
+    <div className="flex flex-col items-center justify-center text-white px-4 text-center pt-24">
       <div className="mb-8">
         <Image
           src="/images/sad.svg"
@@ -12,7 +12,7 @@ export default function NotFound() {
           height={200}
         />
       </div>
-      <h1 className="text-8xl font-bold mb-10">404</h1>
+      <h1 className="text-4xl font-bold mb-10">404</h1>
       <Link
         href="/"
         className="inline-flex items-center text-gray-400 hover:text-white font-medium transition-colors duration-150 ease-in-out group focus:outline-none focus:ring-1 focus:ring-gray-600 rounded-md px-2 py-1"

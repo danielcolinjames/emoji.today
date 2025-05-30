@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --font-geist-mono: var(--font-geist-mono);
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -26,7 +30,7 @@ body {
 
 /* Ensures dark mode is always on */
 html {
-  background-color: #000; /* Or any dark background you prefer */
+  background-color: #050505; /* Or any dark background you prefer */
 }
 
 /* Applying the dark class to the root element */
@@ -49,6 +53,19 @@ html.dark {
   50% {
     transform: translateX(-50%);
   }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
 }
 
 ::-moz-selection {
