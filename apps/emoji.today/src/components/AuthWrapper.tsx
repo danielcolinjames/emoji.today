@@ -2,8 +2,6 @@
 
 import { useSession } from "next-auth/react";
 import { useFrame } from "./providers/FrameProvider";
-import { Button } from "./ui/Button";
-import { SignIn } from "./SignIn";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import LoadingSpinner from "./LoadingSpinner";

@@ -199,7 +199,7 @@ export default function NewHomePage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center text-white bg-[#050505] pt-4 sm:pt-10 md:pt-12 lg:pt-16">
+    <div className="min-h-screen flex flex-col items-center justify-between text-white bg-[#050505] pt-4 sm:pt-10 md:pt-12 lg:pt-16">
       {/* Main Content Area */}
       <main className="flex flex-col items-center justify-start flex-grow w-full container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl lg:max-w-6xl xl:max-w-7xl">
 
@@ -331,21 +331,30 @@ export default function NewHomePage() {
             )}
           </button>
 
-          {/* Legacy text moved below the button */}
-          <p className="text-sm sm:text-base md:text-lg text-neutral-600 font-geist-mono mt-2 sm:mt-4 text-center max-w-[380px] mx-auto">
-            Today&apos;s legacy is on the line.
-          </p>
+          {/* Legacy text or Terms text based on context and auth status */}
+          {context && status !== "authenticated" ? (
+            <p className="text-xs text-neutral-600 text-center mt-2 sm:mt-4 font-geist-mono max-w-[220px] mx-auto">
+              By signing in, you accept our{" "}
+              <a href="/terms-and-conditions" className="text-neutral-500 hover:text-neutral-400 hover:underline transition-colors">
+                Terms and Conditions
+              </a>
+            </p>
+          ) : (
+            <p className="text-sm sm:text-base md:text-lg text-neutral-600 font-geist-mono mt-2 sm:mt-4 text-center max-w-[380px] mx-auto">
+              Today&apos;s legacy is on the line.
+            </p>
+          )}
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="flex flex-col items-center justify-center w-full pt-4 md:pt-20 gap-4 md:gap-6 pb-2 sm:pb-4">
-        <div className="flex space-x-4 sm:space-x-8 items-center">
+      {/* Footer - Sticky to bottom */}
+      <footer className="flex flex-col items-center justify-center w-full py-4 md:py-6">
+        <div className="flex space-x-6 md:space-x-4 items-center">
           <a href="https://farcaster.xyz/emojitoday" target="_blank" rel="noopener noreferrer">
-            <img src="/images/farcaster-white.svg" alt="Farcaster" className="h-[26px] sm:h-[42px] w-auto" />
+            <img src="/images/farcaster-white.svg" alt="Farcaster" className="h-[26px] md:h-[24px] w-auto opacity-70 hover:opacity-100 transition-opacity" />
           </a>
           <a href="https://x.com/emoji_today" target="_blank" rel="noopener noreferrer">
-            <img src="/images/x-white.svg" alt="X" className="h-[24px] sm:h-[40px]" />
+            <img src="/images/x-white.svg" alt="X" className="h-[24px] md:h-[22px] opacity-70 hover:opacity-100 transition-opacity" />
           </a>
         </div>
       </footer>
