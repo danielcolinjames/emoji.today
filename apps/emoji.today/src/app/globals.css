@@ -30,7 +30,7 @@ body {
 
 /* Ensures dark mode is always on */
 html {
-  background-color: #000; /* Or any dark background you prefer */
+  background-color: #050505; /* Or any dark background you prefer */
 }
 
 /* Applying the dark class to the root element */
