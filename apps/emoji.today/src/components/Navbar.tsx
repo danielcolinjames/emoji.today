@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { VotingCountdown } from "./VotingCountdown";
 import { getCurrentVotingDay, formatDateForDB } from "@/lib/date-utils";
+import { clearSessionAndSignOut } from "./AuthWrapper";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -205,14 +206,12 @@ export function Navbar() {
                     onClick={async () => {
                       setIsMenuOpen(false);
                       try {
-                        // Sign out first to clear session immediately
-                        await signOut({ redirect: false });
-                        // Then navigate to home
-                        router.push('/');
+                        // Use enhanced logout that clears all session data
+                        await clearSessionAndSignOut();
                       } catch (error) {
                         console.error('Logout error:', error);
-                        // Navigate anyway in case of error
-                        router.push('/');
+                        // Force reload as fallback
+                        window.location.href = '/';
                       }
                     }}
                     className="block w-full text-left px-4 py-2 text-sm text-neutral-300 hover:bg-white/10 transition-colors border-t border-neutral-700"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useFrame } from "./providers/FrameProvider";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -11,6 +11,40 @@ interface AuthWrapperProps {
   requireAuth?: boolean;
   fallback?: React.ReactNode;
 }
+
+// Enhanced signOut function that clears all session data
+export const clearSessionAndSignOut = async () => {
+  // Clear all NextAuth cookies
+  document.cookie.split(";").forEach((c) => {
+    const eqPos = c.indexOf("=");
+    const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+    if (name.trim().includes('next-auth')) {
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;";
+      // Also clear for different paths and domains
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + window.location.hostname;
+    }
+  });
+
+  // Clear localStorage and sessionStorage
+  localStorage.clear();
+  sessionStorage.clear();
+
+  // Clear any iframe cookies (for Farcaster)
+  try {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'CLEAR_COOKIES' }, '*');
+    }
+  } catch (e) {
+    // Ignore cross-origin errors
+  }
+
+  // Sign out with NextAuth
+  await signOut({ redirect: false });
+
+  // Force a hard reload to clear any cached state
+  window.location.href = '/';
+};
 
 export function AuthWrapper({
   children,
@@ -51,7 +85,7 @@ export function AuthWrapper({
     );
   }
 
-  // Authenticated - show navbar and children
+  // Authenticated - show children
   return (
     <>
       {children}
