@@ -13,6 +13,7 @@ import { useFrame } from "@/components/providers/FrameProvider";
 import { getVotingResults } from "@/lib/actions";
 import { ArrowRight } from 'lucide-react';
 import { VotingCountdown } from '@/components/VotingCountdown';
+import { getCurrentVotingDay, formatDateForDisplay } from "@/lib/date-utils";
 
 const FADE_DURATION_MS = 500;
 
@@ -198,12 +199,9 @@ export default function NewHomePage() {
     }
   };
 
-  const currentDate = new Date();
-  const formattedDate = currentDate.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  });
+  // Use UTC date from date utils
+  const currentDate = getCurrentVotingDay();
+  const formattedDate = formatDateForDisplay(currentDate);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-between text-white bg-[#050505] pt-4 sm:pt-10 md:pt-12 lg:pt-16">

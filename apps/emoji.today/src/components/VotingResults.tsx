@@ -82,9 +82,9 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   // Sort results by count descending
   const sortedResults = [...results].sort((a, b) => b.count - a.count);
 
-  // Show top 10 or all based on state
-  const visibleResults = showAll ? sortedResults : sortedResults.slice(0, 10);
-  const hasMore = sortedResults.length > 10;
+  // Show top 5 or all based on state
+  const visibleResults = showAll ? sortedResults : sortedResults.slice(0, 5);
+  const hasMore = sortedResults.length > 5;
 
   // const handleShareX = async () => {
   //   if (!userVote) return;
@@ -126,7 +126,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   return (
     <div className="space-y-1 pb-20">
       <p
-        className="text-base text-center font-geist-mono mb-2"
+        className="text-base text-center font-geist-mono mb-2 -mt-2"
         style={{ color: userAccentColor }}
       >
         Now it's time to campaign.
@@ -142,17 +142,19 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
         </button> */}
         <button
           onClick={handleShareFarcaster}
-          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+          className="bg-black text-white font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+          style={{ border: `2px solid ${userAccentColor}aa`, backgroundColor: `${userAccentColor}25` }}
           title="Share on Farcaster"
         >
-          <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" />
+          <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-4 max-h-4" />
         </button>
         <button
           onClick={handleCopyLink}
-          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+          className="bg-black text-white font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
           title="Copy share link"
+          style={{ border: `2px solid ${userAccentColor}aa`, backgroundColor: `${userAccentColor}25` }}
         >
-          <Copy className="w-4 h-4" />
+          <Copy className="max-w-4 max-h-4" />
         </button>
       </div>
       {/* Results - Break out completely to full screen width with right padding */}
@@ -181,9 +183,13 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
           const finalWidth = availableWidth * widthPercent;
 
-          // Check if this is the user's vote
-          const isUserVote = result.emoji === userVote;
-          const otherVoters = result.count - (isUserVote ? 1 : 0);
+          // Check if this is the user's vote - more robust comparison
+          const normalizeEmoji = (emoji: string) => emoji.replace(/\uFE0F/g, "");
+          const isUserVote = result.emoji === userVote ||
+            normalizeEmoji(result.emoji) === normalizeEmoji(userVote);
+
+          // Calculate other voters - ensure this updates with live data
+          const otherVoters = Math.max(0, result.count - (isUserVote ? 1 : 0));
 
           // Convert hex color to rgba with opacity
           const hexToRgba = (hex: string, opacity: number) => {
@@ -195,7 +201,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
           return (
             <div
-              key={result.emoji}
+              key={`${result.emoji}-${result.count}`} // Add count to key to force re-render on updates
               className="flex items-center rounded-r-full border-r border-t border-b relative"
               style={{
                 backgroundColor: hexToRgba(result.accent_color, 1),
@@ -206,14 +212,14 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
 
               {/* Position number - positioned on the left in black text */}
-              <div className="text-xs text-black font-bold font-geist-mono pl-3">
+              <div className="text-xs text-black font-bold font-geist-mono pl-2">
                 {getOrdinal(index + 1)}
               </div>
 
               {/* Vote count container - moved to center area */}
               <div className="flex items-center text-black text-sm pl-4 flex-1 relative">
                 {isUserVote ? (
-                  <span className="text-xs">
+                  <span className="text-xs" key={`user-vote-${result.count}`}>
                     {otherVoters > 0 ? (
                       `You & ${otherVoters} voter${otherVoters !== 1 ? 's' : ''}`
                     ) : (
@@ -237,7 +243,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                     )}
                   </span>
                 ) : (
-                  <span className="text-xs">
+                  <span className="text-xs" key={`other-vote-${result.count}`}>
                     {result.count} voter{result.count !== 1 ? 's' : ''}
                   </span>
                 )}
@@ -260,10 +266,10 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
       {/* View All Button */}
       {hasMore && !showAll && (
-        <div className="text-center mt-4">
+        <div className="text-center mt-6 sm:mt-12">
           <button
             onClick={() => setShowAll(true)}
-            className="text-[#696969] font-medium transition-colors duration-200"
+            className="text-[#696969] transition-colors duration-200"
           >
             View all {sortedResults.length} results ↓
           </button>
@@ -272,12 +278,12 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
       {/* Show Less Button */}
       {showAll && hasMore && (
-        <div className="text-center">
+        <div className="text-center mt-6 sm:mt-12">
           <button
             onClick={() => setShowAll(false)}
-            className="text-[#696969] font-medium transition-colors duration-200"
+            className="text-[#696969] transition-colors duration-200"
           >
-            Show top 10 ↑
+            Show top 5 ↑
           </button>
         </div>
       )}

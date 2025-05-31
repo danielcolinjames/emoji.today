@@ -49,7 +49,7 @@ export function isVotingOpen(votingDay: Date): boolean {
  * Format date for display (e.g., "Wednesday, January 28, 2025")
  */
 export function formatDateForDisplay(date: Date): string {
-  return format(date, "EEEE, MMMM d, yyyy")
+  return format(date, "MMMM d, yyyy")
 }
 
 /**
