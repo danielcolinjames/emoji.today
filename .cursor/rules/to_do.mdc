@@ -9,19 +9,20 @@ alwaysApply: false
 Focus: Core voting loop without payments
 
 ### Immediate Setup Tasks
-- [ ] Create backup of current `vote.emoji.today` as `mini-app-reference`
-- [ ] Set up Supabase project
-- [ ] Create basic database schema (simplified for Phase 1)
+- [x] Create backup of current `vote.emoji.today` as `mini-app-reference`
+- [x] Set up Supabase project
+- [x] Create basic database schema (simplified for Phase 1)
+- [x] Consolidate from staging.emoji.today to emoji.today
 
 ### Phase 1 Database Tables (Supabase)
-- [ ] **users** table
+- [x] **users** table
   - id (uuid, primary key)
   - fid (unique, from Farcaster)
   - username (from Farcaster)
   - created_at
   - updated_at
 
-- [ ] **votes** table
+- [x] **votes** table
   - id (uuid, primary key)
   - user_id (foreign key to users)
   - emoji (string)
@@ -29,7 +30,7 @@ Focus: Core voting loop without payments
   - created_at
   - UNIQUE constraint on (user_id, vote_date)
 
-- [ ] **daily_results** table
+- [x] **daily_results** table
   - id (uuid, primary key)
   - vote_date (date, unique)
   - emoji_votes (jsonb - {emoji: count})
@@ -38,40 +39,40 @@ Focus: Core voting loop without payments
   - finalized_at
   - created_at
 
-### Phase 1 Mini App Development (vote.emoji.today)
-- [ ] **Core Authentication**
-  - [ ] Farcaster sign-in integration
-  - [ ] User creation/retrieval in database
-  - [ ] Basic session management
+### Phase 1 Mini App Development (emoji.today)
+- [x] **Core Authentication**
+  - [x] Farcaster sign-in integration
+  - [x] User creation/retrieval in database
+  - [x] Basic session management
 
-- [ ] **Essential UI Screens**
-  - [ ] Splash screen with emoji.today branding
-  - [ ] Main voting screen
-    - [ ] "What emoji is today?" hero text
-    - [ ] Thoughtful subtitle copy
-    - [ ] Time remaining display
-    - [ ] Current date display
-    - [ ] Emoji search and selection
-    - [ ] "Confirm selection" button
-  - [ ] Vote confirmation screen
-  - [ ] Vote success screen with share option
+- [x] **Essential UI Screens**
+  - [x] Splash screen with emoji.today branding
+  - [x] Main voting screen
+    - [x] "What emoji is today?" hero text
+    - [x] Thoughtful subtitle copy
+    - [x] Time remaining display
+    - [x] Current date display
+    - [x] Emoji search and selection
+    - [x] "Confirm selection" button
+  - [x] Vote confirmation screen
+  - [x] Vote success screen with share option
   - [ ] Results view (after voting only)
   - [ ] Clean up terms of service page (add back to home button, improve content)
 
-- [ ] **Emoji System**
-  - [ ] Define emoji list/library to use
-  - [ ] Implement search functionality
-  - [ ] Ensure consistent display across platforms
+- [x] **Emoji System**
+  - [x] Define emoji list/library to use
+  - [x] Implement search functionality
+  - [x] Ensure consistent display across platforms
 
 ### Phase 1 Cron Jobs (Railway)
-- [ ] Create `/apps/jobs` folder structure
-- [ ] **Results Updater** (runs every 5 minutes)
-  - [ ] Calculate current vote tallies
-  - [ ] Update daily_results table
-- [ ] **Daily Reset Job** (runs at midnight ET/UTC - TBD)
-  - [ ] Finalize previous day's results
-  - [ ] Determine winning emoji
-  - [ ] Create new day's voting period
+- [x] Create `/apps/jobs` folder structure
+- [x] **Results Updater** (runs every 5 minutes)
+  - [x] Calculate current vote tallies
+  - [x] Update daily_results table
+- [x] **Daily Reset Job** (runs at midnight UTC)
+  - [x] Finalize previous day's results
+  - [x] Determine winning emoji
+  - [x] Create new day's voting period
 
 ### Phase 1 Social Features
 - [ ] **Share Cards**
@@ -79,7 +80,7 @@ Focus: Core voting loop without payments
   - [ ] "I voted on emoji.today" messaging (without revealing choice)
   - [ ] Implement share to Farcaster
   
-- [ ] **Automated Posts**
+- [ ] **Automated Posts** (placeholders ready in jobs)
   - [ ] X/Twitter bot setup
   - [ ] Farcaster bot setup
   - [ ] Daily opening post: "Today's voting period is now open..."
@@ -87,9 +88,9 @@ Focus: Core voting loop without payments
   - [ ] Link to historical results page
 
 ### Phase 1 Landing Page (emoji.today)
-- [ ] Simple marketing page
-- [ ] "Open in Farcaster" button
-- [ ] Brief explanation of concept
+- [x] Simple marketing page
+- [ ] "Open in Farcaster" button (update to handle auth flow)
+- [x] Brief explanation of concept
 - [ ] Link to results/history
 
 ### Phase 1 Testing & Polish
@@ -173,8 +174,8 @@ Focus: Monetization, NFTs, and sophisticated features
 ## Technical Decisions for Phase 1
 
 ### Priority Decisions (Need answers ASAP)
-1. **Timezone**: Midnight ET or UTC for daily reset?
-2. **Emoji Library**: Which source? How to ensure consistency?
+1. **Timezone**: ✅ UTC for daily reset
+2. **Emoji Library**: ✅ Using existing emoji-assets package
 3. **Results Display**: Live updates or refresh button?
 4. **Share Copy**: Exact wording for share cards?
 
@@ -205,12 +206,12 @@ Focus: Monetization, NFTs, and sophisticated features
 ---
 
 ## Friday Launch Checklist
-- [ ] Core voting flow working end-to-end
-- [ ] Farcaster authentication functional
-- [ ] Database storing votes correctly
-- [ ] Daily reset working
+- [x] Core voting flow working end-to-end
+- [x] Farcaster authentication functional
+- [x] Database storing votes correctly
+- [x] Daily reset working (scripts ready)
 - [ ] Share cards generating properly
 - [ ] Automated social posts configured
 - [ ] Basic error handling in place
-- [ ] Deployed and accessible via vote.emoji.today
-- [ ] Marketing page live at emoji.today
+- [ ] Deployed and accessible via emoji.today
+- [ ] Marketing page updated for voting flow

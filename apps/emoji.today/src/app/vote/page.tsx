@@ -153,15 +153,7 @@ function VotePageContent() {
       case 'review':
         return "Now let's hope nothing crazy happens.";
       case 'results':
-        if (hasVoted && totalVotes > 0) {
-          const otherVoters = totalVotes - 1;
-          if (otherVoters === 0) {
-            return "You're the first voter today. Nice!";
-          } else {
-            return `You and ${otherVoters} other${otherVoters !== 1 ? 's' : ''} did your civic duty.`;
-          }
-        }
-        return "Loading results...";
+        return "The race is on!";
       default:
         return undefined;
     }

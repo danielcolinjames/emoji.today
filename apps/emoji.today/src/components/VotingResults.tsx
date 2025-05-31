@@ -125,6 +125,22 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
   return (
     <div className="space-y-1 pb-20">
+      {/* Live civic duty subtitle */}
+      <div className="text-center mb-6 -mt-4">
+        <p className="text-neutral-400 text-lg font-light">
+          {(() => {
+            if (!data || !totalVotes) return "Loading...";
+
+            const otherVoters = totalVotes - 1;
+            if (otherVoters === 0) {
+              return "You're the first voter today. Nice!";
+            } else {
+              return `You and ${otherVoters} other${otherVoters !== 1 ? 's' : ''} did your civic duty.`;
+            }
+          })()}
+        </p>
+      </div>
+
       <p
         className="text-base text-center font-geist-mono mb-2 -mt-2"
         style={{ color: userAccentColor }}
