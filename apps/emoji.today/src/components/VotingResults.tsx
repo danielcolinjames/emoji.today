@@ -12,7 +12,7 @@ interface VotingResultsProps {
 
 export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const [showAll, setShowAll] = useState(false);
-  const { data, error, isLoading, isValidating, refresh, getTimeSinceUpdate } = useLiveVotingResults();
+  const { data, error, isLoading, isValidating, refresh, getTimeSinceUpdate } = useLiveVotingResults(showAll ? undefined : 5);
 
   // Helper function to convert number to ordinal
   const getOrdinal = (num: number): string => {
@@ -79,12 +79,19 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const userEmojiData = findUserEmojiData(userVote, results);
   const userAccentColor = userEmojiData?.accent_color || '#FFFFFF';
 
-  // Sort results by count descending
-  const sortedResults = [...results].sort((a, b) => b.count - a.count);
+  // All results are already sorted and limited by the API
+  const visibleResults = results;
+  const hasMore = !showAll && results.length >= 5; // Assume there are more if we got exactly 5
 
-  // Show top 5 or all based on state
-  const visibleResults = showAll ? sortedResults : sortedResults.slice(0, 5);
-  const hasMore = sortedResults.length > 5;
+  // Check if user's vote is in the visible results
+  const userVoteInVisible = visibleResults.some(result => {
+    const normalizeEmoji = (emoji: string) => emoji.replace(/\uFE0F/g, "");
+    return result.emoji === userVote ||
+      normalizeEmoji(result.emoji) === normalizeEmoji(userVote);
+  });
+
+  // Show ghost indicator if user's vote is not in visible results but there are more results
+  const showGhostIndicator = hasMore && !userVoteInVisible;
 
   // const handleShareX = async () => {
   //   if (!userVote) return;
@@ -265,19 +272,23 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
       </div>
 
       {/* View All Button */}
-      {hasMore && !showAll && (
+      {hasMore && (
         <div className="text-center mt-6 sm:mt-12">
           <button
             onClick={() => setShowAll(true)}
-            className="text-[#696969] transition-colors duration-200"
+            className="text-[#696969] hover:text-white transition-colors duration-200 flex items-center justify-center gap-2 mx-auto"
           >
-            View all {sortedResults.length} results ↓
+            <span>View all results</span>
+            {showGhostIndicator && (
+              <span className="text-sm opacity-60">{userVote}</span>
+            )}
+            <span>↓</span>
           </button>
         </div>
       )}
 
       {/* Show Less Button */}
-      {showAll && hasMore && (
+      {showAll && (
         <div className="text-center mt-6 sm:mt-12">
           <button
             onClick={() => setShowAll(false)}

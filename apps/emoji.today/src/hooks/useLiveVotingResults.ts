@@ -19,25 +19,31 @@ export interface LiveVotingResultsData {
   lastUpdated: string
 }
 
-const fetcher = async (): Promise<LiveVotingResultsData | null> => {
+const fetcher = async (
+  limit?: number
+): Promise<LiveVotingResultsData | null> => {
   try {
-    return await getLiveVotingResults()
+    return await getLiveVotingResults(limit)
   } catch (error) {
     console.error("Error fetching live results:", error)
     throw error
   }
 }
 
-export function useLiveVotingResults() {
+export function useLiveVotingResults(limit?: number) {
   const { data, error, mutate, isLoading, isValidating } =
-    useSWR<LiveVotingResultsData | null>("live-voting-results", fetcher, {
-      refreshInterval: 10000, // Refresh every 10 seconds
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      dedupingInterval: 5000, // Prevent duplicate requests within 5 seconds
-      errorRetryCount: 3,
-      errorRetryInterval: 2000,
-    })
+    useSWR<LiveVotingResultsData | null>(
+      limit ? `live-voting-results-${limit}` : "live-voting-results",
+      () => fetcher(limit),
+      {
+        refreshInterval: 10000, // Refresh every 10 seconds
+        revalidateOnFocus: true,
+        revalidateOnReconnect: true,
+        dedupingInterval: 5000, // Prevent duplicate requests within 5 seconds
+        errorRetryCount: 3,
+        errorRetryInterval: 2000,
+      }
+    )
 
   const refresh = () => mutate()
 
