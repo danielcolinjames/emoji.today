@@ -280,7 +280,7 @@ export default function NewHomePage() {
 
           <button
             onClick={handleButtonClick}
-            disabled={isSigningIn}
+            disabled={isSigningIn || isCheckingVote}
             className="flex items-center justify-center py-4 px-8 sm:py-5 sm:px-12 rounded-full text-2xl transition-all duration-300 w-full cursor-pointer disabled:opacity-50"
             style={{
               backgroundColor: emojiColor,
@@ -288,7 +288,7 @@ export default function NewHomePage() {
               transition: 'background-color 300ms ease-in-out, color 300ms ease-in-out'
             }}
           >
-            {isSigningIn ? (
+            {isSigningIn || isCheckingVote ? (
               <Image
                 src="/images/logo-white.svg"
                 alt="Loading"
