@@ -155,15 +155,43 @@ export async function generateMintSignature(
       },
     })
 
+    // Debug: Log the actual signature payload
+    console.log("=== MINT SIGNATURE DEBUG ===")
+    console.log("Raw payload:", mintSignature.payload)
+    console.log("Payload price field:", mintSignature.payload.price)
+    console.log("Payload price type:", typeof mintSignature.payload.price)
+    console.log("=============================")
+
+    // Fix: Better BigInt serialization that preserves the actual values
+    const serializePayload = (obj: any): any => {
+      if (typeof obj === "bigint") {
+        return obj.toString()
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(serializePayload)
+      }
+      if (obj && typeof obj === "object") {
+        const result: any = {}
+        for (const [key, value] of Object.entries(obj)) {
+          result[key] = serializePayload(value)
+        }
+        return result
+      }
+      return obj
+    }
+
+    const serializedPayload = serializePayload(mintSignature.payload)
+
+    console.log("=== SERIALIZED PAYLOAD DEBUG ===")
+    console.log("Serialized payload:", serializedPayload)
+    console.log("Serialized price field:", serializedPayload.price)
+    console.log("=================================")
+
     // Store mint record in database
     const { error: insertError } = await supabase.from("vote_nfts").insert({
       vote_id: vote.id,
       wallet_address: walletAddress,
-      signature_payload: JSON.parse(
-        JSON.stringify(mintSignature.payload, (key, value) =>
-          typeof value === "bigint" ? value.toString() : value
-        )
-      ),
+      signature_payload: serializedPayload,
       signature: mintSignature.signature,
       mint_price_usdc: 0.001, // 0.001 ETH
     })

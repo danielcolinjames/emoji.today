@@ -9,7 +9,8 @@
     "clear-fake-votes": "tsx src/clear-fake-votes.ts",
     "populate-missing-emojis": "tsx src/populate-missing-emojis.ts",
     "debug-emoji-storage": "tsx src/debug-emoji-storage.ts",
-    "build": "tsc",
+    "build": "tsc --skipLibCheck",
+    "build:core": "tsc --skipLibCheck src/tally-votes.ts src/daily-reset.ts src/lib/*.ts --outDir dist",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -17,7 +18,8 @@
     "@supabase/supabase-js": "^2.38.4",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "node-vibrant": "^3.1.6"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",

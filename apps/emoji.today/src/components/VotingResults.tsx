@@ -103,8 +103,8 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
     const today = new Date().toISOString().split('T')[0];
     const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
-    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?\n\n${shareUrl}`);
-    const farcasterUrl = `https://warpcast.com/~/compose?text=${text}`;
+    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji!\n\nWhat emoji do you think best represents today?\n\n${shareUrl}`);
+    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${text}`;
 
     window.open(farcasterUrl, '_blank', 'width=550,height=420');
   };

@@ -3,8 +3,6 @@
 import { SessionProvider } from "next-auth/react"
 import { FrameProvider } from "@/components/providers/FrameProvider"
 import dynamic from "next/dynamic";
-// import { ThirdwebProvider } from "@thirdweb-dev/react";
-// import { getChain } from "@/lib/blockchain";
 import type { Session } from "next-auth"
 
 const WagmiProvider = dynamic(
@@ -14,17 +12,16 @@ const WagmiProvider = dynamic(
   }
 );
 
-export function Providers({ session, children }: { session: Session | null, children: React.ReactNode }) {
-  // const activeChain = getChain();
+// Temporarily disable ThirdwebProvider due to WalletConnect conflicts
+// TODO: Re-enable once WalletConnect dependencies are resolved
+// import { ThirdwebProvider } from "thirdweb/react";
+// import { thirdwebClient } from "@/lib/blockchain";
 
+export function Providers({ session, children }: { session: Session | null, children: React.ReactNode }) {
   return (
     <SessionProvider session={session}>
       <WagmiProvider>
-        {/* Temporarily disabled ThirdwebProvider due to ethers v6 compatibility issues */}
-        {/* <ThirdwebProvider
-          activeChain={activeChain}
-          clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID}
-        > */}
+        {/* <ThirdwebProvider> */}
         <FrameProvider>
           {children}
         </FrameProvider>

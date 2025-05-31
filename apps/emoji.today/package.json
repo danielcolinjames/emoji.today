@@ -12,6 +12,8 @@
     "cleanup": "lsof -ti :3000 | xargs kill -9",
     "clear-vote": "node scripts/clear-votes.js clear",
     "clear-all-votes": "node scripts/clear-votes.js clear-all",
+    "clear-my-vote": "node scripts/clear-my-vote.js",
+    "find-my-fid": "node scripts/find-my-fid.js",
     "reassign-vote": "node scripts/clear-votes.js reassign",
     "migrate-db": "node scripts/migrate-add-fid-and-usernames.js"
   },

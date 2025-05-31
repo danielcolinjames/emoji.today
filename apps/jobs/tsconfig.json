@@ -11,16 +11,23 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "moduleResolution": "node",
-    "allowJs": true,
-    "noEmit": true
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true
   },
   "include": [
     "src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/update-emoji-database.ts",
+    "src/populate-missing-emojis.ts",
+    "src/debug-emoji-storage.ts"
   ]
 }

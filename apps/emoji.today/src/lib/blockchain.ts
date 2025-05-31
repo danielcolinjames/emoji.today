@@ -3,7 +3,7 @@ import { base, baseSepolia } from "thirdweb/chains"
 
 // Create Thirdweb client
 export const thirdwebClient = createThirdwebClient({
-  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
+  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
   secretKey: process.env.THIRDWEB_SECRET_KEY,
 })
 
@@ -18,10 +18,15 @@ export const getChain = () => {
 
 // Contract configuration
 export const NFT_CONTRACT_ADDRESS =
-  process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS!
+  process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || ""
 
 // Get the NFT contract instance
 export const getNFTContract = () => {
+  if (!NFT_CONTRACT_ADDRESS) {
+    console.warn("NFT_CONTRACT_ADDRESS not set")
+    return null
+  }
+
   return getContract({
     client: thirdwebClient,
     chain: getChain(),
