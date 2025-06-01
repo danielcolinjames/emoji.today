@@ -72,3 +72,5 @@ packages/*/.env.*
 apps/emoji.today/public/emoji-assets
 
 .cursor/mcp.json
+
+.cursor/rules/about_daniel.mdc

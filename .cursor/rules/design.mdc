@@ -1,0 +1,17 @@
+---
+description: any time you're making visual or UX design decisions, check here and follow all rules
+globs: 
+alwaysApply: false
+---
+# Design
+
+emoji.today is a carefully designed product, and follows strict guidelines on acceptable UI to ship. we must follow all rules consistently.
+
+- Sentence case.
+  - All UI should speak to the user in short sentences with proper punctuation. It should speak in a confident but fun voice, and everything should be concise and kind of pithy. Ideally there's wordplay or language that leans into the dramatic historical significance of this project, and of each emoji.
+- Rounded—all or nothing.
+  - When rounding corners for a piece of UI, it will almost always look kind of odd if we don't round it all the way. If it's a button, use rounded-full, and look to other examples before making a new one with new choices.
+- Any time there's a loading state, use LoadingSpinner. There are examples of how to have it take up the whole screen if that's the appropriate usage. Or inside a button.
+- Use only colors that are already used throughout the UI. If you have to invent a new color, or it needs red or something, let me know, and tell me how to reproduce the UI you're adding so I can review it.
+- Anything about time and date should use geist-mono and anything else should use satoshi font.
+- Use #050505 as the background color, and only stray from colors we're already using everywhere if you check with me first.

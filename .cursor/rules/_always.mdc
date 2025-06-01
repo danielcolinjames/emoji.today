@@ -1,0 +1,77 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# _always.md
+This doc will be included in every prompt. In this repo, I'll add a local [about_daniel.mdc](mdc:.cursor/rules/about_daniel.mdc) file that you should reference, and gitignore it in case my business partner (Marina) works in here at some point. Assume you're talking to me though (Daniel) and read the above file to understand how best to work with me. If you get the sense you're talking to someone non-technical, or you don't see the @about_daniel.mdc file, it's probably Marina attempting to fix something, so help walk her through it more than you would with me.
+
+In general, ask for clarification before making changes if you're not totally sure about something I'm asking you to do, or that I want help with.
+
+# about the project (emoji.today)
+emoji.today is a daily social voting platform where users vote for the emoji that best represents the day. Think of it as Wordle's daily ritual meets Twitter's social sharing meets crypto's onchain mechanics.
+
+## Why I love the idea so much
+
+### Simple, but infinitely extensible
+- Emojis are the universal language. And they need to reach some level of global significance to become enshrined as one of the symbols. In many ways, they're universal modern hieroglyphs.
+- The branding is simple, elegant, timeless, geometric. Infinitely scalable.
+
+### Culturally significant
+- These could be genuine historical artifacts. What's the story of the day, encapsulated in 1 symbol? That's a cool question.
+
+### Social Mechanics
+- Can't see results without voting (FOMO driver)
+- Share cards show you voted, not what you voted for (mystery/intrigue)
+- Dynamic conversations about which emoji should win
+
+### crypto elements
+- One of the coolest and simplest possible ways to show people outside of crypto why crypto can be so powerful and cool. An opportunity to lead by abstracting all of the crypto stuff but using the best parts of blockchain tech and crypto speculation to fuel something genuinely culturally valuable.
+
+
+## UI elements
+- The navbar has a nice date and time remaining UTC piece that should always be visible
+
+## What's live now
+- Basic landing page, different states:
+  - 1. Outside Farcaster: shows button as "Open in Farcaster"
+  - 2. Inside Farcaster, not auth'd: shows "Sign in with Farcaster"
+  - 3. Inside Farcaster, auth'd, hasn't voted: "Cast your vote"
+  - 4. Inside Farcaster, auth'd, HAS voted: "View results"
+- On Cast your vote screen:
+  - Select an emoji input
+  - Continue button
+- On confirm vote screen:
+  - Are you sure? Confirm vote
+- On review vote screen:
+  - Nice. Share, View results
+- On View results screen:
+  - Look at list of all votes today so far.
+- Dynamic share cards that generate an OG image for each page
+
+# Resources
+- **Supabase**:
+  - For database stuff, you have Supabase MCP access. Use it to read from it, and write to it (if you're absolutely sure that's what I want you to do)
+  - you should only ever write to production emoji.today main branch in supabase if you're absolutely certain that's what I want you to do.
+- backlog.mdc
+
+# About this repo
+Here's the lay of the land:
+- this is a Turborepo monorepo, with a /apps and a /packages directory at root.
+- /apps/emoji.today runs the web app (hosted in Vercel)
+  - This is where I'll spend most of my time and effort for now.
+  - It is a Farcaster mini app.
+- /apps/jobs has a few scheduled tasks that need to run regularly (in Railway)
+- /packages/emoji-assets keeps all emojis in png format
+  - There's /images/apple-80 and /images/apple-160 for 80px and 160px versions relatively. we should use 80 when it won't be too small, for performance, and 160 when it needs to be bigger.
+  - There are some scripts that maintain stuff like a mapping of names for files etc., and can sync stuff to the emojis table in the Supabase database, which is where we store accent color for each emoji, etc.
+- Supabase database for backend
+- `/docs` directory contains `/farcaster-mini-apps`
+  - notes from the Farcaster docs which the `emoji.today` repo is based on (cloned from `mini-app-reference`). Reference these docs where relevant, and also use the Neynar MCP tool.
+
+# How to best work in this repo
+- **Always use yarn** for package management (not npm). yarn to install, yarn to run commands. never use npm.
+- **Always use workspace commands** for installing packages instead of jumping around with cd ../.. and the like.
+  - Example: `yarn workspace staging.emoji.today add [package]`
+- **The start command is `yarn emoji` for `emoji.today` to run locally.** assume I'm probably already running it, or tell me to run it, but don't offer up the command
+- Check design.mdc for design notes when you have to make any UI.
