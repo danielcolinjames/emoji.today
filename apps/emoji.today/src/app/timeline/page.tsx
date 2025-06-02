@@ -23,16 +23,16 @@ interface EmojiData {
 }
 
 export const metadata = {
-  title: 'Timeline | emoji.today',
-  description: 'Timeline | emoji.today',
+  title: 'emoji.today | Timeline',
+  description: 'Every emoji.today',
   openGraph: {
-    title: 'Timeline | emoji.today',
-    description: 'Timeline | emoji.today',
+    title: 'emoji.today | Timeline',
+    description: 'Every emoji.today',
     images: ['/images/timeline-og.png'],
   },
   twitter: {
-    title: 'Timeline | emoji.today',
-    description: 'Timeline | emoji.today',
+    title: 'emoji.today | Timeline',
+    description: 'Every emoji.today',
     images: ['/images/timeline-og.png'],
   },
 }
