@@ -353,7 +353,7 @@ export default function NewHomePage() {
       </main>
 
       {/* Footer - Sticky to bottom */}
-      <footer className="flex flex-col items-center justify-center w-full py-4 md:py-6">
+      <footer className="flex flex-col items-center justify-center w-full pt-4 pb-6 md:py-6">
         <div className="flex space-x-6 md:space-x-4 items-center">
           <Link
             href="/timeline"
