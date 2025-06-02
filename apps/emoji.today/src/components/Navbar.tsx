@@ -55,7 +55,9 @@ export function Navbar() {
   if (!session?.user) {
     // Unauthenticated state: centered logo only
     return (
-      <nav className="fixed top-6 sm:top-10 left-1/2 transform -translate-x-1/2 z-50 bg-[#050505]/80 backdrop-blur-sm rounded-full px-4 py-2">
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/80 backdrop-blur-sm transition-all duration-200 flex justify-center items-center py-4"
+      >
         <Link href="/" className="opacity-80 hover:opacity-100 transition-opacity">
           <Image
             src="/images/logo-white.svg"

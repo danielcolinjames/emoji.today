@@ -649,3 +649,22 @@ export async function getDailyResultsData(
     throw error
   }
 }
+
+export async function getDailySummaries() {
+  try {
+    const { data, error } = await supabase
+      .from("daily_summaries")
+      .select("id, vote_date, winning_emoji, winning_count, total_votes")
+      .order("vote_date", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching daily summaries:", error)
+      throw new Error("Failed to fetch daily summaries")
+    }
+
+    return data || []
+  } catch (error) {
+    console.error("Error in getDailySummaries:", error)
+    throw error
+  }
+}

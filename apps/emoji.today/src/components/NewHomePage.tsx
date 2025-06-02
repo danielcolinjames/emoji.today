@@ -355,11 +355,18 @@ export default function NewHomePage() {
       {/* Footer - Sticky to bottom */}
       <footer className="flex flex-col items-center justify-center w-full py-4 md:py-6">
         <div className="flex space-x-6 md:space-x-4 items-center">
+          <Link
+            href="/timeline"
+            className="text-neutral-600 hover:text-neutral-400 transition-colors text-sm font-geist-mono"
+          >
+            Timeline
+          </Link>
+          <span className="text-neutral-700">•</span>
           <a href="https://farcaster.xyz/emojitoday" target="_blank" rel="noopener noreferrer">
-            <img src="/images/farcaster-white.svg" alt="Farcaster" className="h-[26px] md:h-[24px] w-auto opacity-70 hover:opacity-100 transition-opacity" />
+            <img src="/images/farcaster-white.svg" alt="Farcaster" className="h-[18px] md:h-[18px] w-auto opacity-70 hover:opacity-100 transition-opacity" />
           </a>
           <a href="https://x.com/emoji_today" target="_blank" rel="noopener noreferrer">
-            <img src="/images/x-white.svg" alt="X" className="h-[24px] md:h-[22px] opacity-70 hover:opacity-100 transition-opacity" />
+            <img src="/images/x-white.svg" alt="X" className="h-[16px] md:h-[16px] opacity-70 hover:opacity-100 transition-opacity" />
           </a>
         </div>
       </footer>

@@ -42,6 +42,42 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_summaries: {
+        Row: {
+          id: string
+          vote_date: string
+          winning_emoji: string
+          winning_count: number
+          total_votes: number
+          unique_emojis: number
+          top_5_emojis: Json | null
+          finalized_at: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          vote_date: string
+          winning_emoji: string
+          winning_count: number
+          total_votes: number
+          unique_emojis: number
+          top_5_emojis?: Json | null
+          finalized_at?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          vote_date?: string
+          winning_emoji?: string
+          winning_count?: number
+          total_votes?: number
+          unique_emojis?: number
+          top_5_emojis?: Json | null
+          finalized_at?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       emoji_assets: {
         Row: {
           category: string | null
