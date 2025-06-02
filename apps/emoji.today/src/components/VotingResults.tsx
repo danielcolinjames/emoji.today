@@ -1,7 +1,7 @@
 "use client";
 
 import Emoji from '@/components/Emoji';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLiveVotingResults, type EmojiVoteCount } from '@/hooks/useLiveVotingResults';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Copy } from 'lucide-react';
@@ -11,8 +11,7 @@ interface VotingResultsProps {
 }
 
 export function VotingResults({ userProfileUrl }: VotingResultsProps) {
-  const [showAll, setShowAll] = useState(false);
-  const { data, error, isLoading, isValidating, refresh, getTimeSinceUpdate } = useLiveVotingResults(showAll ? undefined : 5);
+  const { data, error, isLoading, isValidating, refresh, getTimeSinceUpdate } = useLiveVotingResults();
 
   // Helper function to convert number to ordinal
   const getOrdinal = (num: number): string => {
@@ -57,7 +56,6 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const { results, totalVotes, userVote } = data;
 
   // Find the user's emoji data to get the accent color
-  // Handle variation selector mismatches by checking multiple formats
   const findUserEmojiData = (userVote: string, results: EmojiVoteCount[]) => {
     // First try exact match
     let userData = results.find(result => result.emoji === userVote);
@@ -77,42 +75,34 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   };
 
   const userEmojiData = findUserEmojiData(userVote, results);
-  const userAccentColor = userEmojiData?.accent_color || '#FFFFFF';
+  const userAccentColor = userEmojiData?.accent_color || "#FFFFFF";
 
-  // All results are already sorted and limited by the API
-  const visibleResults = results;
-  const hasMore = !showAll && results.length >= 5; // Assume there are more if we got exactly 5
+  // Sort results by count descending
+  const sortedResults = [...results].sort((a, b) => b.count - a.count);
 
-  // Check if user's vote is in the visible results
+  // Show top 5 or all based on state
+  const visibleResults = sortedResults.slice(0, 5);
+
+  // Check if user's vote is in the visible top 5
   const userVoteInVisible = visibleResults.some(result => {
     const normalizeEmoji = (emoji: string) => emoji.replace(/\uFE0F/g, "");
     return result.emoji === userVote ||
       normalizeEmoji(result.emoji) === normalizeEmoji(userVote);
   });
 
-  // Show ghost indicator if user's vote is not in visible results but there are more results
-  const showGhostIndicator = hasMore && !userVoteInVisible;
-
-  // const handleShareX = async () => {
-  //   if (!userVote) return;
-
-  //   const today = new Date().toISOString().split('T')[0];
-  //   const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
-  //   const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`);
-  //   const xUrl = `https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`;
-
-  //   window.open(xUrl, '_blank', 'width=550,height=420');
-  // };
+  // Show user's emoji in button if not in visible results
+  const showUserEmojiInButton = sortedResults.length > 5 && !userVoteInVisible;
 
   const handleShareFarcaster = async () => {
     if (!userVote) return;
 
     const today = new Date().toISOString().split('T')[0];
     const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
-    const text = encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?\n\n${shareUrl}`);
-    const farcasterUrl = `https://warpcast.com/~/compose?text=${text}`;
 
-    window.open(farcasterUrl, '_blank', 'width=550,height=420');
+    // Open Farcaster compose with the share URL
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`)}&embeds[]=${encodeURIComponent(shareUrl)}`;
+
+    window.open(farcasterUrl, '_blank');
   };
 
   const handleCopyLink = async () => {
@@ -123,47 +113,45 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      alert('Share link copied to clipboard!');
-    } catch (error) {
-      console.error('Error copying to clipboard:', error);
-      alert('Failed to copy link');
+      // Could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy:', err);
     }
+  };
+
+  // Convert hex color to rgba with opacity
+  const hexToRgba = (hex: string, opacity: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
   return (
     <div className="space-y-1 pb-20">
       <p
-        className="text-base text-center font-geist-mono mb-2 -mt-2"
+        className="text-base text-center font-geist-mono mb-2"
         style={{ color: userAccentColor }}
       >
         Now it's time to campaign.
       </p>
       <div className="flex flex-row items-center justify-center mb-4 gap-4">
-        {/* Twitter/X Share - Commented out for now */}
-        {/* <button
-          onClick={handleShareX}
-          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
-          title="Share on X"
-        >
-          <img src="/images/x-white.svg" alt="X" className="max-w-[16px] max-h-[16px]" />
-        </button> */}
         <button
           onClick={handleShareFarcaster}
-          className="bg-black text-white font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
-          style={{ border: `2px solid ${userAccentColor}aa`, backgroundColor: `${userAccentColor}25` }}
+          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
           title="Share on Farcaster"
         >
-          <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-4 max-h-4" />
+          <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" />
         </button>
         <button
           onClick={handleCopyLink}
-          className="bg-black text-white font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
           title="Copy share link"
-          style={{ border: `2px solid ${userAccentColor}aa`, backgroundColor: `${userAccentColor}25` }}
         >
-          <Copy className="max-w-4 max-h-4" />
+          <Copy className="w-4 h-4" />
         </button>
       </div>
+
       {/* Results - Break out completely to full screen width with right padding */}
       <div className="space-y-2 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4">
         {visibleResults.map((result, index) => {
@@ -190,25 +178,17 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
           const finalWidth = availableWidth * widthPercent;
 
-          // Check if this is the user's vote - more robust comparison
+          // Check if this is the user's vote
           const normalizeEmoji = (emoji: string) => emoji.replace(/\uFE0F/g, "");
           const isUserVote = result.emoji === userVote ||
             normalizeEmoji(result.emoji) === normalizeEmoji(userVote);
 
-          // Calculate other voters - ensure this updates with live data
+          // Calculate other voters
           const otherVoters = Math.max(0, result.count - (isUserVote ? 1 : 0));
-
-          // Convert hex color to rgba with opacity
-          const hexToRgba = (hex: string, opacity: number) => {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-          };
 
           return (
             <div
-              key={`${result.emoji}-${result.count}`} // Add count to key to force re-render on updates
+              key={result.emoji}
               className="flex items-center rounded-r-full border-r border-t border-b relative"
               style={{
                 backgroundColor: hexToRgba(result.accent_color, 1),
@@ -216,19 +196,32 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                 width: `${finalWidth}px`,
               }}
             >
-
-
               {/* Position number - positioned on the left in black text */}
-              <div className="text-xs text-black font-bold font-geist-mono pl-2">
+              <div className="text-xs text-black font-bold font-geist-mono pl-3">
                 {getOrdinal(index + 1)}
               </div>
 
               {/* Vote count container - moved to center area */}
               <div className="flex items-center text-black text-sm pl-4 flex-1 relative">
                 {isUserVote ? (
-                  <span className="text-xs" key={`user-vote-${result.count}`}>
+                  <span className="text-xs flex items-center gap-1.5">
                     {otherVoters > 0 ? (
-                      `You & ${otherVoters} voter${otherVoters !== 1 ? 's' : ''}`
+                      <>
+                        {/* User profile pic for their vote */}
+                        {userProfileUrl && (
+                          <img
+                            src={userProfileUrl}
+                            alt="Your vote"
+                            className="w-5 h-5 rounded-full"
+                          />
+                        )}
+                        <div className="bg-black/10 rounded-full px-2 py-0.5 text-xs text-black font-medium">
+                          You
+                        </div>
+                        <span className="text-black/60">
+                          & {otherVoters} other{otherVoters !== 1 ? 's' : ''}
+                        </span>
+                      </>
                     ) : (
                       <span className="flex items-center gap-1.5 -ml-1">
                         {/* User profile pic for their vote - smaller */}
@@ -250,52 +243,28 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                     )}
                   </span>
                 ) : (
-                  <span className="text-xs" key={`other-vote-${result.count}`}>
+                  <span className="text-xs">
                     {result.count} voter{result.count !== 1 ? 's' : ''}
                   </span>
                 )}
               </div>
 
-              {/* Emoji container - rightmost with zero padding */}
-              <div className="relative">
-                <Emoji
-                  emoji={result.emoji}
-                  filename={result.filename}
-                  containerSize={60}
-                  borderWidth={3}
-                  accentColor={result.accent_color}
-                />
-              </div>
+              <Emoji emoji={result.emoji} containerSize={50} borderWidth={3} accentColor={result.accent_color} />
             </div>
           );
         })}
       </div>
 
-      {/* View All Button */}
-      {hasMore && (
-        <div className="text-center mt-6 sm:mt-12">
-          <button
-            onClick={() => setShowAll(true)}
-            className="text-[#696969] hover:text-white transition-colors duration-200 flex items-center justify-center gap-2 mx-auto"
-          >
-            <span>View all results</span>
-            {showGhostIndicator && (
-              <span className="text-sm opacity-60">{userVote}</span>
-            )}
-            <span>↓</span>
-          </button>
-        </div>
-      )}
-
-      {/* Show Less Button */}
-      {showAll && (
-        <div className="text-center mt-6 sm:mt-12">
-          <button
-            onClick={() => setShowAll(false)}
-            className="text-[#696969] transition-colors duration-200"
-          >
-            Show top 5 ↑
-          </button>
+      {/* Show user's emoji at bottom if not in visible list */}
+      {showUserEmojiInButton && userEmojiData && (
+        <div className="text-center mt-8 pt-8 border-t border-neutral-800">
+          <p className="text-neutral-500 text-xs mb-3">Your vote</p>
+          <div className="flex items-center justify-center gap-3">
+            <Emoji emoji={userVote} containerSize={40} borderWidth={2} accentColor={userAccentColor} />
+            <span className="text-sm text-neutral-400">
+              Ranked #{sortedResults.findIndex(r => r.emoji === userVote || r.emoji === userVote.replace(/\uFE0F/g, "") || r.emoji.replace(/\uFE0F/g, "") === userVote.replace(/\uFE0F/g, "")) + 1}
+            </span>
+          </div>
         </div>
       )}
 

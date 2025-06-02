@@ -29,6 +29,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { DebugImageButton } from "@/components/DebugImageButton";
+import { EnvironmentBadge } from "@/components/EnvironmentBadge";
 
 const satoshiFont = localFont({
   src: "../assets/fonts/Satoshi-Variable.ttf",
@@ -64,6 +65,7 @@ export default async function RootLayout({
       <body>
         <GoogleAnalytics />
         <Providers session={session}>
+          <EnvironmentBadge />
           <main className="bg-[#050505]">
             <Navbar />
             <div className="w-full">{children}</div>

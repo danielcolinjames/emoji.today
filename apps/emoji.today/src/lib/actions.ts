@@ -4,12 +4,13 @@ import { revalidatePath } from "next/cache"
 import { getSession } from "@/auth"
 import { supabase } from "@/lib/supabase"
 
-interface EmojiVoteCount {
+export interface EmojiVoteCount {
   emoji: string
   count: number
   percentage: number
   accent_color: string
   filename: string
+  rank?: number
 }
 
 // Function to upsert user with username tracking
@@ -525,6 +526,126 @@ export async function getLiveVotingResults(limit?: number) {
     }
   } catch (error) {
     console.error("Error in getLiveVotingResults:", error)
+    throw error
+  }
+}
+
+export async function getDailyResultsData(
+  offset: number = 0,
+  limit: number = 10
+) {
+  try {
+    // Check authentication
+    const session = await getSession()
+    if (!session?.user?.fid) {
+      throw new Error("Authentication required")
+    }
+
+    const fid = session.user.fid
+    const today = new Date().toISOString().split("T")[0]
+
+    // Check if user has voted today
+    const { data: userVote } = await supabase
+      .from("votes")
+      .select("emoji")
+      .eq("fid", fid)
+      .eq("vote_date", today)
+      .single()
+
+    if (!userVote) {
+      return null // User hasn't voted yet
+    }
+
+    // Get results from daily_results table
+    const { data: dailyResult, error: dailyError } = await supabase
+      .from("daily_results")
+      .select("emoji_votes, total_votes, winning_emoji, created_at")
+      .eq("vote_date", today)
+      .single()
+
+    if (dailyError || !dailyResult || !dailyResult.emoji_votes) {
+      console.error("Error fetching daily results:", dailyError)
+      return null
+    }
+
+    const emojiVotes = dailyResult.emoji_votes as { [key: string]: number }
+    const totalVotes = dailyResult.total_votes || 0
+
+    // Sort emojis by vote count
+    const sortedEmojis = Object.entries(emojiVotes)
+      .sort(([, a], [, b]) => b - a)
+      .slice(offset, offset + limit)
+
+    if (sortedEmojis.length === 0) {
+      return {
+        results: [],
+        totalVotes,
+        userVote: userVote.emoji,
+        voteDate: today,
+        hasMore: false,
+        totalUniqueEmojis: Object.keys(emojiVotes).length,
+        lastUpdated: dailyResult.created_at,
+      }
+    }
+
+    // Get emoji metadata for the requested page
+    const emojisToFetch = sortedEmojis.map(([emoji]) => emoji)
+
+    // Handle variation selector normalization
+    const emojiVariants = emojisToFetch
+      .flatMap((emoji) => [
+        emoji,
+        emoji + "\uFE0F", // Add variation selector
+        emoji.replace(/\uFE0F/g, ""), // Remove variation selector
+      ])
+      .filter((v, i, arr) => arr.indexOf(v) === i) // Remove duplicates
+
+    const { data: emojiData, error: emojiError } = await supabase
+      .from("emojis")
+      .select("emoji, accent_color, filename")
+      .in("emoji", emojiVariants)
+
+    if (emojiError) {
+      console.error("Error fetching emoji data:", emojiError)
+    }
+
+    // Create a map for quick emoji data lookup
+    const emojiDataMap = new Map()
+    emojiData?.forEach((emoji) => {
+      const baseEmoji = emoji.emoji.replace(/\uFE0F/g, "")
+      const withVariationSelector = baseEmoji + "\uFE0F"
+
+      emojiDataMap.set(emoji.emoji, emoji)
+      emojiDataMap.set(baseEmoji, emoji)
+      emojiDataMap.set(withVariationSelector, emoji)
+    })
+
+    // Build results array
+    const results: EmojiVoteCount[] = sortedEmojis.map(
+      ([emoji, count], index) => {
+        const emojiInfo = emojiDataMap.get(emoji)
+        return {
+          emoji,
+          count,
+          percentage: Math.round((count / totalVotes) * 100),
+          accent_color: emojiInfo?.accent_color || "#FFFFFF",
+          filename: emojiInfo?.filename || "",
+          rank: offset + index + 1,
+        }
+      }
+    )
+
+    return {
+      results,
+      totalVotes,
+      userVote: userVote.emoji,
+      voteDate: today,
+      hasMore: offset + limit < Object.keys(emojiVotes).length,
+      totalUniqueEmojis: Object.keys(emojiVotes).length,
+      lastUpdated: dailyResult.created_at,
+    }
+  } catch (error) {
+    console.error("Error in getDailyResultsData:", error)
     throw error
   }
 }

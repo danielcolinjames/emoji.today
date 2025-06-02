@@ -8,6 +8,7 @@ import { SelectEmoji } from "@/components/voting/SelectEmoji";
 import { ConfirmEmoji } from "@/components/voting/ConfirmEmoji";
 import { ReviewVote } from "@/components/voting/ReviewVote";
 import { VotingResults } from "@/components/VotingResults";
+import { VotingResultsScalable } from "@/components/VotingResultsScalable";
 import { submitVote, getLiveVotingResults } from "@/lib/actions";
 import { useFrame } from "@/components/providers/FrameProvider";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -62,6 +63,10 @@ function VotePageContent() {
       if (data) {
         setHasVoted(true);
         setTotalVotes(data.totalVotes);
+        // Store the user's vote emoji
+        if (data.userVote) {
+          setSelectedEmoji(data.userVote);
+        }
         // Don't jump straight to results if we haven't set it explicitly
         if (step === 'select') {
           setStep('results');
@@ -197,8 +202,8 @@ function VotePageContent() {
           </button>
         </div>
       ) : step === 'results' ? (
-        <VotingResults
-          userProfileUrl={context?.user?.pfpUrl}
+        <VotingResultsScalable
+          userVote={selectedEmoji || undefined}
         />
       ) : step === 'review' && selectedEmoji ? (
         <ReviewVote

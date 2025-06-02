@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "predev": "test -f .env.staging && cp .env.staging .env.local || echo 'Warning: .env.staging not found'",
     "dev": "node scripts/dev.js",
     "prebuild": "node scripts/copy-emoji-assets.js",
     "build": "next build",
@@ -13,7 +14,9 @@
     "clear-vote": "node scripts/clear-votes.js clear",
     "clear-all-votes": "node scripts/clear-votes.js clear-all",
     "reassign-vote": "node scripts/clear-votes.js reassign",
-    "migrate-db": "node scripts/migrate-add-fid-and-usernames.js"
+    "migrate-db": "node scripts/migrate-add-fid-and-usernames.js",
+    "env:staging": "cp .env.staging .env.local",
+    "env:production": "cp .env.production .env.local"
   },
   "dependencies": {
     "@date-fns/utc": "^2.1.0",
