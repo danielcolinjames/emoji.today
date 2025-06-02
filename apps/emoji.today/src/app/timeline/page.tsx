@@ -163,10 +163,10 @@ export default async function TimelinePage() {
                       {/* Left side - Date */}
                       <div className="flex-1 pr-2 sm:pr-4 text-right">
                         <div className="font-geist-mono">
-                          <div className="text-[#696969] text-xs sm:text-base leading-tight">
+                          <div className="text-[#696969] text-xs sm:text-sm leading-tight">
                             {dateParts.month}
                           </div>
-                          <div className="text-white text-2xl sm:text-5xl leading-tight">
+                          <div className="text-white text-2xl sm:text-5xl leading-tight -my-1 sm:-my-2">
                             {dateParts.day}
                           </div>
                           <div className="text-[#696969] text-xs sm:text-sm leading-tight">
@@ -246,15 +246,15 @@ export default async function TimelinePage() {
                       {/* Right side - Vote count */}
                       <div className="flex-1 pl-2 sm:pl-4">
                         <div className="font-geist-mono">
-                          <div className="text-[#696969] text-xs sm:text-base leading-tight">
+                          <div className="text-[#696969] text-xs sm:text-sm leading-tight">
                             WITH
                           </div>
-                          <div className="text-white text-2xl sm:text-5xl leading-tight">
+                          <div className="text-white text-2xl sm:text-5xl leading-tight -my-1 sm:-my-2">
                             {summary.winning_count.toLocaleString()}<span className="text-[#696969] text-xs sm:text-xl">/{summary.total_votes.toLocaleString()}</span>
 
                           </div>
                           <div className="text-[#696969] text-xs sm:text-sm leading-tight">
-                            votes
+                            VOTES
                           </div>
                         </div>
                       </div>
