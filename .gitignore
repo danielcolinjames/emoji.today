@@ -74,3 +74,9 @@ apps/emoji.today/public/emoji-assets
 .cursor/mcp.json
 
 .cursor/rules/about_daniel.mdc
+
+.env
+.env.local
+.env.staging
+.env.production
+.env.*.local

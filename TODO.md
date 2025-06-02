@@ -168,3 +168,25 @@ yarn migrate-db
 - Username can change, so track in `previous_usernames` array
 - Database design now supports both normalized queries (via user_id) and efficient direct queries (via fid)
 - Testing override: FID 1090325 always allows fresh voting in development 
+
+## RIGHT NOW (1 thing at a time, move to DONE when done, move next Immediately up to here)
+- [ ] Fix vote results page and vote tallying (IN PROGRESS)
+  - ✅ Created scalable database architecture:
+    - `emoji_ranks` table: One row per emoji per day (rank, count, percentage)
+    - `daily_summaries` table: One row per day with winner and top 5
+    - Database trigger automatically updates both tables when votes change
+  - ✅ Applied migration to staging successfully
+  - [ ] Frontend updates needed:
+    - Update VotingResults to use new tables
+    - Implement infinite scroll (load top 5, then 10 more at a time)
+    - Remove "View all results" button, replace with scroll-to-load
+  - [ ] Migration plan for production:
+    1. Apply migration to prod (tables created alongside existing ones)
+    2. Update job to write to both old and new tables (dual-write)
+    3. Deploy frontend to use new tables
+    4. Monitor for a week, then remove old tables
+  
+  **Original notes:**
+  - Right now the way it works (veryify this for me) is that every time someone votes, it recalculates the live_results table.
+  - Instead, there should be a job that updates a new table, which maybe this new table can be daily_records, and the frontend checks the entry for that date (UTC) and pulls a certain range of those results, ranked. Maybe it just pulls the top 5 results (can we make that table update its rankings automatically? I don't know the best way to store all voted-for emojis and how many votes each one received, but that's how it should work, and it should be query-able by asking for e.g. top 5, then the user presses "View more" and it loads the next 10, then the next 10 come up when they scroll to the bottom, so it's like an infinite scroll reveal)
+  - Maybe there's a job that runs either every 5 minutes, OR gets triggered every time a user votes. I'm not sure how to accomplish that, but I think that's probably how it should work. 

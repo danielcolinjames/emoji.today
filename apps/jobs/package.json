@@ -6,6 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "tally-votes": "tsx src/tally-votes.ts",
     "daily-reset": "tsx src/daily-reset.ts",
+    "update-live-results": "tsx src/update-live-results.ts",
     "clear-fake-votes": "tsx src/clear-fake-votes.ts",
     "populate-missing-emojis": "tsx src/populate-missing-emojis.ts",
     "debug-emoji-storage": "tsx src/debug-emoji-storage.ts",
