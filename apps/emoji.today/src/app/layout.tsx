@@ -5,6 +5,9 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { Providers } from "./providers";
 import { getSession } from "@/auth";
 import "./globals.css";
+import { FrameProvider } from '@/components/providers/FrameProvider';
+import { Navbar } from '@/components/Navbar';
+import { EnvironmentBadge } from '@/components/EnvironmentBadge';
 
 export const metadata: Metadata = {
   title: "emoji.today",
@@ -26,10 +29,8 @@ export const metadata: Metadata = {
 
 import localFont from "next/font/local";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { DebugImageButton } from "@/components/DebugImageButton";
-import { EnvironmentBadge } from "@/components/EnvironmentBadge";
 
 const satoshiFont = localFont({
   src: "../assets/fonts/Satoshi-Variable.ttf",
@@ -65,13 +66,15 @@ export default async function RootLayout({
       <body>
         <GoogleAnalytics />
         <Providers session={session}>
-          <EnvironmentBadge />
-          <main className="bg-[#050505]">
+          <FrameProvider>
             <Navbar />
-            <div className="w-full">{children}</div>
-            <Footer />
-            <DebugImageButton />
-          </main>
+            <EnvironmentBadge />
+            <main className="bg-[#050505]">
+              <div className="w-full">{children}</div>
+              <Footer />
+              <DebugImageButton />
+            </main>
+          </FrameProvider>
         </Providers>
         <SpeedInsights />
         <Analytics />

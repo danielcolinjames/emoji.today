@@ -2,7 +2,7 @@
 
 import useSWR from "swr"
 import { getDailyResultsData } from "@/lib/actions"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import type { EmojiVoteCount } from "@/lib/actions"
 
 export interface DailyResultsData {
@@ -43,6 +43,27 @@ export function useDailyResults() {
       },
     }
   )
+
+  // Listen for cross-tab vote updates
+  useEffect(() => {
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      const channel = new BroadcastChannel("emoji-votes-updated")
+
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === "VOTES_UPDATED") {
+          // Refresh the data when votes are updated in another tab
+          mutate()
+        }
+      }
+
+      channel.addEventListener("message", handleMessage)
+
+      return () => {
+        channel.removeEventListener("message", handleMessage)
+        channel.close()
+      }
+    }
+  }, [mutate])
 
   // Load more results
   const loadMore = useCallback(async () => {

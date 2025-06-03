@@ -83,13 +83,22 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     )
   }
 
-  // Log errors if any
-  if (summaryError || ranksError) {
+  // Log errors if any - check if errors actually contain meaningful data
+  const hasActualErrors = (summaryError && Object.keys(summaryError).length > 0) ||
+    (ranksError && Object.keys(ranksError).length > 0)
+
+  if (hasActualErrors) {
     console.error('VotingResultsScalable - errors:', {
       summaryError,
       ranksError,
       todayString
     })
+
+    return (
+      <div className="text-center space-y-4">
+        <div className="text-red-400">Error loading voting results</div>
+      </div>
+    )
   }
 
   if (!summary || !ranks || ranks.length === 0) {
@@ -166,16 +175,17 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
       </div>
 
       {/* Results - Full screen width with right padding */}
-      <div className="space-y-2 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4">
+      <div className="space-y-2 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4 overflow-x-hidden">
         {visibleResults.map((rank) => {
           // Get accent color directly from the rank data
           const accentColor = rank.accent_color || "#FFD700"
 
           // Calculate proportional width
           const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 400;
-          const availableWidth = viewportWidth - 16;
+          // Account for scrollbars and add extra margin for safety
+          const availableWidth = Math.max(320, viewportWidth - 32); // Increased margin and minimum width
           const minWidthPercent = 0.55;
-          const maxWidthPercent = 1.0;
+          const maxWidthPercent = 0.98; // Reduced to 98% to prevent overflow
 
           // Use visible results for width calculation when not showing all
           const ranksForWidth = showAll ? ranks : visibleResults;
@@ -191,7 +201,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
             widthPercent = minWidthPercent + (maxWidthPercent - minWidthPercent) * (votePosition / voteRange);
           }
 
-          const finalWidth = availableWidth * widthPercent;
+          const finalWidth = Math.min(availableWidth * widthPercent, availableWidth); // Cap at available width
 
           const isUserVote = rank.emoji === userVote;
           const otherVoters = Math.max(0, rank.vote_count - (isUserVote ? 1 : 0));
@@ -204,6 +214,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
                 backgroundColor: hexToRgba(accentColor, 1),
                 borderColor: hexToRgba(accentColor, 1),
                 width: `${finalWidth}px`,
+                maxWidth: '98vw', // Additional safeguard
               }}
             >
               {/* Position number */}

@@ -6,6 +6,7 @@
   "scripts": {
     "analyze": "tsx scripts/analyze-and-populate-emoji-database.ts",
     "sync": "tsx scripts/sync-to-apps.ts",
+    "fix-colors": "tsx scripts/fix-staging-colors.ts",
     "build": "echo 'No build needed for emoji-assets'"
   },
   "devDependencies": {

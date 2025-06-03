@@ -1,6 +1,7 @@
 import useSWR from "swr"
 import useSWRInfinite from "swr/infinite"
 import { supabase } from "@/lib/supabase"
+import { useEffect } from "react"
 
 const PAGE_SIZE = 10
 
@@ -67,6 +68,27 @@ export function useEmojiRanks(date: string) {
     }
   )
 
+  // Listen for cross-tab vote updates
+  useEffect(() => {
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      const channel = new BroadcastChannel("emoji-votes-updated")
+
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === "VOTES_UPDATED") {
+          // Refresh the data when votes are updated in another tab
+          mutate()
+        }
+      }
+
+      channel.addEventListener("message", handleMessage)
+
+      return () => {
+        channel.removeEventListener("message", handleMessage)
+        channel.close()
+      }
+    }
+  }, [mutate])
+
   // Flatten all pages into one array
   const allRanks = data ? data.flat() : []
   const isLoadingInitialData = !data && !error
@@ -98,6 +120,27 @@ export function useDailySummary(date: string) {
       revalidateOnReconnect: false,
     }
   )
+
+  // Listen for cross-tab vote updates
+  useEffect(() => {
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      const channel = new BroadcastChannel("emoji-votes-updated")
+
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === "VOTES_UPDATED") {
+          // Refresh the data when votes are updated in another tab
+          mutate()
+        }
+      }
+
+      channel.addEventListener("message", handleMessage)
+
+      return () => {
+        channel.removeEventListener("message", handleMessage)
+        channel.close()
+      }
+    }
+  }, [mutate])
 
   return {
     summary: data,

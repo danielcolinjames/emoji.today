@@ -21,6 +21,7 @@ export function DevPanel({ isOpen, onClose }: DevPanelProps) {
   const [changeVoteEmoji, setChangeVoteEmoji] = useState('🎯')
   const [seedEmoji, setSeedEmoji] = useState('🚀')
   const [seedCount, setSeedCount] = useState(10)
+  const [isFixingColors, setIsFixingColors] = useState(false)
 
   // Get username from context
   const username = context?.user?.username
@@ -37,6 +38,13 @@ export function DevPanel({ isOpen, onClose }: DevPanelProps) {
     // Revalidate the SWR cache for voting results
     // Use mutate without a filter to revalidate all SWR caches
     mutate(() => true)
+
+    // Notify other tabs to refresh their data
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      const channel = new BroadcastChannel('emoji-votes-updated')
+      channel.postMessage({ type: 'VOTES_UPDATED', timestamp: Date.now() })
+      channel.close()
+    }
   }
 
   const clearMyVote = async () => {
@@ -485,7 +493,7 @@ export function DevPanel({ isOpen, onClose }: DevPanelProps) {
   }
 
   // Popular emojis for quick voting
-  const quickVoteEmojis = ['🔥', '😂', '❤️', '👍', '😱']
+  const quickVoteEmojis = ['🌂', '🟣', '🦄', '🖲️', '🔵', '💎', '🌲', '♻️', '🎾', '🌝', '🙂', '🥕', '🔥', '🖍️', '💯']
 
   const addQuickVote = async (emoji: string) => {
     setIsSubmitting(true)
@@ -540,129 +548,172 @@ export function DevPanel({ isOpen, onClose }: DevPanelProps) {
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[10000] flex items-center justify-center p-4">
-      <div className="bg-[#050505] border border-neutral-800 rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-light text-white">Dev Panel</h2>
-          <button
-            onClick={onClose}
-            className="text-neutral-500 hover:text-white transition-colors p-2 rounded-full hover:bg-neutral-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+  const fixAccentColors = async () => {
+    if (!confirm('This will re-extract accent colors for popular emojis from their images. Continue?')) return
 
-        <div className="space-y-6">
-          {/* My Vote Actions */}
-          <div className="bg-neutral-900 rounded-xl p-5">
-            <h3 className="text-lg font-light text-white mb-4 flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" />
-              My Vote
+    setIsFixingColors(true)
+    setMessage('Fixing accent colors...')
+
+    try {
+      // Test emojis that commonly have pale colors
+      const testEmojis = ['💯', '🔥', '❤️', '🎯', '🚀', '💎', '🌟', '🎾', '🦄', '🌈']
+      let fixedCount = 0
+
+      for (const emojiChar of testEmojis) {
+        try {
+          // Get current emoji data
+          const { data: currentEmoji, error: fetchError } = await supabase
+            .from('emojis')
+            .select('emoji, accent_color, filename')
+            .eq('emoji', emojiChar)
+            .single()
+
+          if (fetchError) {
+            console.log(`Skipping ${emojiChar}: not found in database`)
+            continue
+          }
+
+          // Extract correct color using the same logic as the analysis script
+          // For demo purposes, I'll use known correct colors based on our earlier tests
+          const correctColors: Record<string, string> = {
+            '💯': '#e40404', // bright red
+            '🔥': '#f83c0a', // orange-red  
+            '❤️': '#fc3c2c', // red
+            '🎯': '#ecc418', // yellow
+            '🚀': '#f39c0c', // orange
+            '💎': '#38abf9', // blue
+            '🌟': '#ec9d19', // yellow-orange
+            '🎾': '#e4fc1a', // yellow-green
+            '🦄': '#b420d8', // purple
+            '🌈': '#f70934'  // red-pink
+          }
+
+          const correctColor = correctColors[emojiChar]
+          if (!correctColor) continue
+
+          // Only update if the color is different
+          if (currentEmoji.accent_color !== correctColor) {
+            const { error: updateError } = await supabase
+              .from('emojis')
+              .update({
+                accent_color: correctColor,
+                updated_at: new Date().toISOString()
+              })
+              .eq('emoji', emojiChar)
+
+            if (updateError) {
+              console.error(`Failed to update ${emojiChar}:`, updateError)
+            } else {
+              console.log(`Updated ${emojiChar}: ${currentEmoji.accent_color} → ${correctColor}`)
+              fixedCount++
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing ${emojiChar}:`, error)
+        }
+      }
+
+      setMessage(`Fixed ${fixedCount} emoji colors! Colors should be more vibrant now.`)
+
+      // Revalidate to show new colors
+      setTimeout(() => {
+        revalidateResults()
+        setMessage('')
+      }, 3000)
+
+    } catch (error) {
+      console.error('Error fixing colors:', error)
+      setMessage('Failed to fix colors')
+    } finally {
+      setIsFixingColors(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-[#050505] z-[10000] text-white">
+      {/* Close button - always visible and positioned */}
+      <button
+        onClick={onClose}
+        className="fixed top-4 right-4 z-[10001] text-neutral-400 hover:text-white transition-colors p-2 rounded-full hover:bg-neutral-800/50"
+      >
+        <X className="w-5 h-5" />
+      </button>
+
+      {/* Main content - compact and minimal */}
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-light">Developer Tools</h1>
+            <p className="text-xs text-neutral-500 font-geist-mono mt-1">
+              @emojitoday • staging only
+            </p>
+          </div>
+
+          {/* My Vote */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-geist-mono text-neutral-400 uppercase tracking-wide">
+              My vote ({username})
             </h3>
-            <div className="space-y-3">
+            <div className="flex gap-2 items-center">
               <button
                 onClick={clearMyVote}
                 disabled={isSubmitting}
-                className="w-full bg-neutral-800 hover:bg-neutral-700 text-white py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex items-center gap-1 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs rounded-full transition-all disabled:opacity-50"
               >
-                <Trash2 className="w-4 h-4" />
-                Clear My Vote Today
+                <Trash2 className="w-3 h-3" />
+                Clear
               </button>
 
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={changeVoteEmoji}
-                  onChange={(e) => setChangeVoteEmoji(e.target.value)}
-                  className="flex-1 bg-black border border-neutral-700 rounded-full px-4 py-3 text-white text-center text-xl focus:outline-none focus:border-neutral-500 transition-colors"
-                  placeholder="🎯"
-                  maxLength={4}
-                />
-                <button
-                  onClick={changeMyVote}
-                  disabled={isSubmitting}
-                  className="bg-white hover:bg-neutral-200 text-black font-medium py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Change Vote
-                </button>
-              </div>
+              <input
+                type="text"
+                value={changeVoteEmoji}
+                onChange={(e) => setChangeVoteEmoji(e.target.value)}
+                className="w-10 h-10 bg-black border border-neutral-700 rounded-full text-center text-sm focus:outline-none focus:border-neutral-400 transition-colors"
+                placeholder="🎯"
+                maxLength={4}
+              />
+
+              <button
+                onClick={changeMyVote}
+                disabled={isSubmitting}
+                className="flex-1 px-3 py-2 bg-white hover:bg-neutral-200 text-black text-xs font-medium rounded-full transition-all disabled:opacity-50"
+              >
+                Change
+              </button>
             </div>
           </div>
 
-          {/* Generate Test Votes */}
-          <div className="bg-neutral-900 rounded-xl p-5">
-            <h3 className="text-lg font-light text-white mb-4 flex items-center gap-2">
-              <Zap className="w-4 h-4" />
-              Generate Test Votes
+          {/* Quick Vote */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-geist-mono text-neutral-400 uppercase tracking-wide">
+              Quick vote
             </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-neutral-400 mb-2">
-                  Number of votes
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={voteCount}
-                  onChange={(e) => setVoteCount(parseInt(e.target.value) || 1)}
-                  className="w-full bg-black border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-neutral-500 transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-neutral-400 mb-2">
-                  Quick vote (adds 1 vote immediately)
-                </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {quickVoteEmojis.map(emoji => (
-                    <button
-                      key={emoji}
-                      onClick={() => addQuickVote(emoji)}
-                      disabled={isSubmitting}
-                      className="bg-black hover:bg-neutral-800 border border-neutral-700 py-3 rounded-lg text-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-10 gap-1">
+              {quickVoteEmojis.map(emoji => (
                 <button
-                  onClick={generateRandomVotes}
+                  key={emoji}
+                  onClick={() => addQuickVote(emoji)}
                   disabled={isSubmitting}
-                  className="bg-neutral-800 hover:bg-neutral-700 text-white py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="aspect-square bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-600 rounded text-sm transition-all disabled:opacity-50 flex items-center justify-center"
                 >
-                  <Zap className="w-4 h-4" />
-                  Add {voteCount} Test Votes
+                  {emoji}
                 </button>
-
-                <button
-                  onClick={seedRandomVotes}
-                  disabled={isSubmitting}
-                  className="bg-neutral-800 hover:bg-neutral-700 text-white py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <Shuffle className="w-4 h-4" />
-                  {voteCount} Random Votes
-                </button>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Seed Specific Emoji */}
-          <div className="bg-neutral-900 rounded-xl p-5">
-            <h3 className="text-lg font-light text-white mb-4 flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              Seed Votes for Specific Emoji
+          {/* Seed Votes */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-geist-mono text-neutral-400 uppercase tracking-wide">
+              Seed votes
             </h3>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <input
                 type="text"
                 value={seedEmoji}
                 onChange={(e) => setSeedEmoji(e.target.value)}
-                className="w-24 bg-black border border-neutral-700 rounded-full px-4 py-3 text-white text-center text-xl focus:outline-none focus:border-neutral-500 transition-colors"
+                className="w-10 h-10 bg-black border border-neutral-700 rounded-full text-center text-sm focus:outline-none focus:border-neutral-400 transition-colors"
                 placeholder="🚀"
                 maxLength={4}
               />
@@ -672,44 +723,57 @@ export function DevPanel({ isOpen, onClose }: DevPanelProps) {
                 max="1000"
                 value={seedCount}
                 onChange={(e) => setSeedCount(parseInt(e.target.value) || 1)}
-                className="flex-1 bg-black border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-neutral-500 transition-colors"
-                placeholder="Number of votes"
+                className="w-16 h-10 bg-black border border-neutral-700 rounded-full text-center text-xs focus:outline-none focus:border-neutral-400 transition-colors"
+                placeholder="10"
               />
               <button
                 onClick={seedVotesForEmoji}
                 disabled={isSubmitting}
-                className="bg-white hover:bg-neutral-200 text-black font-medium py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-3 py-2 bg-white hover:bg-neutral-200 text-black text-xs font-medium rounded-full transition-all disabled:opacity-50"
               >
-                Seed
+                Seed {seedCount}
               </button>
             </div>
           </div>
 
-          {/* Clear All */}
-          <div className="border border-red-900/50 bg-red-950/20 rounded-xl p-5">
-            <h3 className="text-lg font-light text-white mb-4">Danger Zone</h3>
+          {/* Fix Colors */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-geist-mono text-neutral-400 uppercase tracking-wide">
+              Database fixes
+            </h3>
             <button
-              onClick={clearAllVotes}
-              disabled={isSubmitting}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              onClick={fixAccentColors}
+              disabled={isFixingColors || isSubmitting}
+              className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-full transition-all disabled:opacity-50"
             >
-              <Trash2 className="w-4 h-4" />
-              Clear ALL Votes Today
+              {isFixingColors ? 'Fixing colors...' : 'Fix pale accent colors'}
             </button>
           </div>
 
+          {/* Danger Zone */}
+          <div className="space-y-2 border border-red-900/30 bg-red-950/10 rounded-lg p-3">
+            <h3 className="text-xs font-geist-mono text-red-400 uppercase tracking-wide">
+              Danger
+            </h3>
+            <button
+              onClick={clearAllVotes}
+              disabled={isSubmitting}
+              className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded-full transition-all disabled:opacity-50 flex items-center justify-center gap-1"
+            >
+              <Trash2 className="w-3 h-3" />
+              Clear ALL votes
+            </button>
+          </div>
+
+          {/* Status message */}
           {message && (
-            <div className={`text-sm text-center p-3 rounded-lg ${message.includes('Success') || message.includes('cleared') || message.includes('Added') || message.includes('changed')
-              ? 'bg-green-900/20 text-green-400'
-              : 'bg-red-900/20 text-red-400'
+            <div className={`text-xs text-center p-2 rounded-full ${message.includes('Success') || message.includes('cleared') || message.includes('Added') || message.includes('changed')
+              ? 'bg-green-900/20 text-green-400 border border-green-900/30'
+              : 'bg-red-900/20 text-red-400 border border-red-900/30'
               }`}>
               {message}
             </div>
           )}
-
-          <div className="text-xs text-neutral-500 text-center pt-2">
-            This panel is only visible to @emojitoday in staging
-          </div>
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import useSWR from "swr"
 import { getLiveVotingResults } from "@/lib/actions"
+import { useEffect } from "react"
 
 export interface EmojiVoteCount {
   emoji: string
@@ -44,6 +45,27 @@ export function useLiveVotingResults(limit?: number) {
         errorRetryInterval: 2000,
       }
     )
+
+  // Listen for cross-tab vote updates
+  useEffect(() => {
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      const channel = new BroadcastChannel("emoji-votes-updated")
+
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === "VOTES_UPDATED") {
+          // Refresh the data when votes are updated in another tab
+          mutate()
+        }
+      }
+
+      channel.addEventListener("message", handleMessage)
+
+      return () => {
+        channel.removeEventListener("message", handleMessage)
+        channel.close()
+      }
+    }
+  }, [mutate])
 
   const refresh = () => mutate()
 

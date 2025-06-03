@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useLiveVotingResults, type EmojiVoteCount } from '@/hooks/useLiveVotingResults';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Copy } from 'lucide-react';
+import { LiveTicker } from '@/components/LiveTicker';
 
 interface VotingResultsProps {
   userProfileUrl?: string;
@@ -153,13 +154,14 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
       </div>
 
       {/* Results - Break out completely to full screen width with right padding */}
-      <div className="space-y-2 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4">
+      <div className="space-y-2 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4 overflow-x-hidden">
         {visibleResults.map((result, index) => {
           // Calculate proportional width between 55% and 100% of viewport minus right padding
           const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 400;
-          const availableWidth = viewportWidth - 16; // Subtract 16px for pr-4
+          // Account for scrollbars and add extra margin for safety
+          const availableWidth = Math.max(320, viewportWidth - 32); // Increased margin and minimum width
           const minWidthPercent = 0.55; // 55%
-          const maxWidthPercent = 1.0;  // 100%
+          const maxWidthPercent = 0.98;  // Reduced to 98% to prevent overflow
 
           // Find min and max votes in visible results for scaling
           const maxVotes = visibleResults[0].count; // Already sorted, so first is highest
@@ -167,16 +169,16 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
           let widthPercent;
           if (maxVotes === minVotes) {
-            // If all have same vote count, use 100%
+            // If all have same vote count, use 98%
             widthPercent = maxWidthPercent;
           } else {
-            // Scale between 55% and 100% based on vote count
+            // Scale between 55% and 98% based on vote count
             const voteRange = maxVotes - minVotes;
             const votePosition = result.count - minVotes;
             widthPercent = minWidthPercent + (maxWidthPercent - minWidthPercent) * (votePosition / voteRange);
           }
 
-          const finalWidth = availableWidth * widthPercent;
+          const finalWidth = Math.min(availableWidth * widthPercent, availableWidth); // Cap at available width
 
           // Check if this is the user's vote
           const normalizeEmoji = (emoji: string) => emoji.replace(/\uFE0F/g, "");
@@ -194,6 +196,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
                 backgroundColor: hexToRgba(result.accent_color, 1),
                 borderColor: hexToRgba(result.accent_color, 1),
                 width: `${finalWidth}px`,
+                maxWidth: '98vw', // Additional safeguard
               }}
             >
               {/* Position number - positioned on the left in black text */}
@@ -267,6 +270,11 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
           </div>
         </div>
       )}
+
+      {/* Live Ticker above status bar */}
+      <div className="fixed bottom-16 left-0 right-0 z-40">
+        <LiveTicker />
+      </div>
 
       {/* Fixed Live Status Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-md border-t border-neutral-800 px-4 pt-2 pb-6 z-50">
