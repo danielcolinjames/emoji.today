@@ -218,7 +218,7 @@ async function startDev() {
   let ip = null
 
   if (useTunnel) {
-    console.log("🔗 Tunneling enabled (USE_TUNNEL=true)")
+    // console.log("🔗 Tunneling enabled (USE_TUNNEL=true)")
     // Start localtunnel and get URL
     tunnel = await localtunnel({ port: 3000 })
 
@@ -231,38 +231,32 @@ async function startDev() {
     }
 
     frameUrl = tunnel.url
-    console.log(`
-🚀 Starting emoji.today in development mode...
+    //     console.log(`
+    // 🚀 Starting emoji.today in development mode...
 
-📱 Quick start instructions:
-   1. Copy your IP address (below)
-   2. Open the tunnel URL
-   3. Paste your IP in the password field
-   4. Click "Click to Submit"
+    // 📱 Quick start instructions:
+    //    1. Copy your IP address (below)
+    //    2. Open the tunnel URL
+    //    3. Paste your IP in the password field
+    //    4. Click "Click to Submit"
 
-💻 To test in Farcaster Dev Tools:
-   Go to: https://farcaster.xyz/~/developers
-   Enter: ${tunnel.url}
+    // 💻 To test in Farcaster Dev Tools:
+    //    Go to: https://farcaster.xyz/~/developers
+    //    Enter: ${tunnel.url}
 
-📱 To test in Warpcast mobile:
-   Settings > Developer > Mini Apps
-   Enter: ${tunnel.url}
-`)
+    // 📱 To test in Warpcast mobile:
+    //    Settings > Developer > Mini Apps
+    //    Enter: ${tunnel.url}
+    // `)
   } else {
-    console.log("🔗 Tunneling disabled (USE_TUNNEL is not 'true')")
-    console.log(
-      "💡 To enable tunneling for Farcaster testing, add USE_TUNNEL=true to your .env.local"
-    )
+    // console.log("Tunneling disabled (USE_TUNNEL is not 'true')")
+    // console.log(
+    //   "💡 To enable tunneling for Farcaster testing, add USE_TUNNEL=true to your .env.local"
+    // )
     frameUrl = "http://localhost:3000"
-    console.log(`
-🚀 Starting emoji.today in development mode...
+    console.log(`☻ emoji.today is running locally: http://localhost:3000
 
-💻 To test your mini app:
-   1. Open: https://farcaster.xyz/~/developers
-   2. Scroll to "Preview Mini App"
-   3. Enter: ${frameUrl}
-   4. Click "Preview"
-`)
+(enable USE_TUNNEL=true to test in Farcaster)`)
   }
 
   // Start next dev with appropriate configuration
@@ -282,12 +276,12 @@ async function startDev() {
     // Wait a bit for Next.js to start up
     setTimeout(() => {
       console.log(`
+                ══════════════════════════════════════════════════════════════════════════════
+                                      ☻ emoji.today is running locally
 
-════════════════════════════════════════════════════════════════════════
+                                ${ip}    //    ${tunnel.url}
 
-        ${ip}    //    ${tunnel.url}
-
-════════════════════════════════════════════════════════════════════════
+                ══════════════════════════════════════════════════════════════════════════════
 `)
     }, 2000)
   }
