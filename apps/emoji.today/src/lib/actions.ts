@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { getSession } from "@/auth"
 import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
 
 export interface EmojiVoteCount {
   emoji: string
@@ -21,11 +22,20 @@ async function upsertUserWithUsername(
 ) {
   try {
     // Get existing user
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: fetchError } = await supabase
       .from("users")
       .select("id, username, previous_usernames")
       .eq("fid", fid)
       .single()
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      // PGRST116 = no rows returned
+      console.error(
+        `[upsertUserWithUsername] Error fetching user for FID ${fid}:`,
+        fetchError
+      )
+      throw new Error(`Failed to fetch user: ${fetchError.message}`)
+    }
 
     if (existingUser) {
       // User exists - check if username changed
@@ -55,13 +65,13 @@ async function upsertUserWithUsername(
           .single()
 
         if (updateError) {
-          console.error("Error updating user:", updateError)
-          throw new Error("Failed to update user")
+          console.error(
+            `[upsertUserWithUsername] Error updating user for FID ${fid}:`,
+            updateError
+          )
+          throw new Error(`Failed to update user: ${updateError.message}`)
         }
 
-        console.log(
-          `Updated username for FID ${fid}: ${existingUser.username} -> ${username}`
-        )
         return updatedUser.id
       }
 
@@ -80,15 +90,112 @@ async function upsertUserWithUsername(
         .single()
 
       if (userError) {
-        console.error("Error creating user:", userError)
-        throw new Error("Failed to create user")
+        console.error(
+          `[upsertUserWithUsername] Error creating user for FID ${fid}:`,
+          userError
+        )
+        throw new Error(`Failed to create user: ${userError.message}`)
       }
 
-      console.log(`Created new user for FID ${fid} with username: ${username}`)
       return newUser.id
     }
   } catch (error) {
-    console.error("Error in upsertUserWithUsername:", error)
+    console.error(`[upsertUserWithUsername] Error for FID ${fid}:`, error)
+    throw error
+  }
+}
+
+// Service role version of upsertUserWithUsername
+async function upsertUserWithUsernameServiceRole(
+  fid: number,
+  serviceSupabase: any,
+  username?: string,
+  displayName?: string
+) {
+  try {
+    // Get existing user
+    const { data: existingUser, error: fetchError } = await serviceSupabase
+      .from("users")
+      .select("id, username, previous_usernames")
+      .eq("fid", fid)
+      .single()
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      // PGRST116 = no rows returned
+      console.error(
+        `[upsertUserWithUsernameServiceRole] Error fetching user for FID ${fid}:`,
+        fetchError
+      )
+      throw new Error(`Failed to fetch user: ${fetchError.message}`)
+    }
+
+    if (existingUser) {
+      // User exists - check if username changed
+      const needsUpdate = username && username !== existingUser.username
+
+      if (needsUpdate) {
+        let previousUsernames = existingUser.previous_usernames || []
+
+        // Add old username to previous_usernames if it exists and isn't already there
+        if (
+          existingUser.username &&
+          !previousUsernames.includes(existingUser.username)
+        ) {
+          previousUsernames = [...previousUsernames, existingUser.username]
+        }
+
+        // Update user with new username and previous usernames
+        const { data: updatedUser, error: updateError } = await serviceSupabase
+          .from("users")
+          .update({
+            username,
+            previous_usernames: previousUsernames,
+            last_updated: new Date().toISOString(),
+          })
+          .eq("fid", fid)
+          .select("id")
+          .single()
+
+        if (updateError) {
+          console.error(
+            `[upsertUserWithUsernameServiceRole] Error updating user for FID ${fid}:`,
+            updateError
+          )
+          throw new Error(`Failed to update user: ${updateError.message}`)
+        }
+
+        return updatedUser.id
+      }
+
+      return existingUser.id
+    } else {
+      // Create new user
+      const { data: newUser, error: userError } = await serviceSupabase
+        .from("users")
+        .insert({
+          fid,
+          username: username || null,
+          previous_usernames: [],
+          last_updated: new Date().toISOString(),
+        })
+        .select("id")
+        .single()
+
+      if (userError) {
+        console.error(
+          `[upsertUserWithUsernameServiceRole] Error creating user for FID ${fid}:`,
+          userError
+        )
+        throw new Error(`Failed to create user: ${userError.message}`)
+      }
+
+      return newUser.id
+    }
+  } catch (error) {
+    console.error(
+      `[upsertUserWithUsernameServiceRole] Error for FID ${fid}:`,
+      error
+    )
     throw error
   }
 }
@@ -101,8 +208,17 @@ export async function submitVote(
   try {
     // Check authentication
     const session = await getSession()
-    if (!session?.user?.fid) {
-      throw new Error("Authentication required")
+
+    if (!session) {
+      throw new Error("No active session found. Please sign in again.")
+    }
+
+    if (!session.user) {
+      throw new Error("Invalid session. Please sign in again.")
+    }
+
+    if (!session.user.fid) {
+      throw new Error("Invalid user session. Please sign in again.")
     }
 
     if (!emoji) {
@@ -112,23 +228,45 @@ export async function submitVote(
     const fid = session.user.fid
     const today = new Date().toISOString().split("T")[0]
 
-    // Upsert user with username tracking
-    const userId = await upsertUserWithUsername(fid, username, displayName)
+    // Use service role for all database operations to avoid RLS issues with triggers
+    const serviceSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
     // Check if user already voted today (using fid directly for efficiency)
-    const { data: existingVote } = await supabase
+    const { data: existingVote, error: voteCheckError } = await serviceSupabase
       .from("votes")
       .select("id")
       .eq("fid", fid)
       .eq("vote_date", today)
       .single()
 
+    if (voteCheckError && voteCheckError.code !== "PGRST116") {
+      // PGRST116 = no rows returned
+      console.error(
+        `[submitVote] Error checking existing vote for FID ${fid}:`,
+        voteCheckError
+      )
+      throw new Error(
+        `Failed to check voting status: ${voteCheckError.message}`
+      )
+    }
+
     if (existingVote) {
       throw new Error("You have already voted today")
     }
 
+    // Upsert user with username tracking (using service role)
+    const userId = await upsertUserWithUsernameServiceRole(
+      fid,
+      serviceSupabase,
+      username,
+      displayName
+    )
+
     // Insert the vote with both user_id and fid for redundancy and query efficiency
-    const { error: voteError } = await supabase.from("votes").insert({
+    const { error: voteError } = await serviceSupabase.from("votes").insert({
       user_id: userId,
       fid: fid,
       emoji,
@@ -136,14 +274,17 @@ export async function submitVote(
     })
 
     if (voteError) {
-      console.error("Error inserting vote:", voteError)
-      throw new Error("Failed to submit vote")
+      console.error(
+        `[submitVote] Error inserting vote for FID ${fid}:`,
+        voteError
+      )
+      throw new Error(`Failed to submit vote: ${voteError.message}`)
     }
 
     revalidatePath("/vote")
     return { success: true, message: "Vote submitted successfully" }
   } catch (error) {
-    console.error("Error in submitVote:", error)
+    console.error(`[submitVote] Final error:`, error)
     throw error
   }
 }
@@ -665,6 +806,58 @@ export async function getDailySummaries() {
     return data || []
   } catch (error) {
     console.error("Error in getDailySummaries:", error)
+    throw error
+  }
+}
+
+export async function clearUserVote() {
+  try {
+    // Check authentication
+    const session = await getSession()
+
+    if (!session) {
+      throw new Error("No active session found. Please sign in again.")
+    }
+
+    if (!session.user) {
+      throw new Error("Invalid session. Please sign in again.")
+    }
+
+    if (!session.user.fid) {
+      throw new Error("Invalid user session. Please sign in again.")
+    }
+
+    const fid = session.user.fid
+    const today = new Date().toISOString().split("T")[0]
+
+    // Use service role for the deletion to avoid RLS issues with triggers
+    const serviceSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data, error } = await serviceSupabase
+      .from("votes")
+      .delete()
+      .eq("fid", fid)
+      .eq("vote_date", today)
+      .select()
+
+    if (error) {
+      console.error(`[clearUserVote] Database error:`, error)
+      throw new Error(`Failed to clear vote: ${error.message}`)
+    }
+
+    revalidatePath("/vote")
+    return {
+      success: true,
+      message:
+        data?.length === 0
+          ? "No vote found to clear for today"
+          : `Vote cleared successfully (${data.length} vote(s) removed)`,
+    }
+  } catch (error) {
+    console.error(`[clearUserVote] Final error:`, error)
     throw error
   }
 }

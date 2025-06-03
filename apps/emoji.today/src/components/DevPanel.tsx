@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useFrame } from "./providers/FrameProvider"
 import { X, Trash2, RefreshCw, Zap, Shuffle, Target } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { clearUserVote } from '@/lib/actions'
 import { mutate } from 'swr'
 
 interface DevPanelProps {
@@ -49,19 +50,9 @@ export function DevPanel({ isOpen, onClose }: DevPanelProps) {
     setMessage('')
 
     try {
-      const today = new Date().toISOString().split("T")[0]
+      const result = await clearUserVote()
 
-      const { error } = await supabase
-        .from("votes")
-        .delete()
-        .eq("fid", userFid)
-        .eq("vote_date", today)
-
-      if (error) {
-        throw new Error('Failed to clear your vote')
-      }
-
-      setMessage('Your vote has been cleared!')
+      setMessage(result.message)
 
       // Revalidate SWR cache
       setTimeout(() => {
@@ -69,8 +60,8 @@ export function DevPanel({ isOpen, onClose }: DevPanelProps) {
         setMessage('')
       }, 1500)
     } catch (error) {
-      console.error('Error clearing vote:', error)
-      setMessage('Failed to clear your vote')
+      console.error('[clearMyVote] Error clearing vote:', error)
+      setMessage(error instanceof Error ? error.message : 'Failed to clear your vote')
     } finally {
       setIsSubmitting(false)
     }

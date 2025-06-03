@@ -104,12 +104,46 @@ function VotePageContent() {
         context?.user?.username,
         context?.user?.displayName
       );
-      // After successful vote, update state and go to review step
+
+      // After successful vote, update state and fetch latest results
       setHasVoted(true);
+
+      // Fetch updated voting results to get the latest vote count
+      try {
+        const updatedData = await getLiveVotingResults();
+        if (updatedData) {
+          setTotalVotes(updatedData.totalVotes);
+        }
+      } catch (resultError) {
+        console.error('[handleConfirmVote] Error fetching updated results:', resultError);
+        // Don't throw here - voting was successful, just couldn't get updated count
+      }
+
       setStep('review');
     } catch (error) {
       console.error('Error submitting vote:', error);
-      setError(error instanceof Error ? error.message : 'Failed to submit vote');
+
+      // Provide more specific error messages
+      let errorMessage = 'Failed to submit vote';
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+
+        // Add more context for common error types
+        if (error.message.includes('Authentication')) {
+          errorMessage = 'Authentication failed. Please try signing in again.';
+        } else if (error.message.includes('already voted')) {
+          errorMessage = 'You have already voted today. Check the results to see how your vote is doing!';
+        } else if (error.message.includes('required')) {
+          errorMessage = 'There was an issue with your vote. Please try selecting the emoji again.';
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('database') || error.message.includes('Failed to')) {
+          errorMessage = `Server error: ${error.message}. Please try again or take a screenshot and send it to @emojitoday on Farcaster if this persists.`;
+        }
+      }
+
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +159,18 @@ function VotePageContent() {
     // The actual sharing is handled in ReviewVote component
   };
 
-  const handleViewResults = () => {
+  const handleViewResults = async () => {
+    // Fetch latest results before showing results view
+    try {
+      const updatedData = await getLiveVotingResults();
+      if (updatedData) {
+        setTotalVotes(updatedData.totalVotes);
+      }
+    } catch (resultError) {
+      console.error('[handleViewResults] Error fetching updated results:', resultError);
+      // Continue to results view even if fetch fails
+    }
+
     // Simply move to results step - VotingResults will handle data fetching
     setStep('results');
   };

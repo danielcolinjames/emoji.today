@@ -131,10 +131,14 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
         {/* View Results Button */}
         <button
           onClick={onViewResults}
-          className="w-full px-8 py-3 font-medium text-lg rounded-full transition-all duration-200 bg-neutral-800 text-white hover:bg-neutral-700 flex items-center justify-center gap-2 mt-6"
+          className="w-full px-8 py-3 font-medium text-lg rounded-full transition-all duration-200 flex items-center justify-center gap-2 mt-6"
+          style={{
+            backgroundColor: accentColor,
+            color: getContrastColor(accentColor)
+          }}
         >
           View results
-          <ArrowRight className="w-5 h-5" />
+          <ArrowRight className="w-5 h-5" style={{ color: getContrastColor(accentColor) }} />
         </button>
       </div>
     </div>
