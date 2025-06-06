@@ -11,6 +11,7 @@ import { VotingResultsScalable } from "@/components/VotingResultsScalable";
 import { submitVote, getLiveVotingResults } from "@/lib/actions";
 import { useFrame } from "@/components/providers/FrameProvider";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { triggerVoteCacheUpdate } from "@/components/SWRCacheManager";
 
 type VotingStep = 'select' | 'confirm' | 'review' | 'results';
 
@@ -98,11 +99,17 @@ function VotePageContent() {
 
     try {
       // Pass username and displayName from Frame context to track user info
-      await submitVote(
+      const result = await submitVote(
         selectedEmoji,
         context?.user?.username,
         context?.user?.displayName
       );
+
+      // Trigger cache invalidation for real-time updates across tabs
+      if (result.success && result.voteDate) {
+        triggerVoteCacheUpdate(result.voteDate);
+        console.log("🔄 Vote submitted, invalidated caches");
+      }
 
       // After successful vote, update state and fetch latest results
       setHasVoted(true);

@@ -29,6 +29,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { UnifiedDebugButton } from "@/components/UnifiedDebugButton";
+import { SWRCacheManager } from "@/components/SWRCacheManager";
 
 const satoshiFont = localFont({
   src: "../assets/fonts/Satoshi-Variable.ttf",
@@ -55,15 +56,21 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={`${satoshiFont.variable} ${geistSans.variable} ${geistMono.variable} dark`}>
-      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-      <link rel="manifest" href="/site.webmanifest" />
-      <meta name="msapplication-TileColor" content="#000000" />
-      <meta name="theme-color" content="#000000" />
+      <head>
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="msapplication-TileColor" content="#000000" />
+        <meta name="theme-color" content="#000000" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link href="https://fonts.googleapis.com/css2?family=Sixtyfour+Convergence&display=swap" rel="stylesheet" />
+      </head>
       <body>
         <GoogleAnalytics />
         <Providers session={session}>
+          <SWRCacheManager />
           <main className="bg-[#050505]">
             <Navbar />
             <div className="w-full">{children}</div>
@@ -74,6 +81,6 @@ export default async function RootLayout({
         <SpeedInsights />
         <Analytics />
       </body>
-    </html >
+    </html>
   );
 }

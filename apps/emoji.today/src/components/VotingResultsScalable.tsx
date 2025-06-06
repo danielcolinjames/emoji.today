@@ -7,6 +7,8 @@ import { Copy } from 'lucide-react'
 import { useEmojiRanks, useDailySummary } from '@/hooks/useEmojiRanks'
 import { formatInTimeZone } from 'date-fns-tz'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { RaceChyron } from '@/components/RaceChyron'
+import { supabase } from '@/lib/supabase'
 
 interface VotingResultsScalableProps {
   userVote?: string
@@ -15,6 +17,7 @@ interface VotingResultsScalableProps {
 export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) {
   const { data: session } = useSession()
   const [showAll, setShowAll] = useState(false)
+  const [userAccentColor, setUserAccentColor] = useState<string>("#FFFFFF")
 
   // Use UTC date to match database
   const todayString = formatInTimeZone(new Date(), 'UTC', 'yyyy-MM-dd')
@@ -28,6 +31,38 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     isReachingEnd,
     isError: ranksError
   } = useEmojiRanks(todayString)
+
+  // Fetch user's accent color separately if they voted
+  useEffect(() => {
+    const fetchUserAccentColor = async () => {
+      if (!userVote) return
+
+      try {
+        // Handle variation selector normalization
+        const emojiVariants = [
+          userVote,
+          userVote + "\uFE0F", // Add variation selector
+          userVote.replace(/\uFE0F/g, ""), // Remove variation selector
+        ].filter((v, i, arr) => arr.indexOf(v) === i) // Remove duplicates
+
+        const { data: emojiData } = await supabase
+          .from("emojis")
+          .select("accent_color")
+          .in("emoji", emojiVariants)
+          .limit(1)
+          .single()
+
+        if (emojiData?.accent_color) {
+          setUserAccentColor(emojiData.accent_color)
+        }
+      } catch (error) {
+        console.error("Error fetching user accent color:", error)
+        // Keep default color
+      }
+    }
+
+    fetchUserAccentColor()
+  }, [userVote])
 
   // Infinite scroll observer
   const observerRef = useRef<IntersectionObserver>()
@@ -105,10 +140,6 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     )
   }
 
-  // Get accent color for user's emoji
-  const userRank = ranks.find(r => r.emoji === userVote)
-  const userAccentColor = userRank?.accent_color || "#FFFFFF"
-
   // Determine which results to show
   const visibleResults = showAll ? ranks : ranks.slice(0, 5);
   const hasMore = ranks.length > 5;
@@ -139,7 +170,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
   };
 
   return (
-    <div className="space-y-1 pb-20">
+    <div className="space-y-1 pb-20"> {/* Increased bottom padding since chyron is now taller */}
       <p
         className="text-base text-center font-geist-mono mb-2 -mt-2"
         style={{ color: userAccentColor }}
@@ -147,18 +178,28 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
         Now it's time to campaign.
       </p>
 
-      {/* Share buttons */}
+      {/* Share buttons with accent color */}
       <div className="flex flex-row items-center justify-center mb-4 gap-4">
         <button
           onClick={handleShareFarcaster}
-          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+          className="font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:opacity-80"
+          style={{
+            backgroundColor: userAccentColor,
+            color: '#000000',
+            border: `1px solid ${userAccentColor}`
+          }}
           title="Share on Farcaster"
         >
-          <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" />
+          <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" style={{ filter: 'invert(1)' }} />
         </button>
         <button
           onClick={handleCopyLink}
-          className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
+          className="font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:opacity-80"
+          style={{
+            backgroundColor: userAccentColor,
+            color: '#000000',
+            border: `1px solid ${userAccentColor}`
+          }}
           title="Copy share link"
         >
           <Copy className="w-4 h-4" />
@@ -284,23 +325,8 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
           )}
         </div>
       )}
-
-      {/* Fixed Live Status Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-md border-t border-neutral-800 px-4 pt-2 pb-6 z-50">
-        <div className="flex items-center justify-center gap-3 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="relative w-2 h-2 rounded-full bg-green-400">
-              <div className="absolute inset-0 w-2 h-2 rounded-full bg-green-400 animate-ping opacity-75"></div>
-            </div>
-            <div className="text-neutral-500 text-xs uppercase tracking-wider font-mono">
-              LIVE
-            </div>
-            <span className="text-neutral-600 text-xs font-geist-mono">
-              {summary.total_votes} vote{summary.total_votes !== 1 ? 's' : ''} today
-            </span>
-          </div>
-        </div>
-      </div>
+      {/* Race Chyron - positioned at very bottom, full width */}
+      <RaceChyron className="" />
     </div>
   )
 } 

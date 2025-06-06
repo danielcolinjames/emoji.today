@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache"
 import { getSession } from "@/auth"
 import { supabase } from "@/lib/supabase"
 import { createClient } from "@supabase/supabase-js"
+import { updateChyronOnVoteChange } from "@/actions/race-commentary"
+import { getCurrentVotingDateString } from "@/lib/date-utils"
 
 export interface EmojiVoteCount {
   emoji: string
@@ -226,7 +228,7 @@ export async function submitVote(
     }
 
     const fid = session.user.fid
-    const today = new Date().toISOString().split("T")[0]
+    const today = getCurrentVotingDateString()
 
     // Use service role for all database operations to avoid RLS issues with triggers
     const serviceSupabase = createClient(
@@ -281,8 +283,20 @@ export async function submitVote(
       throw new Error(`Failed to submit vote: ${voteError.message}`)
     }
 
+    // Update chyron text with new commentary reflecting the vote change
+    try {
+      await updateChyronOnVoteChange()
+    } catch (chyronError) {
+      // Don't fail the entire vote submission if chyron update fails
+      console.error("Failed to update chyron after vote:", chyronError)
+    }
+
     revalidatePath("/vote")
-    return { success: true, message: "Vote submitted successfully" }
+    return {
+      success: true,
+      message: "Vote submitted successfully",
+      voteDate: today, // Add date for client-side cache invalidation
+    }
   } catch (error) {
     console.error(`[submitVote] Final error:`, error)
     throw error
