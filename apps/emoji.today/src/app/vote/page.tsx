@@ -7,7 +7,6 @@ import { PageLayout } from "@/components/PageLayout";
 import { SelectEmoji } from "@/components/voting/SelectEmoji";
 import { ConfirmEmoji } from "@/components/voting/ConfirmEmoji";
 import { ReviewVote } from "@/components/voting/ReviewVote";
-import { VotingResults } from "@/components/VotingResults";
 import { VotingResultsScalable } from "@/components/VotingResultsScalable";
 import { submitVote, getLiveVotingResults } from "@/lib/actions";
 import { useFrame } from "@/components/providers/FrameProvider";

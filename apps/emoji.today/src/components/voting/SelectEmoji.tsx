@@ -99,45 +99,7 @@ export function SelectEmoji({ onContinue, isLoading = false }: SelectEmojiProps)
         </p>
       </div>
 
-      {/* Horizontal Emoji Scroll - only show after typing */}
-      {hasSearched && emojis.length > 0 && (
-        <div className="mb-4">
-          <div
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-            className={`overflow-x-auto scrollbar-hide ${emojis.length <= 2 ? 'flex justify-center' : ''
-              }`}
-            style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-            }}
-          >
-            <div className={`flex gap-3 ${emojis.length <= 2 ? '-ml-4 px-4' : 'pr-0'
-              }`}>
-              {emojis.map((emojiData, index) => (
-                <button
-                  key={`${emojiData.emoji}-${index}`}
-                  onClick={() => setSelectedEmoji(emojiData)}
-                  disabled={isLoading}
-                  className={`
-                    flex-shrink-0 text-2xl p-3 rounded-xl transition-all duration-300
-                    ${selectedEmoji?.emoji === emojiData.emoji
-                    && 'z-10'
-                    }
-                    ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-                  `}
-                  style={{
-                    filter: !selectedEmoji || selectedEmoji.emoji !== emojiData.emoji ? 'grayscale(100%)' : 'none',
-                    opacity: !selectedEmoji || selectedEmoji.emoji !== emojiData.emoji ? 0.5 : 1,
-                  }}
-                >
-                  {emojiData.emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Search Input and Continue Button - horizontal split */}
       <div className="flex gap-4 w-full items-center">
@@ -180,6 +142,46 @@ export function SelectEmoji({ onContinue, isLoading = false }: SelectEmojiProps)
           <ArrowRight className="w-6 h-6" />
         </button>
       </div>
+
+      {/* Horizontal Emoji Scroll - only show after typing */}
+      {hasSearched && emojis.length > 0 && (
+        <div className="mb-4">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className={`overflow-x-auto scrollbar-hide ${emojis.length <= 2 ? 'flex justify-center' : ''
+              }`}
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            <div className={`flex gap-3 ${emojis.length <= 2 ? '-ml-4 px-4' : 'pr-0'
+              }`}>
+              {emojis.map((emojiData, index) => (
+                <button
+                  key={`${emojiData.emoji}-${index}`}
+                  onClick={() => setSelectedEmoji(emojiData)}
+                  disabled={isLoading}
+                  className={`
+                    flex-shrink-0 text-2xl p-3 rounded-xl transition-all duration-300
+                    ${selectedEmoji?.emoji === emojiData.emoji
+                    && 'z-10'
+                    }
+                    ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                  style={{
+                    filter: !selectedEmoji || selectedEmoji.emoji !== emojiData.emoji ? 'grayscale(100%)' : 'none',
+                    opacity: !selectedEmoji || selectedEmoji.emoji !== emojiData.emoji ? 0.5 : 1,
+                  }}
+                >
+                  {emojiData.emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add global styles for scrollbar hiding */}
       <style jsx global>{`

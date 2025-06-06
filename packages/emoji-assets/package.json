@@ -5,6 +5,8 @@
   "main": "src/index.ts",
   "scripts": {
     "analyze": "tsx scripts/analyze-and-populate-emoji-database.ts",
+    "populate-db": "tsx scripts/populate-supabase-database.ts",
+    "fix-prod": "tsx scripts/fix-production-emojis.ts",
     "sync": "tsx scripts/sync-to-apps.ts",
     "build": "echo 'No build needed for emoji-assets'"
   },

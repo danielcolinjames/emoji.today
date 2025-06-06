@@ -531,176 +531,170 @@ export function DevPanel({ isOpen, onClose }: DevPanelProps) {
     }
   }
 
+  // Rainbow of sample emojis for quick voting
+  const rainbowEmojis = [
+    // Red
+    '❤️', '🔥', '🌶️', '🍎', '🌹', '🚗', '👺', '🎈',
+    // Orange  
+    '🧡', '🍊', '🥕', '🦊', '🍑', '🎃', '🧿', '🌅',
+    // Yellow
+    '💛', '⭐', '☀️', '🍌', '🌻', '⚡', '🐥', '🧀',
+    // Green
+    '💚', '🌱', '🍀', '🥬', '🐸', '🌲', '💸', '🍏',
+    // Blue
+    '💙', '🌊', '🧊', '🫐', '🐋', '💎', '🌀', '🦋',
+    // Purple
+    '💜', '🔮', '🍇', '🌂', '🦄', '👾', '🟣', '⚛️',
+    // Pink
+    '🩷', '🌸', '🦩', '💗', '🎀', '🌺', '🧠', '🍡'
+  ]
+
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[10000] flex items-center justify-center p-4">
-      <div className="bg-[#050505] border border-neutral-800 rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-light text-white">Dev Panel</h2>
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[10000] flex items-center justify-center p-1">
+      <div className="bg-[#050505] border border-neutral-800 rounded-xl p-2 max-w-sm w-full max-h-[95vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-lg font-medium text-white">Dev Tools</h2>
           <button
             onClick={onClose}
-            className="text-neutral-500 hover:text-white transition-colors p-2 rounded-full hover:bg-neutral-800"
+            className="text-neutral-500 hover:text-white transition-colors p-1 rounded-full hover:bg-neutral-800"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="space-y-6">
-          {/* My Vote Actions */}
-          <div className="bg-neutral-900 rounded-xl p-5">
-            <h3 className="text-lg font-light text-white mb-4 flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" />
+        <div className="space-y-2 text-xs">
+          {/* My Vote */}
+          <div className="bg-neutral-900/50 rounded-lg p-1.5">
+            <h3 className="text-xs font-medium text-white mb-1.5 flex items-center gap-1">
+              <RefreshCw className="w-3 h-3" />
               My Vote
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-1">
               <button
                 onClick={clearMyVote}
                 disabled={isSubmitting}
-                className="w-full bg-neutral-800 hover:bg-neutral-700 text-white py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-neutral-800 hover:bg-neutral-700 text-white py-1 px-2 rounded text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1"
               >
-                <Trash2 className="w-4 h-4" />
-                Clear My Vote Today
+                <Trash2 className="w-3 h-3" />
+                Clear Vote
               </button>
-
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <input
                   type="text"
                   value={changeVoteEmoji}
                   onChange={(e) => setChangeVoteEmoji(e.target.value)}
-                  className="flex-1 bg-black border border-neutral-700 rounded-full px-4 py-3 text-white text-center text-xl focus:outline-none focus:border-neutral-500 transition-colors"
+                  className="w-12 bg-black border border-neutral-700 rounded px-1.5 py-1 text-white text-center text-sm focus:outline-none focus:border-neutral-500"
                   placeholder="🎯"
                   maxLength={4}
                 />
                 <button
                   onClick={changeMyVote}
                   disabled={isSubmitting}
-                  className="bg-white hover:bg-neutral-200 text-black font-medium py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-white hover:bg-neutral-200 text-black text-xs py-1 px-1.5 rounded transition-all disabled:opacity-50"
                 >
-                  Change Vote
+                  Change
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Generate Test Votes */}
-          <div className="bg-neutral-900 rounded-xl p-5">
-            <h3 className="text-lg font-light text-white mb-4 flex items-center gap-2">
-              <Zap className="w-4 h-4" />
-              Generate Test Votes
+          {/* Quick Rainbow Votes */}
+          <div className="bg-neutral-900/50 rounded-lg p-1.5">
+            <h3 className="text-xs font-medium text-white mb-1.5 flex items-center gap-1">
+              <Zap className="w-3 h-3" />
+              Quick Votes
             </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-neutral-400 mb-2">
-                  Number of votes
-                </label>
+            <div className="grid grid-cols-8 gap-0.5">
+              {rainbowEmojis.map((emoji, index) => (
+                <button
+                  key={`${emoji}-${index}`}
+                  onClick={() => addQuickVote(emoji)}
+                  disabled={isSubmitting}
+                  className="bg-black hover:bg-neutral-800 border border-neutral-700 aspect-square rounded text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  title={emoji}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Generate Votes */}
+          <div className="bg-neutral-900/50 rounded-lg p-1.5">
+            <h3 className="text-xs font-medium text-white mb-1.5 flex items-center gap-1">
+              <Target className="w-3 h-3" />
+              Generate
+            </h3>
+            <div className="space-y-1">
+              <div className="flex gap-1">
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={voteCount}
+                  onChange={(e) => setVoteCount(parseInt(e.target.value) || 1)}
+                  className="w-12 bg-black border border-neutral-700 rounded px-1 py-1 text-white text-xs focus:outline-none focus:border-neutral-500"
+                  placeholder="5"
+                />
+                <button
+                  onClick={generateRandomVotes}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-1 px-1.5 rounded text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1"
+                >
+                  <Zap className="w-3 h-3" />
+                  Random
+                </button>
+              </div>
+
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  value={seedEmoji}
+                  onChange={(e) => setSeedEmoji(e.target.value)}
+                  className="w-12 bg-black border border-neutral-700 rounded px-1.5 py-1 text-white text-center text-sm focus:outline-none focus:border-neutral-500"
+                  placeholder="🚀"
+                  maxLength={4}
+                />
                 <input
                   type="number"
                   min="1"
                   max="100"
-                  value={voteCount}
-                  onChange={(e) => setVoteCount(parseInt(e.target.value) || 1)}
-                  className="w-full bg-black border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-neutral-500 transition-colors"
+                  value={seedCount}
+                  onChange={(e) => setSeedCount(parseInt(e.target.value) || 1)}
+                  className="w-12 bg-black border border-neutral-700 rounded px-1 py-1 text-white text-xs focus:outline-none focus:border-neutral-500"
+                  placeholder="10"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm text-neutral-400 mb-2">
-                  Quick vote (adds 1 vote immediately)
-                </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {quickVoteEmojis.map(emoji => (
-                    <button
-                      key={emoji}
-                      onClick={() => addQuickVote(emoji)}
-                      disabled={isSubmitting}
-                      className="bg-black hover:bg-neutral-800 border border-neutral-700 py-3 rounded-lg text-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
-                  onClick={generateRandomVotes}
+                  onClick={seedVotesForEmoji}
                   disabled={isSubmitting}
-                  className="bg-neutral-800 hover:bg-neutral-700 text-white py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 bg-white hover:bg-neutral-200 text-black text-xs py-1 px-1.5 rounded transition-all disabled:opacity-50"
                 >
-                  <Zap className="w-4 h-4" />
-                  Add {voteCount} Test Votes
-                </button>
-
-                <button
-                  onClick={seedRandomVotes}
-                  disabled={isSubmitting}
-                  className="bg-neutral-800 hover:bg-neutral-700 text-white py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <Shuffle className="w-4 h-4" />
-                  {voteCount} Random Votes
+                  Seed
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Seed Specific Emoji */}
-          <div className="bg-neutral-900 rounded-xl p-5">
-            <h3 className="text-lg font-light text-white mb-4 flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              Seed Votes for Specific Emoji
-            </h3>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={seedEmoji}
-                onChange={(e) => setSeedEmoji(e.target.value)}
-                className="w-24 bg-black border border-neutral-700 rounded-full px-4 py-3 text-white text-center text-xl focus:outline-none focus:border-neutral-500 transition-colors"
-                placeholder="🚀"
-                maxLength={4}
-              />
-              <input
-                type="number"
-                min="1"
-                max="1000"
-                value={seedCount}
-                onChange={(e) => setSeedCount(parseInt(e.target.value) || 1)}
-                className="flex-1 bg-black border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-neutral-500 transition-colors"
-                placeholder="Number of votes"
-              />
-              <button
-                onClick={seedVotesForEmoji}
-                disabled={isSubmitting}
-                className="bg-white hover:bg-neutral-200 text-black font-medium py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Seed
-              </button>
-            </div>
-          </div>
-
-          {/* Clear All */}
-          <div className="border border-red-900/50 bg-red-950/20 rounded-xl p-5">
-            <h3 className="text-lg font-light text-white mb-4">Danger Zone</h3>
+          {/* Danger Zone */}
+          <div className="border border-red-900/50 bg-red-950/20 rounded-lg p-1.5">
             <button
               onClick={clearAllVotes}
               disabled={isSubmitting}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1"
             >
-              <Trash2 className="w-4 h-4" />
-              Clear ALL Votes Today
+              <Trash2 className="w-3 h-3" />
+              Clear ALL
             </button>
           </div>
 
           {message && (
-            <div className={`text-sm text-center p-3 rounded-lg ${message.includes('Success') || message.includes('cleared') || message.includes('Added') || message.includes('changed')
+            <div className={`text-xs text-center p-1.5 rounded ${message.includes('Success') || message.includes('cleared') || message.includes('Added') || message.includes('changed')
               ? 'bg-green-900/20 text-green-400'
               : 'bg-red-900/20 text-red-400'
               }`}>
               {message}
             </div>
           )}
-
-          <div className="text-xs text-neutral-500 text-center pt-2">
-            This panel is only visible to @emojitoday in staging
-          </div>
         </div>
       </div>
     </div>
