@@ -99,6 +99,49 @@ export function SelectEmoji({ onContinue, isLoading = false }: SelectEmojiProps)
         </p>
       </div>
 
+      {/* Search Input and Continue Button - horizontal split */}
+      <div className="flex gap-4 w-full items-center">
+        {/* Search Input - 2/3 width */}
+        <div className="relative flex-grow">
+          <input
+            autoFocus
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search emojis..."
+            className="w-full px-4 py-2 text-white text-lg bg-neutral-800/50 border border-neutral-700 rounded-full focus:outline-none focus:border-neutral-700 transition-colors"
+            style={{ fontSize: '16px' }}
+          />
+          {isSearching && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+              <div className="w-5 h-5 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+        </div>
+
+        {/* Continue Button - 1/3 width, just arrow */}
+        <button
+          onClick={handleContinue}
+          disabled={!selectedEmoji || isLoading}
+          className={`
+            h-[45px] w-[45px] rounded-full
+            transition-all duration-300 
+            flex items-center justify-center
+            ${selectedEmoji
+              ? ''
+              : 'opacity-50 cursor-not-allowed bg-neutral-700'
+            }
+          `}
+          style={{
+            backgroundColor: selectedEmoji?.accent_color || '#404040',
+            color: selectedEmoji ? getContrastTextColor(selectedEmoji.accent_color) : '#9CA3AF',
+          }}
+        >
+          <ArrowRight className="w-6 h-6" />
+        </button>
+      </div>
+
       {/* Horizontal Emoji Scroll - only show after typing */}
       {hasSearched && emojis.length > 0 && (
         <div className="mb-4">
@@ -138,48 +181,6 @@ export function SelectEmoji({ onContinue, isLoading = false }: SelectEmojiProps)
           </div>
         </div>
       )}
-
-      {/* Search Input and Continue Button - horizontal split */}
-      <div className="flex gap-4 w-full items-center">
-        {/* Search Input - 2/3 width */}
-        <div className="relative flex-grow">
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Type to search emojis..."
-            className="w-full px-4 py-2 text-white text-lg bg-neutral-800/50 border border-neutral-700 rounded-full focus:outline-none focus:border-neutral-700 transition-colors"
-            style={{ fontSize: '16px' }}
-          />
-          {isSearching && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-              <div className="w-5 h-5 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-        </div>
-
-        {/* Continue Button - 1/3 width, just arrow */}
-        <button
-          onClick={handleContinue}
-          disabled={!selectedEmoji || isLoading}
-          className={`
-            h-[45px] w-[45px] rounded-full
-            transition-all duration-300 
-            flex items-center justify-center
-            ${selectedEmoji
-              ? ''
-              : 'opacity-50 cursor-not-allowed bg-neutral-700'
-            }
-          `}
-          style={{
-            backgroundColor: selectedEmoji?.accent_color || '#404040',
-            color: selectedEmoji ? getContrastTextColor(selectedEmoji.accent_color) : '#9CA3AF',
-          }}
-        >
-          <ArrowRight className="w-6 h-6" />
-        </button>
-      </div>
 
       {/* Add global styles for scrollbar hiding */}
       <style jsx global>{`

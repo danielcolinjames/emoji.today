@@ -7,6 +7,7 @@ import { Copy } from 'lucide-react'
 import { useEmojiRanks, useDailySummary } from '@/hooks/useEmojiRanks'
 import { formatInTimeZone } from 'date-fns-tz'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { handleFarcasterShare, generateVoteShareUrl } from '@/lib/farcaster-share'
 
 interface VotingResultsScalableProps {
   userVote?: string
@@ -128,17 +129,21 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
 
   const handleShareFarcaster = async () => {
     if (!userVote) return;
-
-    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${todayString}&accentColor=${encodeURIComponent(userAccentColor)}`;
-    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`)}&embeds[]=${encodeURIComponent(shareUrl)}`;
-
-    window.open(farcasterUrl, '_blank');
+    handleFarcasterShare({
+      emoji: userVote,
+      date: todayString,
+      accentColor: userAccentColor
+    });
   };
 
   const handleCopyLink = async () => {
     if (!userVote) return;
 
-    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${todayString}&accentColor=${encodeURIComponent(userAccentColor)}`;
+    const shareUrl = generateVoteShareUrl({
+      emoji: userVote,
+      date: todayString,
+      accentColor: userAccentColor
+    });
 
     try {
       await navigator.clipboard.writeText(shareUrl);

@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import Emoji from "@/components/Emoji";
 import { searchEmojis, type DatabaseEmoji } from "@/lib/emojis";
-import { ArrowRight, Share2, Copy, CheckCircle } from "lucide-react";
+import { ArrowRight, Copy, CheckCircle } from "lucide-react";
+import { generateVoteShareUrl } from "@/lib/farcaster-share";
+import { getCurrentVotingDateString } from "@/lib/date-utils";
 
 interface ReviewVoteProps {
   emoji: string;
@@ -43,12 +45,15 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
   const accentColor = emojiData?.accent_color || "#6B7280";
 
   // Get current date for sharing
-  const currentDate = new Date().toISOString().split('T')[0];
-
-  // Create share URLs with all necessary parameters
-  const shareUrl = `https://emoji.today/share?emoji=${encodeURIComponent(emoji)}&date=${currentDate}&accentColor=${encodeURIComponent(accentColor)}`;
+  const currentDate = getCurrentVotingDateString();
 
   const handleFarcasterShare = () => {
+    const shareUrl = generateVoteShareUrl({
+      emoji,
+      date: currentDate,
+      accentColor
+    });
+
     const castText = `Just voted ${emoji} for ${new Date().toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
@@ -64,6 +69,12 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
   };
 
   const handleCopyToClipboard = async () => {
+    const shareUrl = generateVoteShareUrl({
+      emoji,
+      date: currentDate,
+      accentColor
+    });
+
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);

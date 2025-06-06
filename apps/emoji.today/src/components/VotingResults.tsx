@@ -6,6 +6,8 @@ import { useLiveVotingResults, type EmojiVoteCount } from '@/hooks/useLiveVoting
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Copy } from 'lucide-react';
 import { LiveTicker } from '@/components/LiveTicker';
+import { handleFarcasterShare, generateVoteShareUrl } from '@/lib/farcaster-share';
+import { getCurrentVotingDateString } from '@/lib/date-utils';
 
 interface VotingResultsProps {
   userProfileUrl?: string;
@@ -97,20 +99,23 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const handleShareFarcaster = async () => {
     if (!userVote) return;
 
-    const today = new Date().toISOString().split('T')[0];
-    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
-
-    // Open Farcaster compose with the share URL
-    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`)}&embeds[]=${encodeURIComponent(shareUrl)}`;
-
-    window.open(farcasterUrl, '_blank');
+    const today = getCurrentVotingDateString();
+    handleFarcasterShare({
+      emoji: userVote,
+      date: today,
+      accentColor: userAccentColor
+    });
   };
 
   const handleCopyLink = async () => {
     if (!userVote) return;
 
-    const today = new Date().toISOString().split('T')[0];
-    const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
+    const today = getCurrentVotingDateString();
+    const shareUrl = generateVoteShareUrl({
+      emoji: userVote,
+      date: today,
+      accentColor: userAccentColor
+    });
 
     try {
       await navigator.clipboard.writeText(shareUrl);

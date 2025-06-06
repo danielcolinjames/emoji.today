@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { searchEmojis, DatabaseEmoji } from '@/lib/emojis';
+import { getCurrentVotingDateString } from '@/lib/date-utils';
+import { Image as ImageIcon, X } from 'lucide-react';
 
 export function DebugImageButton() {
   const [showModal, setShowModal] = useState(false);
@@ -98,7 +100,7 @@ export function DebugImageButton() {
   ];
 
   // Sample parameters for testing
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCurrentVotingDateString();
   const sampleUsername = 'testuser';
   const sampleUserId = '123456';
 
@@ -107,6 +109,19 @@ export function DebugImageButton() {
 
   const currentUrl = imageType === 'og' ? ogUrl : participationUrl;
   const currentDimensions = imageType === 'og' ? { width: 1200, height: 630 } : { width: 1000, height: 1000 };
+
+  const generateUrl = () => {
+    const today = getCurrentVotingDateString();
+    const params = new URLSearchParams();
+
+    if (selectedEmoji) params.set('emoji', selectedEmoji);
+    if (today) params.set('date', today);
+    if (emojiData?.accent_color) params.set('accentColor', emojiData.accent_color);
+    if (process.env.NEXT_PUBLIC_HIDE_DATE === 'true') params.set('hideDate', 'true');
+    if (process.env.NEXT_PUBLIC_HIDE_BORDER === 'true') params.set('showBorder', 'false');
+
+    return `${process.env.NEXT_PUBLIC_BASE_URL}api/${imageType}?${params.toString()}`;
+  };
 
   return (
     <>
@@ -190,14 +205,11 @@ export function DebugImageButton() {
                 <label className="text-white/80 font-mono text-sm">Data:</label>
                 {emojiData ? (
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded border border-white/30"
-                        style={{ backgroundColor: emojiData.accent_color }}
-                      />
-                      <code className="text-xs text-white/60">{emojiData.accent_color}</code>
-                    </div>
-                    <span className="text-white/60 text-sm">{emojiData.name}</span>
+                    <div
+                      className="w-6 h-6 rounded border border-white/30"
+                      style={{ backgroundColor: emojiData.accent_color }}
+                    />
+                    <code className="text-xs text-white/60">{emojiData.accent_color}</code>
                   </div>
                 ) : (
                   <span className="text-red-400 text-sm">
@@ -210,10 +222,10 @@ export function DebugImageButton() {
               <div className="flex items-center gap-4">
                 <label className="text-white/80 font-mono text-sm">URL:</label>
                 <code className="text-white/60 text-xs bg-white/5 px-2 py-1 rounded flex-1 break-all">
-                  {currentUrl}
+                  {generateUrl()}
                 </code>
                 <button
-                  onClick={() => navigator.clipboard.writeText(`${window.location.origin}${currentUrl}`)}
+                  onClick={() => navigator.clipboard.writeText(`${window.location.origin}${generateUrl()}`)}
                   className="text-white/60 hover:text-white text-sm font-mono px-2 py-1 bg-white/10 rounded"
                 >
                   Copy
@@ -232,7 +244,7 @@ export function DebugImageButton() {
                   }}
                 >
                   <iframe
-                    src={currentUrl}
+                    src={generateUrl()}
                     style={{
                       width: currentDimensions.width,
                       height: currentDimensions.height,
@@ -256,7 +268,7 @@ export function DebugImageButton() {
             {/* Actions */}
             <div className="flex gap-2 mt-6">
               <button
-                onClick={() => window.open(currentUrl, '_blank')}
+                onClick={() => window.open(generateUrl(), '_blank')}
                 className="bg-white/10 text-white px-4 py-2 rounded font-mono text-sm hover:bg-white/20 transition-colors"
               >
                 Open in New Tab
@@ -264,7 +276,7 @@ export function DebugImageButton() {
               <button
                 onClick={() => {
                   const link = document.createElement('a');
-                  link.href = currentUrl;
+                  link.href = generateUrl();
                   link.download = `${imageType}-${selectedEmoji}-${today}.png`;
                   link.click();
                 }}

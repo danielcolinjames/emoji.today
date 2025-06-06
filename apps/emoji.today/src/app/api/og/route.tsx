@@ -2,6 +2,8 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { EMOJI_FILENAME_MAP } from "@emoji.today/emoji-assets/src/filename-mapping";
 import { getEmojiFilenameNormalized } from "@emoji.today/emoji-assets/src/emoji-utils";
+import { searchEmojis } from '@/lib/emojis';
+import { formatDateForDisplay, getCurrentVotingDateString } from '@/lib/date-utils';
 // App router includes @vercel/og.
 // No need to install it.
 
@@ -23,72 +25,76 @@ async function loadGoogleFont(font: string, text: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const emoji = searchParams.get("emoji");
-  const date = searchParams.get("date");
-  const accentColor = searchParams.get("accentColor");
+  try {
+    const { searchParams } = new URL(request.url);
 
-  // Default values
-  const displayEmoji = emoji || "🗳️";
-  const displayDate = date || new Date().toISOString().split('T')[0];
+    // Get parameters
+    const emoji = searchParams.get('emoji') || '🗳️';
+    const date = searchParams.get('date');
+    const accentColor = searchParams.get('accentColor') || '#FFFFFF';
+    const hideDate = searchParams.get('hideDate') === 'true';
+    const showBorder = searchParams.get('showBorder') !== 'false'; // Default to true
 
-  // Format date components separately for vertical layout
-  const dateObj = new Date(displayDate);
-  const month = dateObj.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
-  const day = dateObj.toLocaleDateString('en-US', { day: 'numeric' });
-  const year = dateObj.toLocaleDateString('en-US', { year: 'numeric' });
+    // Use provided date or current voting date
+    const displayDate = date || getCurrentVotingDateString();
 
-  // Use normalized emoji lookup to handle variation selectors
-  const emojiFilename = getEmojiFilenameNormalized(displayEmoji);
+    // Format date components separately for vertical layout
+    const dateObj = new Date(displayDate);
+    const month = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+    const day = dateObj.toLocaleDateString('en-US', { day: 'numeric' });
+    const year = dateObj.toLocaleDateString('en-US', { year: 'numeric' });
 
-  // Use localhost for development, dynamic origin for production
-  const requestUrl = new URL(request.url);
-  const origin = process.env.NODE_ENV === 'development'
-    ? 'http://localhost:3000'
-    : (process.env.NEXT_PUBLIC_URL || requestUrl.origin);
-  const emojiImageUrl = emojiFilename
-    ? `${origin}/emoji-assets/apple-160/${emojiFilename}`
-    : null;
+    // Use normalized emoji lookup to handle variation selectors
+    const emojiFilename = getEmojiFilenameNormalized(emoji);
 
-  // Use white accent color as fallback when no emoji image
-  const displayAccentColor = emojiImageUrl && accentColor
-    ? accentColor
-    : "#FFFFFF";
+    // Use localhost for development, dynamic origin for production
+    const requestUrl = new URL(request.url);
+    const origin = process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000'
+      : (process.env.NEXT_PUBLIC_URL || requestUrl.origin);
+    const emojiImageUrl = emojiFilename
+      ? `${origin}/emoji-assets/apple-160/${emojiFilename}`
+      : null;
 
-  // Load fonts
-  const satoshiBoldFontData = await fetch(
-    new URL("../../../assets/fonts/Satoshi-Bold.otf", import.meta.url),
-  ).then((res) => res.arrayBuffer());
+    // Use white accent color as fallback when no emoji image
+    const displayAccentColor = emojiImageUrl && accentColor
+      ? accentColor
+      : "#FFFFFF";
 
-  const satoshiRegularFontData = await fetch(
-    new URL("../../../assets/fonts/Satoshi-Regular.otf", import.meta.url),
-  ).then((res) => res.arrayBuffer());
+    // Load fonts
+    const satoshiBoldFontData = await fetch(
+      new URL("../../../assets/fonts/Satoshi-Bold.otf", import.meta.url),
+    ).then((res) => res.arrayBuffer());
 
-  const satoshiLightFontData = await fetch(
-    new URL("../../../assets/fonts/Satoshi-Light.otf", import.meta.url),
-  ).then((res) => res.arrayBuffer());
+    const satoshiRegularFontData = await fetch(
+      new URL("../../../assets/fonts/Satoshi-Regular.otf", import.meta.url),
+    ).then((res) => res.arrayBuffer());
 
-  // Load Geist Mono from Google Fonts
-  const dateText = `${month}${day}${year}`;
-  const geistMonoFontData = await loadGoogleFont('Geist+Mono', dateText);
+    const satoshiLightFontData = await fetch(
+      new URL("../../../assets/fonts/Satoshi-Light.otf", import.meta.url),
+    ).then((res) => res.arrayBuffer());
 
-  // Create colored badge SVG
-  const coloredBadgeSvg = `<svg width="144" height="144" viewBox="0 0 144 144" fill="none" xmlns="http://www.w3.org/2000/svg">
+    // Load Geist Mono from Google Fonts
+    const dateText = `${month}${day}${year}`;
+    const geistMonoFontData = await loadGoogleFont('Geist+Mono', dateText);
+
+    // Create colored badge SVG
+    const coloredBadgeSvg = `<svg width="144" height="144" viewBox="0 0 144 144" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M144 72C143.862 67.0498 142.352 62.2299 139.632 58.0843C136.92 53.9464 133.103 50.636 128.613 48.5364C130.322 43.8851 130.682 38.8506 129.686 34C128.682 29.1418 126.337 24.6667 122.927 21.0728C119.326 17.6628 114.858 15.3257 110 14.3142C105.149 13.318 100.115 13.6782 95.4636 15.387C93.3716 10.8889 90.069 7.06515 85.9234 4.35251C81.7778 1.63987 76.9579 0.122605 72 0C67.0498 0.130268 62.2452 1.6322 58.1073 4.35251C53.9694 7.07282 50.682 10.8965 48.6054 15.387C43.9464 13.6782 38.8966 13.3027 34.0307 14.3142C29.1648 15.3104 24.682 17.6552 21.0805 21.0728C17.6705 24.6743 15.341 29.1571 14.3525 34.0077C13.3563 38.8582 13.7395 43.8927 15.4559 48.5364C10.9579 50.636 7.12644 53.9387 4.39847 58.0766C1.6705 62.2146 0.145594 67.0421 0 72C0.153257 76.9579 1.6705 81.7778 4.39847 85.9234C7.12644 90.0613 10.9579 93.3716 15.4559 95.4636C13.7395 100.107 13.3563 105.142 14.3525 109.992C15.3487 114.851 17.6705 119.326 21.0728 122.927C24.6743 126.322 29.1494 128.651 34 129.655C38.8506 130.667 43.8851 130.299 48.5364 128.613C50.636 133.103 53.9387 136.92 58.0843 139.64C62.2222 142.352 67.0498 143.862 72 144C76.9579 143.877 81.7778 142.368 85.9234 139.655C90.069 136.943 93.3716 133.111 95.4636 128.621C100.092 130.452 105.165 130.889 110.046 129.877C114.92 128.866 119.395 126.452 122.92 122.927C126.444 119.402 128.866 114.927 129.877 110.046C130.889 105.165 130.452 100.092 128.613 95.4636C133.103 93.364 136.92 90.0613 139.64 85.9157C142.352 81.7778 143.862 76.9502 144 72Z" fill="${displayAccentColor}"/>
 <path d="M37.44 74.0353L63.7159 100.303L107.264 52.7479L96.9419 43.2L63.2254 79.9357L47.3481 64.0583L37.44 74.0353Z" fill="#050505"/>
 </svg>`;
 
-  const badgeDataUrl = `data:image/svg+xml;base64,${Buffer.from(coloredBadgeSvg).toString('base64')}`;
+    const badgeDataUrl = `data:image/svg+xml;base64,${Buffer.from(coloredBadgeSvg).toString('base64')}`;
 
-  // Inline smile emoji SVG (from logo-white)
-  const smileEmojiSvg = `<svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+    // Inline smile emoji SVG (from logo-white)
+    const smileEmojiSvg = `<svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M250 0C388.071 0 500 111.929 500 250C500 388.071 388.071 500 250 500C111.929 500 0 388.071 0 250C0 111.929 111.929 0 250 0ZM250 30C128.497 30 30 128.497 30 250C30 371.503 128.497 470 250 470C371.503 470 470 371.503 470 250C470 128.497 371.503 30 250 30ZM318 235C326.284 235 333 241.716 333 250C333 295.84 295.84 333 250 333C204.16 333 167 295.84 167 250C167 241.716 173.716 235 182 235C190.284 235 197 241.716 197 250C197 279.271 220.729 303 250 303C279.271 303 303 279.271 303 250C303 241.716 309.716 235 318 235ZM189.5 170C201.926 170 212 180.074 212 192.5C212 204.926 201.926 215 189.5 215C177.074 215 167 204.926 167 192.5C167 180.074 177.074 170 189.5 170ZM310.5 170C322.926 170 333 180.074 333 192.5C333 204.926 322.926 215 310.5 215C298.074 215 288 204.926 288 192.5C288 180.074 298.074 170 310.5 170Z" fill="white"/>
 </svg>`;
 
-  const smileEmojiDataUrl = `data:image/svg+xml;base64,${Buffer.from(smileEmojiSvg).toString('base64')}`;
+    const smileEmojiDataUrl = `data:image/svg+xml;base64,${Buffer.from(smileEmojiSvg).toString('base64')}`;
 
-  // Inline wordmark SVG
-  const wordmarkSvg = `<svg width="664" height="153" viewBox="0 0 664 153" fill="none" xmlns="http://www.w3.org/2000/svg">
+    // Inline wordmark SVG
+    const wordmarkSvg = `<svg width="664" height="153" viewBox="0 0 664 153" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clip-path="url(#clip0_486_2557)">
 <path d="M76.5 0C118.75 0 153 34.2502 153 76.5C153 118.75 118.75 153 76.5 153C34.2502 153 0 118.75 0 76.5C0 34.2502 34.2502 0 76.5 0ZM76.5 9.17969C39.3202 9.17969 9.17969 39.3202 9.17969 76.5C9.17969 113.68 39.3202 143.82 76.5 143.82C113.68 143.82 143.82 113.68 143.82 76.5C143.82 39.3202 113.68 9.17969 76.5 9.17969ZM97.3076 71.9102C99.8426 71.9102 101.898 73.965 101.898 76.5C101.898 90.5269 90.5269 101.898 76.5 101.898C62.4731 101.898 51.1016 90.5269 51.1016 76.5C51.1016 73.965 53.1574 71.9102 55.6924 71.9102C58.2272 71.9104 60.2822 73.9651 60.2822 76.5C60.2822 85.457 67.543 92.7178 76.5 92.7178C85.457 92.7178 92.7178 85.457 92.7178 76.5C92.7178 73.9651 94.7728 71.9104 97.3076 71.9102ZM57.9873 52.0195C61.7896 52.0197 64.8721 55.1029 64.8721 58.9053C64.8719 62.7075 61.7896 65.7899 57.9873 65.79C54.1849 65.79 51.1017 62.7076 51.1016 58.9053C51.1016 55.1028 54.1848 52.0195 57.9873 52.0195ZM95.0127 52.0195C98.8152 52.0195 101.898 55.1028 101.898 58.9053C101.898 62.7076 98.8151 65.79 95.0127 65.79C91.2104 65.7899 88.1281 62.7075 88.1279 58.9053C88.1279 55.1029 91.2104 52.0197 95.0127 52.0195Z" fill="white"/>
 <path d="M216.328 101.892C211.784 101.892 207.752 100.868 204.232 98.8199C200.712 96.7079 197.96 93.8279 195.976 90.1799C193.992 86.4679 193 82.1799 193 77.3159C193 72.3879 193.96 68.0679 195.88 64.3559C197.864 60.6439 200.552 57.7319 203.944 55.6199C207.4 53.5079 211.4 52.4519 215.944 52.4519C220.424 52.4519 224.296 53.4119 227.56 55.3319C230.888 57.2519 233.448 59.9399 235.24 63.3959C237.096 66.8519 238.024 70.9159 238.024 75.5879V78.9479L197.8 79.0439L197.992 72.9959H229C229 69.0919 227.816 65.9559 225.448 63.5879C223.08 61.2199 219.912 60.0359 215.944 60.0359C212.936 60.0359 210.344 60.7079 208.168 62.0519C206.056 63.3319 204.424 65.2519 203.272 67.8119C202.184 70.3079 201.64 73.3159 201.64 76.8359C201.64 82.4679 202.92 86.8199 205.48 89.8919C208.04 92.8999 211.72 94.4039 216.52 94.4039C220.04 94.4039 222.92 93.6999 225.16 92.2919C227.4 90.8839 228.904 88.8359 229.672 86.1479H238.12C236.968 91.1399 234.504 95.0119 230.728 97.7639C226.952 100.516 222.152 101.892 216.328 101.892Z" fill="white"/>
@@ -110,163 +116,166 @@ export async function GET(request: NextRequest) {
 </defs>
 </svg>`;
 
-  const wordmarkDataUrl = `data:image/svg+xml;base64,${Buffer.from(wordmarkSvg).toString('base64')}`;
+    const wordmarkDataUrl = `data:image/svg+xml;base64,${Buffer.from(wordmarkSvg).toString('base64')}`;
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          background: '#050505',
-          position: 'relative',
-          padding: '50px',
-        }}
-      >
-        {/* Top Left: Emoji with Ring */}
+    return new ImageResponse(
+      (
         <div
           style={{
-            position: 'absolute',
-            top: '50px',
-            left: '50px',
+            width: '100%',
+            height: '100%',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            background: '#050505',
+            position: 'relative',
           }}
         >
-          {emojiImageUrl ? (
-            <div style={{
-              width: '400px',
-              height: '400px',
-              borderRadius: '50%',
-              border: `20px solid ${displayAccentColor}`,
-              backgroundColor: '#050505',
+          {/* Top Left: Emoji with Ring */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '96px',
+              left: '72px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-            }}>
+            }}
+          >
+            {emojiImageUrl ? (
+              <div style={{
+                width: '380px',
+                height: '380px',
+                borderRadius: '50%',
+                border: `20px solid ${displayAccentColor}`,
+                backgroundColor: '#050505',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <img
+                  src={emojiImageUrl}
+                  alt={emoji}
+                  style={{
+                    width: '190px',
+                    height: '190px',
+                  }}
+                />
+              </div>
+            ) : (
               <img
-                src={emojiImageUrl}
-                alt={displayEmoji}
+                src={smileEmojiDataUrl}
+                alt="Emoji Today Logo"
                 style={{
-                  width: '200px',
-                  height: '200px',
+                  width: '380px',
+                  height: '380px',
                 }}
               />
-            </div>
-          ) : (
+            )}
+          </div>
+
+          {/* Bottom Left: Badge + "I voted" text */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '40px',
+              left: '96px',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'flex-end',
+              justifyContent: 'flex-end',
+              gap: '24px',
+            }}
+          >
             <img
-              src={smileEmojiDataUrl}
-              alt="Emoji Today Logo"
+              src={badgeDataUrl}
+              alt="Voted Badge"
               style={{
-                width: '400px',
-                height: '400px',
+                width: '72px',
+                height: '72px',
+                marginBottom: '6px',
               }}
             />
-          )}
-        </div>
+            <div style={{
+              color: 'white',
+              fontSize: '72px',
+              fontFamily: 'Satoshi-Regular',
+            }}>
+              I voted
+            </div>
+          </div>
 
-        {/* Bottom Left: Badge + "I voted" text */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '50px',
-            left: '64px',
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'flex-end',
-            justifyContent: 'flex-end',
-            gap: '32px',
-          }}
-        >
-          <img
-            src={badgeDataUrl}
-            alt="Voted Badge"
+          {/* Top Right: Wordmark */}
+          <div
             style={{
-              width: '80px',
-              height: '80px',
-              marginBottom: '12px',
+              position: 'absolute',
+              bottom: '96px',
+              right: '50px',
+              display: 'flex',
             }}
-          />
-          <div style={{
-            color: 'white',
-            fontSize: '86px',
-            fontFamily: 'Satoshi-Regular',
-          }}>
-            I voted
+          >
+            <img
+              src={wordmarkDataUrl}
+              alt="Emoji Today Wordmark"
+              style={{
+                width: '270px',
+                height: '62.68px',
+              }}
+            />
           </div>
-        </div>
 
-        {/* Top Right: Wordmark */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '50px',
-            right: '50px',
-            display: 'flex',
-          }}
-        >
-          <img
-            src={wordmarkDataUrl}
-            alt="Emoji Today Wordmark"
+          {/* Bottom Right: Date */}
+          <div
             style={{
-              width: '405px',
-              height: '94.02px',
+              position: 'absolute',
+              top: '50px',
+              right: '50px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              fontFamily: 'Geist Mono',
+              textAlign: 'right',
             }}
-          />
-        </div>
-
-        {/* Bottom Right: Date */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '50px',
-            right: '50px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            fontFamily: 'Geist Mono',
-            textAlign: 'right',
-          }}
-        >
-          <div style={{ fontSize: '80px', color: '#696969', lineHeight: 1, marginBottom: '-12px' }}>
-            {month}
-          </div>
-          <div style={{ fontSize: '128px', color: '#DADADA', lineHeight: 1, fontWeight: 'bold' }}>
-            {day}
-          </div>
-          <div style={{ fontSize: '64px', color: '#696969', lineHeight: 1 }}>
-            {year}
+          >
+            <div style={{ fontSize: '64px', color: '#696969', lineHeight: 1, marginBottom: '-12px' }}>
+              {month}
+            </div>
+            <div style={{ fontSize: '128px', color: '#DADADA', lineHeight: 1, fontWeight: 'bold' }}>
+              {day}
+            </div>
+            <div style={{ fontSize: '64px', color: '#696969', lineHeight: 1 }}>
+              {year}
+            </div>
           </div>
         </div>
-      </div>
-    ),
-    {
-      width: 1200,
-      height: 630,
-      fonts: [
-        {
-          name: "Satoshi-Bold",
-          data: satoshiBoldFontData,
-          style: "normal",
-        },
-        {
-          name: "Satoshi-Regular",
-          data: satoshiRegularFontData,
-          style: "normal",
-        },
-        {
-          name: "Satoshi-Light",
-          data: satoshiLightFontData,
-          style: "normal",
-        },
-        {
-          name: "Geist Mono",
-          data: geistMonoFontData,
-          style: "normal",
-        },
-      ],
-    },
-  );
+      ),
+      {
+        width: 1200,
+        height: 630,
+        fonts: [
+          {
+            name: "Satoshi-Bold",
+            data: satoshiBoldFontData,
+            style: "normal",
+          },
+          {
+            name: "Satoshi-Regular",
+            data: satoshiRegularFontData,
+            style: "normal",
+          },
+          {
+            name: "Satoshi-Light",
+            data: satoshiLightFontData,
+            style: "normal",
+          },
+          {
+            name: "Geist Mono",
+            data: geistMonoFontData,
+            style: "normal",
+          },
+        ],
+      },
+    );
+  } catch (error) {
+    console.error('Error generating ImageResponse:', error);
+    return new Response('Error generating ImageResponse', { status: 500 });
+  }
 }
