@@ -4,11 +4,23 @@ import { getCurrentVotingDateString } from "./date-utils"
 import { getRemainingTimeToMidnightUTC } from "./utils"
 import { DEFAULT_OPENING_CHYRON } from "./constants"
 
-// Service role client for bypassing RLS
-const serviceSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Service role client for bypassing RLS - lazy initialization
+let _serviceSupabase: ReturnType<typeof createClient> | null = null
+
+function getServiceSupabase() {
+  if (!_serviceSupabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error("Supabase service role credentials are not configured")
+    }
+
+    _serviceSupabase = createClient(supabaseUrl, serviceRoleKey)
+  }
+
+  return _serviceSupabase
+}
 
 export interface EmojiStanding {
   emoji: string
@@ -108,7 +120,7 @@ export async function createRaceSnapshot(
     const now = new Date()
 
     // Check if snapshot already exists for this milestone today
-    const { data: existingSnapshot } = await serviceSupabase
+    const { data: existingSnapshot } = await getServiceSupabase()
       .from("race_commentary_snapshots")
       .select("*")
       .eq("vote_date", today)
@@ -117,7 +129,22 @@ export async function createRaceSnapshot(
 
     if (existingSnapshot) {
       console.log(`⏭️  Snapshot for ${milestone} already exists today`)
-      return { success: true, snapshot: existingSnapshot as RaceSnapshot }
+      return {
+        success: true,
+        snapshot: {
+          vote_date: existingSnapshot.vote_date,
+          milestone: existingSnapshot.milestone,
+          timestamp_utc: existingSnapshot.timestamp_utc,
+          total_votes: existingSnapshot.total_votes,
+          emoji_standings: existingSnapshot.emoji_standings as EmojiStanding[],
+          momentum_data:
+            existingSnapshot.momentum_data as RaceSnapshot["momentum_data"],
+          historical_context:
+            existingSnapshot.historical_context as RaceSnapshot["historical_context"],
+          commentary_text: existingSnapshot.commentary_text,
+          chyron_text: existingSnapshot.chyron_text,
+        } as RaceSnapshot,
+      }
     }
 
     // Get current race state
@@ -145,21 +172,22 @@ export async function createRaceSnapshot(
     snapshot.chyron_text = chyron
 
     // Store snapshot in database
-    const { data: insertedSnapshot, error: insertError } = await serviceSupabase
-      .from("race_commentary_snapshots")
-      .insert({
-        vote_date: snapshot.vote_date,
-        milestone: snapshot.milestone,
-        timestamp_utc: snapshot.timestamp_utc,
-        total_votes: snapshot.total_votes,
-        emoji_standings: snapshot.emoji_standings,
-        momentum_data: snapshot.momentum_data,
-        historical_context: snapshot.historical_context,
-        commentary_text: snapshot.commentary_text,
-        chyron_text: snapshot.chyron_text,
-      })
-      .select()
-      .single()
+    const { data: insertedSnapshot, error: insertError } =
+      await getServiceSupabase()
+        .from("race_commentary_snapshots")
+        .insert({
+          vote_date: snapshot.vote_date,
+          milestone: snapshot.milestone,
+          timestamp_utc: snapshot.timestamp_utc,
+          total_votes: snapshot.total_votes,
+          emoji_standings: snapshot.emoji_standings,
+          momentum_data: snapshot.momentum_data,
+          historical_context: snapshot.historical_context,
+          commentary_text: snapshot.commentary_text,
+          chyron_text: snapshot.chyron_text,
+        })
+        .select()
+        .single()
 
     if (insertError) {
       console.error("Error inserting snapshot:", insertError)
@@ -300,7 +328,7 @@ async function buildRaceContext(dateString: string) {
 
 async function buildHistoricalContext(dateString: string, milestone: string) {
   // Get previous snapshots for context
-  const { data: previousSnapshots } = await serviceSupabase
+  const { data: previousSnapshots } = await getServiceSupabase()
     .from("race_commentary_snapshots")
     .select("*")
     .eq("vote_date", dateString)
@@ -312,7 +340,7 @@ async function buildHistoricalContext(dateString: string, milestone: string) {
   const yesterday = new Date(Date.parse(dateString) - 24 * 60 * 60 * 1000)
     .toISOString()
     .split("T")[0]
-  const { data: yesterdaySnapshot } = await serviceSupabase
+  const { data: yesterdaySnapshot } = await getServiceSupabase()
     .from("race_commentary_snapshots")
     .select("*")
     .eq("vote_date", yesterday)
@@ -330,9 +358,10 @@ async function buildHistoricalContext(dateString: string, milestone: string) {
     previous_snapshots: previousSnapshots || [],
     same_time_yesterday: yesterdaySnapshot
       ? {
-          total_votes: yesterdaySnapshot.total_votes,
-          leader: (yesterdaySnapshot.emoji_standings as EmojiStanding[])?.[0]
-            ?.emoji,
+          total_votes: Number(yesterdaySnapshot.total_votes) || 0,
+          leader:
+            (yesterdaySnapshot.emoji_standings as EmojiStanding[])?.[0]
+              ?.emoji || "❓",
         }
       : undefined,
     recent_winners:
@@ -576,7 +605,7 @@ export async function postToFarcaster(
 
     // Update snapshot with successful post
     if (snapshotId && castHash) {
-      await serviceSupabase
+      await getServiceSupabase()
         .from("race_commentary_snapshots")
         .update({
           posted_to_farcaster: true,
@@ -600,7 +629,7 @@ export async function getLatestChyronText(): Promise<string> {
   const today = getCurrentVotingDateString()
 
   // Get the most recent snapshot for today using service client
-  const { data: latestSnapshot } = await serviceSupabase
+  const { data: latestSnapshot } = await getServiceSupabase()
     .from("race_commentary_snapshots")
     .select("chyron_text, timestamp_utc")
     .eq("vote_date", today)
@@ -608,7 +637,10 @@ export async function getLatestChyronText(): Promise<string> {
     .limit(1)
     .single()
 
-  if (latestSnapshot?.chyron_text) {
+  if (
+    latestSnapshot?.chyron_text &&
+    typeof latestSnapshot.chyron_text === "string"
+  ) {
     return latestSnapshot.chyron_text
   }
 

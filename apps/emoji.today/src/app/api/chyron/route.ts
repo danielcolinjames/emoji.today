@@ -4,6 +4,21 @@ import { DEFAULT_OPENING_CHYRON } from "@/lib/constants"
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if we're in a build environment
+    if (
+      process.env.NODE_ENV === "production" &&
+      !process.env.NEXT_PUBLIC_SUPABASE_URL
+    ) {
+      // During build time, return a static response
+      return NextResponse.json({
+        success: true,
+        chyron: DEFAULT_OPENING_CHYRON,
+        cached: true,
+        source: "build_fallback",
+        timestamp: new Date().toISOString(),
+      })
+    }
+
     // Get the latest chyron text from race snapshots
     const chyronText = await getLatestChyronText()
 

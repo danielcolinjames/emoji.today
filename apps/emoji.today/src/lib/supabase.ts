@@ -252,6 +252,57 @@ export type Database = {
         }
         Relationships: []
       }
+      race_commentary_snapshots: {
+        Row: {
+          id: number
+          vote_date: string
+          milestone: string
+          timestamp_utc: string
+          total_votes: number
+          emoji_standings: Json
+          momentum_data: Json
+          historical_context: Json
+          commentary_text: string | null
+          chyron_text: string | null
+          posted_to_farcaster: boolean | null
+          farcaster_cast_hash: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          vote_date: string
+          milestone: string
+          timestamp_utc: string
+          total_votes: number
+          emoji_standings: Json
+          momentum_data: Json
+          historical_context: Json
+          commentary_text?: string | null
+          chyron_text?: string | null
+          posted_to_farcaster?: boolean | null
+          farcaster_cast_hash?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          vote_date?: string
+          milestone?: string
+          timestamp_utc?: string
+          total_votes?: number
+          emoji_standings?: Json
+          momentum_data?: Json
+          historical_context?: Json
+          commentary_text?: string | null
+          chyron_text?: string | null
+          posted_to_farcaster?: boolean | null
+          farcaster_cast_hash?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string
@@ -380,7 +431,24 @@ export type Database = {
   }
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+let _supabase: ReturnType<typeof createClient<Database>> | null = null
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+export const supabase = new Proxy(
+  {} as ReturnType<typeof createClient<Database>>,
+  {
+    get(target, prop) {
+      if (!_supabase) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+        if (!supabaseUrl || !supabaseAnonKey) {
+          throw new Error("Supabase environment variables are not configured")
+        }
+
+        _supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+      }
+
+      return _supabase[prop as keyof typeof _supabase]
+    },
+  }
+)
