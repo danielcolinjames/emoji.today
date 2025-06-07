@@ -234,9 +234,9 @@ ${
     : `${context.currentStandings[0]?.emoji} LEADS`
 }
 
-NOTE: Rankings are timing-based - emojis with later average vote times rank higher, not just vote count!
+NOTE: Rankings are timing-based - emojis with later average vote times rank higher, not just vote count! If two emojis have the same vote count but different rankings, the higher-ranked one "leads by timing tiebreak" - don't say they're tied!
 
-Write like a TV ticker: ALL CAPS, urgent, punchy! Examples: "🔥 LEADS WITH 15 VOTES • 6H LEFT" or "TIGHT RACE! 🎯 vs 🔥 • 2 VOTE GAP"`
+Write like a TV ticker: ALL CAPS, urgent, punchy! Examples: "🔥 LEADS WITH 15 VOTES • 6H LEFT" or "TIGHT RACE! 🎯 vs 🔥 • 2 VOTE GAP" or "🔥 LEADS BY TIMING TIEBREAK • BOTH AT 8 VOTES"`
   } else if (mode === "farcaster") {
     // Optimized for social media posts
     prompt = `You are a breathless horse race announcer covering the daily emoji election at emoji.today. Write exciting commentary (1-2 sentences, under 200 chars) for Farcaster:
@@ -258,7 +258,7 @@ ${
 
 MOMENTUM: ${context.momentum.map((m) => `${m.emoji}: ${m.trend}`).join(", ")}
 
-IMPORTANT: Rankings use timing-based algorithm where later votes give better rankings! An emoji with fewer votes but more recent timing can rank higher!
+IMPORTANT: Rankings use timing-based algorithm where later votes give better rankings! An emoji with fewer votes but more recent timing can rank higher! If two emojis have the same vote count but different rankings, the higher-ranked one "leads by timing tiebreak" - they're not tied!
 
 Write like a horse race announcer - dramatic, energetic! Reference specific emojis and vote counts. Keep under 200 characters for Farcaster!`
   } else {
@@ -297,7 +297,7 @@ ${context.historicalWinners
   .map((h) => `${h.date}: ${h.emoji} won with ${h.winningCount} votes`)
   .join("\n")}
 
-CRITICAL: The rankings use a timing-based algorithm where emojis with later average vote times rank higher! This means an emoji with fewer total votes but more recent voting activity can rank above one with more votes but earlier timing. This creates strategic late-game dynamics!
+CRITICAL: The rankings use a timing-based algorithm where emojis with later average vote times rank higher! This means an emoji with fewer total votes but more recent voting activity can rank above one with more votes but earlier timing. When two emojis have the same vote count but different rankings, the higher-ranked one "leads by timing tiebreak" - they're not tied! This creates strategic late-game dynamics!
 
 Write like you're calling a horse race - dramatic, energetic, and focused on the most exciting current developments. Reference specific emojis by their actual emoji character, mention vote counts, and capture the drama of the moment. Keep it concise but thrilling!`
   }
@@ -331,12 +331,25 @@ Write like you're calling a horse race - dramatic, energetic, and focused on the
     console.error("Error generating commentary:", error)
     // Fallback commentary based on mode
     const leader = context.currentStandings[0]
+    const second = context.currentStandings[1]
     if (leader) {
+      // Check for timing-based ties (same vote count, different ranking due to timing)
+      const isTimingTiebreak = second && leader.count === second.count
+
       if (mode === "chyron") {
+        if (isTimingTiebreak) {
+          return `${leader.emoji} LEADS BY TIMING • BOTH AT ${leader.count} VOTES • ${context.timeRemaining.hours}H${context.timeRemaining.minutes}M LEFT`
+        }
         return `${leader.emoji} LEADS WITH ${leader.count} • ${context.timeRemaining.hours}H${context.timeRemaining.minutes}M LEFT`
       } else if (mode === "farcaster") {
+        if (isTimingTiebreak) {
+          return `🏁 ${leader.emoji} leads by timing tiebreak over ${second.emoji} (both at ${leader.count} votes) with ${context.timeRemaining.hours}h ${context.timeRemaining.minutes}m left!`
+        }
         return `🏁 ${leader.emoji} leads with ${leader.count} votes, but ${context.timeRemaining.hours}h ${context.timeRemaining.minutes}m left in this ${context.raceStats.uniqueEmojis}-emoji showdown!`
       } else {
+        if (isTimingTiebreak) {
+          return `🏁 ${leader.emoji} leads by timing tiebreak! Both ${leader.emoji} and ${second.emoji} have ${leader.count} votes, but ${leader.emoji} gets the edge from more recent voting activity.`
+        }
         return `🏁 ${leader.emoji} is leading the pack with ${leader.count} votes (${leader.percentage}%), but with ${context.timeRemaining.hours}h ${context.timeRemaining.minutes}m left, anything can happen in this ${context.raceStats.uniqueEmojis}-emoji showdown!`
       }
     }

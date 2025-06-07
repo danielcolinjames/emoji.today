@@ -556,10 +556,13 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
 
     if (loser && leader !== loser) {
       return `${loser.emoji} HANGING ON WITH 1 VOTE • LONE SUPPORTER!`
-    } else if (leader && second && leader.count - second.count <= 3) {
-      return `TIGHT RACE! ${leader.emoji} LEADS ${second.emoji} BY ${
-        leader.count - second.count
-      }!`
+    } else if (leader && second) {
+      const gap = leader.count - second.count
+      if (gap === 0) {
+        return `${leader.emoji} LEADS BY TIMING TIEBREAK • BOTH AT ${leader.count} VOTES!`
+      } else if (gap <= 3) {
+        return `TIGHT RACE! ${leader.emoji} LEADS ${second.emoji} BY ${gap}!`
+      }
     } else if (leader) {
       return `${leader.emoji} DOMINATES WITH ${leader.count} VOTES • RUNNING AWAY!`
     }

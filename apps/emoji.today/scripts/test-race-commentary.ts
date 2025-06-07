@@ -229,7 +229,9 @@ function generateMockChyron(
 
   if (leader && second) {
     const gap = leader.count - second.count
-    if (gap <= 3) {
+    if (gap === 0) {
+      return `${leader.emoji} LEADS BY TIMING TIEBREAK • BOTH AT ${leader.count} VOTES!`
+    } else if (gap <= 3) {
       return `NAIL-BITER! ${leader.emoji} VS ${second.emoji} SEPARATED BY ${gap} VOTES!`
     }
     return `${leader.emoji} RUNNING AWAY WITH ${leader.count} VOTES • ${second.emoji} CHASING AT ${second.count}!`

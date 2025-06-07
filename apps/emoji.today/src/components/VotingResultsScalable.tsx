@@ -214,9 +214,9 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
           title={copySuccess ? "Link copied!" : "Copy share link"}
         >
           {copySuccess ? (
-            <Check className="w-4 h-4" />
+            <Check className="w-4 h-4" style={{ color: getContrastColor(userAccentColor) }} />
           ) : (
-            <Copy className="w-4 h-4" />
+            <Copy className="w-4 h-4" style={{ color: getContrastColor(userAccentColor) }} />
           )}
         </button>
       </div>
