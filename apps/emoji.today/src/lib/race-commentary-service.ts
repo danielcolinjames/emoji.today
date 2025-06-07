@@ -104,11 +104,23 @@ Historical context: {historical_comparison}
 Tone: Authoritative, comprehensive, celebratory of democratic participation. "The results are in." Reference the winning emoji and key competitors. Do NOT include hashtags like #EmojiElection or any # symbols.`,
 }
 
-const CHYRON_PROMPT = `You will be some emojis and some context about the race for which one will represent today. You are the writer of headlines that will scroll across the bottom of a live view of the race, that anyone on earth can watch and vote on. It's your job to make people feel a sense of democratic pride, wonder about the winning emoji, and urgency about the race.
+const CHYRON_PROMPT = `You are a creative news ticker writer for the global emoji election. Looking at today's race, tell a vivid micro-story about what must be happening in the world for these emojis to be leading/winning. Be imaginative, witty, and paint a picture of the collective human experience driving these votes.
 
-Data: {emoji_standings}
+Current standings: {emoji_standings}
 
-Write one VERY short ticker line. Format: [EMOJI] [RACE CONTEXT] • [SHORT PHRASE]! • [BRIEF SPECULATION]`
+Think about:
+- What global events, moods, or phenomena would make people choose this emoji?
+- What's the human story behind these choices?
+- Create intrigue and narrative tension
+
+Write one dynamic ticker line (45-65 chars max). Use the winning/leading emoji(s) as characters in your story. Make it feel like breaking news from the collective human psyche.
+
+Examples of style:
+"🌧️ STORMS ACROSS 3 CONTINENTS • WORLD SEEKS COMFORT IN RAIN"
+"🔥 SPICY FOOD SALES SURGE 400% • TASTE BUDS REBEL GLOBALLY" 
+"😴 MONDAY ENERGY CRISIS SPREADS • PILLOW SALES SKYROCKET"
+
+Be creative, unexpected, and make people think "that actually makes sense!" Focus on the winning emoji and create a plausible world scenario.`
 
 export async function createRaceSnapshot(
   milestone: string
@@ -549,22 +561,45 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
     return chyron.toUpperCase()
   } catch (error) {
     console.error("Error generating chyron:", error)
-    // Fallback chyron - guaranteed complete and well-formed
+    // Creative fallback chyrons based on race dynamics
     const leader = snapshot.emoji_standings[0]
     const second = snapshot.emoji_standings[1]
     const loser = snapshot.emoji_standings.find((s) => s.count === 1)
 
     if (loser && leader !== loser) {
-      return `${loser.emoji} HANGING ON WITH 1 VOTE • LONE SUPPORTER!`
+      // Create stories for single-vote emojis
+      const stories = [
+        `${loser.emoji} HOLDS THE LINE • ONE BRAVE SOUL STANDS ALONE`,
+        `${loser.emoji} DEFIES THE ODDS • UNDERDOG SPIRIT LIVES ON`,
+        `${loser.emoji} FIGHTS FOR RELEVANCE • DAVID VS GOLIATH VIBES`,
+      ]
+      return stories[Math.floor(Math.random() * stories.length)]
     } else if (leader && second) {
       const gap = leader.count - second.count
       if (gap === 0) {
-        return `${leader.emoji} LEADS BY TIMING TIEBREAK • BOTH AT ${leader.count} VOTES!`
+        const tieStories = [
+          `${leader.emoji}${second.emoji} DEADLOCK DRAMA • FATE HANGS IN BALANCE`,
+          `${leader.emoji}${second.emoji} PHOTO FINISH • EVERY VOTE MATTERS NOW`,
+          `${leader.emoji}${second.emoji} SPLIT DECISION • WORLD CAN'T CHOOSE`,
+        ]
+        return tieStories[Math.floor(Math.random() * tieStories.length)]
       } else if (gap <= 3) {
-        return `TIGHT RACE! ${leader.emoji} LEADS ${second.emoji} BY ${gap}!`
+        const closeStories = [
+          `${leader.emoji} BARELY AHEAD • ${second.emoji} BREATHING DOWN NECK`,
+          `NAIL-BITER ALERT! ${leader.emoji} LEADS BY WHISKER`,
+          `${leader.emoji} vs ${second.emoji} • THRILLER IN PROGRESS`,
+        ]
+        return closeStories[Math.floor(Math.random() * closeStories.length)]
       }
     } else if (leader) {
-      return `${leader.emoji} DOMINATES WITH ${leader.count} VOTES • RUNNING AWAY!`
+      const dominationStories = [
+        `${leader.emoji} TOTAL DOMINATION • RESISTANCE IS FUTILE`,
+        `${leader.emoji} STEAMROLLS COMPETITION • CROWD GOES WILD`,
+        `${leader.emoji} UNSTOPPABLE FORCE • NEW WORLD ORDER?`,
+      ]
+      return dominationStories[
+        Math.floor(Math.random() * dominationStories.length)
+      ]
     }
     return DEFAULT_OPENING_CHYRON
   }

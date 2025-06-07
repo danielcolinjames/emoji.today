@@ -105,14 +105,7 @@ export function RaceChyron({ className = "" }: RaceChyronProps) {
 
   if (showGap) {
     return (
-      <div className={`fixed bottom-0 left-0 right-0 h-14 overflow-hidden border-t border-neutral-800 z-50 ${className}`}>
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-neutral-900 to-black" />
-        <div className="relative z-10 h-full flex items-center justify-center pb-2">
-          <span className="text-white text-xs font-bold tracking-wide font-mono opacity-50">
-            • • •
-          </span>
-        </div>
-      </div>
+      <div className={`fixed bottom-0 left-0 right-0 h-14 overflow-hidden border-t border-neutral-800 z-50 ${className}`} />
     );
   }
 

@@ -217,7 +217,7 @@ async function generateCommentaryWithOpenRouter(
 
   if (mode === "chyron") {
     // Ultra-short ticker style for scrolling chyron
-    prompt = `You are a TV news ticker announcer covering the daily emoji election at emoji.today. Write an ultra-short, punchy update (max 60 characters) in ALL CAPS ticker style:
+    prompt = `You are a TV news ticker announcer covering the daily emoji election at emoji.today. Write an ultra-short, punchy update (max 60 characters) in ALL CAPS ticker style. Speculate on what world events must be happening for these emojis to be winning:
 
 CURRENT STANDINGS (ranked by timing - later votes get better rankings):
 ${context.currentStandings
@@ -313,7 +313,7 @@ Write like you're calling a horse race - dramatic, energetic, and focused on the
           "X-Title": "emoji.today race commentary",
         },
         body: JSON.stringify({
-          model: "anthropic/claude-3.5-haiku",
+          model: "anthropic/claude-3.7-haiku",
           messages: [{ role: "user", content: prompt }],
           max_tokens: mode === "chyron" ? 30 : mode === "farcaster" ? 80 : 150,
           temperature: 0.9,

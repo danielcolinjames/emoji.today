@@ -875,3 +875,239 @@ export async function clearUserVote() {
     throw error
   }
 }
+
+export interface UserVote {
+  vote_date: string
+  emoji: string
+  created_at: string
+  accent_color?: string
+  filename?: string
+}
+
+export interface UserProfile {
+  fid: number
+  username?: string
+  currentStreak: number
+  longestStreak: number
+  totalVotes: number
+  votingHistory: UserVote[]
+}
+
+export async function getUserVotingHistory(): Promise<UserVote[]> {
+  try {
+    const session = await getSession()
+    if (!session?.user?.fid) {
+      throw new Error("Authentication required")
+    }
+
+    const fid = session.user.fid
+
+    // Get all user's votes ordered by date (most recent first)
+    const { data: userVotes, error: votesError } = await supabase
+      .from("votes")
+      .select("vote_date, emoji, created_at")
+      .eq("fid", fid)
+      .order("vote_date", { ascending: false })
+
+    if (votesError) {
+      console.error("Error fetching user votes:", votesError)
+      throw new Error("Failed to fetch voting history")
+    }
+
+    if (!userVotes || userVotes.length === 0) {
+      return []
+    }
+
+    // Get emoji metadata for all voted emojis
+    const uniqueEmojis = Array.from(
+      new Set(userVotes.map((vote) => vote.emoji))
+    )
+
+    // Handle variation selector normalization
+    const emojiVariants = uniqueEmojis
+      .flatMap((emoji) => [
+        emoji,
+        emoji + "\uFE0F", // Add variation selector
+        emoji.replace(/\uFE0F/g, ""), // Remove variation selector
+      ])
+      .filter((v, i, arr) => arr.indexOf(v) === i) // Remove duplicates
+
+    const { data: emojiData, error: emojiError } = await supabase
+      .from("emojis")
+      .select("emoji, accent_color, filename")
+      .in("emoji", emojiVariants)
+
+    if (emojiError) {
+      console.error("Error fetching emoji data:", emojiError)
+    }
+
+    // Create a map for quick emoji data lookup
+    const emojiDataMap = new Map()
+    emojiData?.forEach((emoji) => {
+      const baseEmoji = emoji.emoji.replace(/\uFE0F/g, "")
+      const withVariationSelector = baseEmoji + "\uFE0F"
+
+      emojiDataMap.set(emoji.emoji, emoji)
+      emojiDataMap.set(baseEmoji, emoji)
+      emojiDataMap.set(withVariationSelector, emoji)
+    })
+
+    // Combine vote data with emoji metadata
+    return userVotes.map((vote) => {
+      const emojiInfo = emojiDataMap.get(vote.emoji)
+      return {
+        vote_date: vote.vote_date,
+        emoji: vote.emoji,
+        created_at: vote.created_at,
+        accent_color: emojiInfo?.accent_color,
+        filename: emojiInfo?.filename,
+      }
+    })
+  } catch (error) {
+    console.error("Error in getUserVotingHistory:", error)
+    throw error
+  }
+}
+
+export async function calculateVotingStreak(): Promise<{
+  currentStreak: number
+  longestStreak: number
+}> {
+  try {
+    const session = await getSession()
+    if (!session?.user?.fid) {
+      throw new Error("Authentication required")
+    }
+
+    const fid = session.user.fid
+
+    // Get all user's vote dates
+    const { data: userVotes, error: votesError } = await supabase
+      .from("votes")
+      .select("vote_date")
+      .eq("fid", fid)
+      .order("vote_date", { ascending: false })
+
+    if (votesError) {
+      console.error("Error fetching user votes for streak:", votesError)
+      throw new Error("Failed to calculate voting streak")
+    }
+
+    if (!userVotes || userVotes.length === 0) {
+      return { currentStreak: 0, longestStreak: 0 }
+    }
+
+    // Get unique vote dates and sort them (most recent first)
+    const voteDates = Array.from(
+      new Set(userVotes.map((vote) => vote.vote_date))
+    ).sort((a, b) => b.localeCompare(a))
+
+    const today = new Date().toISOString().split("T")[0]
+    let currentStreak = 0
+    let longestStreak = 0
+    let tempStreak = 0
+
+    // Check if user voted today or yesterday (current streak might continue)
+    const mostRecentVote = voteDates[0]
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0]
+
+    let streakStartDate = today
+    if (mostRecentVote === today) {
+      currentStreak = 1
+      streakStartDate = today
+    } else if (mostRecentVote === yesterday) {
+      currentStreak = 1
+      streakStartDate = yesterday
+    } else {
+      // No recent votes, current streak is 0
+      currentStreak = 0
+    }
+
+    // Calculate current streak by working backwards from the most recent vote
+    if (currentStreak > 0) {
+      let checkDate = new Date(streakStartDate)
+      let streakIndex = 0
+
+      while (streakIndex < voteDates.length) {
+        const checkDateString = checkDate.toISOString().split("T")[0]
+
+        if (voteDates[streakIndex] === checkDateString) {
+          currentStreak = streakIndex + 1
+          streakIndex++
+        } else {
+          // Gap found, stop counting current streak
+          break
+        }
+
+        // Move to previous day
+        checkDate.setDate(checkDate.getDate() - 1)
+      }
+    }
+
+    // Calculate longest streak by checking all possible consecutive sequences
+    tempStreak = 0
+    for (let i = 0; i < voteDates.length; i++) {
+      let consecutiveCount = 1
+      let currentDate = new Date(voteDates[i])
+
+      // Look for consecutive days going backwards
+      for (let j = i + 1; j < voteDates.length; j++) {
+        const expectedPrevDate = new Date(currentDate)
+        expectedPrevDate.setDate(expectedPrevDate.getDate() - 1)
+        const expectedDateString = expectedPrevDate.toISOString().split("T")[0]
+
+        if (voteDates[j] === expectedDateString) {
+          consecutiveCount++
+          currentDate = expectedPrevDate
+        } else {
+          break
+        }
+      }
+
+      longestStreak = Math.max(longestStreak, consecutiveCount)
+    }
+
+    return { currentStreak, longestStreak }
+  } catch (error) {
+    console.error("Error calculating voting streak:", error)
+    throw error
+  }
+}
+
+export async function getUserProfile(): Promise<UserProfile> {
+  try {
+    const session = await getSession()
+    if (!session?.user?.fid) {
+      throw new Error("Authentication required")
+    }
+
+    const fid = session.user.fid
+
+    // Get user data, voting history, and streak in parallel
+    const [votingHistory, streakData] = await Promise.all([
+      getUserVotingHistory(),
+      calculateVotingStreak(),
+    ])
+
+    // Get username from session context or user table
+    const { data: userData } = await supabase
+      .from("users")
+      .select("username")
+      .eq("fid", fid)
+      .single()
+
+    return {
+      fid,
+      username: userData?.username || undefined,
+      currentStreak: streakData.currentStreak,
+      longestStreak: streakData.longestStreak,
+      totalVotes: votingHistory.length,
+      votingHistory,
+    }
+  } catch (error) {
+    console.error("Error in getUserProfile:", error)
+    throw error
+  }
+}
