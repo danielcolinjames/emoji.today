@@ -145,8 +145,8 @@ export function DevPanel({ isOpen, onClose, onDevAction, isLoading, message: ext
         {/* Message */}
         {displayMessage && (
           <div className={`mb-4 p-2.5 rounded-full text-sm font-medium border ${displayMessage.includes('Failed') || displayMessage.includes('Error') || displayMessage.includes('Unauthorized')
-              ? 'bg-red-500/10 text-red-400 border-red-500/20'
-              : 'bg-brand-primary/10 text-brand-primary border-brand-primary/20'
+            ? 'bg-red-500/10 text-red-400 border-red-500/20'
+            : 'bg-brand-primary/10 text-brand-primary border-brand-primary/20'
             }`}>
             {displayMessage}
           </div>

@@ -10,6 +10,7 @@ import {
   getHoursRemaining,
 } from "@/lib/date-utils"
 import { getRemainingTimeToMidnightUTC } from "@/lib/utils"
+import { DEFAULT_OPENING_CHYRON } from "@/lib/constants"
 
 interface RaceContext {
   currentStandings: {
@@ -473,7 +474,7 @@ export async function generateChyronUpdate(): Promise<{
     if (context.totalVotes === 0) {
       return {
         success: true,
-        chyron: "POLLS OPEN • CAST YOUR VOTE AT EMOJI.TODAY",
+        chyron: DEFAULT_OPENING_CHYRON,
       }
     }
 

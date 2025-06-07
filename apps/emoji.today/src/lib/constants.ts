@@ -1,3 +1,5 @@
+import { formatDateShortAndUppercase, getCurrentVotingDay } from "./date-utils"
+
 export const APP_URL = process.env.NEXT_PUBLIC_URL!
 export const APP_NAME = process.env.NEXT_PUBLIC_FRAME_NAME
 export const APP_DESCRIPTION = process.env.NEXT_PUBLIC_FRAME_DESCRIPTION
@@ -21,3 +23,8 @@ export const APP_TAGLINE = "Vote for today's emoji"
 export const APP_OG_TITLE = "emoji.today"
 export const APP_OG_DESCRIPTION = "What emoji is today?"
 export const APP_OG_IMAGE_URL_FINAL = `${APP_URL}/og.png`
+
+const currentDate = getCurrentVotingDay()
+export const DEFAULT_OPENING_CHYRON = `VOTING UNDERWAY FOR ${formatDateShortAndUppercase(
+  currentDate
+)}`

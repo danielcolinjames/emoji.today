@@ -13,7 +13,7 @@ interface ConfirmEmojiProps {
 }
 
 // Function to determine if text should be white or black based on background color
-function getContrastColor(hexColor: string): string {
+export function getContrastColor(hexColor: string): string {
   // Convert hex to RGB
   const r = parseInt(hexColor.slice(1, 3), 16);
   const g = parseInt(hexColor.slice(3, 5), 16);

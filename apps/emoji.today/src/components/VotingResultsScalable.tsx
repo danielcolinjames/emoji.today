@@ -3,12 +3,13 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Emoji from '@/components/Emoji'
-import { Copy } from 'lucide-react'
+import { Copy, Check } from 'lucide-react'
 import { useEmojiRanks, useDailySummary } from '@/hooks/useEmojiRanks'
 import { formatInTimeZone } from 'date-fns-tz'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { RaceChyron } from '@/components/RaceChyron'
 import { supabase } from '@/lib/supabase'
+import { getContrastColor } from './voting/ConfirmEmoji'
 
 interface VotingResultsScalableProps {
   userVote?: string
@@ -18,6 +19,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
   const { data: session } = useSession()
   const [showAll, setShowAll] = useState(false)
   const [userAccentColor, setUserAccentColor] = useState<string>("#FFFFFF")
+  const [copySuccess, setCopySuccess] = useState(false)
 
   // Use UTC date to match database
   const todayString = formatInTimeZone(new Date(), 'UTC', 'yyyy-MM-dd')
@@ -110,6 +112,27 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
+  // Log errors and no-data in useEffect to avoid setState during render
+  useEffect(() => {
+    if (summaryError || ranksError) {
+      console.error('VotingResultsScalable - errors:', {
+        summaryError,
+        ranksError,
+        todayString
+      })
+    }
+  }, [summaryError, ranksError, todayString])
+
+  useEffect(() => {
+    if (!summaryLoading && !ranksLoading && (!summary || !ranks || ranks.length === 0)) {
+      console.log('VotingResultsScalable - no data:', {
+        summary,
+        ranks: ranks?.length,
+        todayString
+      })
+    }
+  }, [summaryLoading, ranksLoading, summary, ranks, todayString])
+
   if (summaryLoading || ranksLoading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
@@ -118,21 +141,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     )
   }
 
-  // Log errors if any
-  if (summaryError || ranksError) {
-    console.error('VotingResultsScalable - errors:', {
-      summaryError,
-      ranksError,
-      todayString
-    })
-  }
-
   if (!summary || !ranks || ranks.length === 0) {
-    console.log('VotingResultsScalable - no data:', {
-      summary,
-      ranks: ranks?.length,
-      todayString
-    })
     return (
       <div className="text-center space-y-4">
         <div className="text-neutral-400">No votes yet today!</div>
@@ -164,13 +173,15 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
 
     try {
       await navigator.clipboard.writeText(shareUrl);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
   };
 
   return (
-    <div className="space-y-1 pb-20"> {/* Increased bottom padding since chyron is now taller */}
+    <div className="space-y-1">
       <p
         className="text-base text-center font-geist-mono mb-2 -mt-2"
         style={{ color: userAccentColor }}
@@ -182,27 +193,31 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
       <div className="flex flex-row items-center justify-center mb-4 gap-4">
         <button
           onClick={handleShareFarcaster}
-          className="font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:opacity-80"
+          className="font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:opacity-80 h-10 w-20 justify-center"
           style={{
             backgroundColor: userAccentColor,
-            color: '#000000',
+            color: getContrastColor(userAccentColor),
             border: `1px solid ${userAccentColor}`
           }}
           title="Share on Farcaster"
         >
-          <img src="/images/farcaster-white.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" style={{ filter: 'invert(1)' }} />
+          <img src="/images/farcaster.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" style={{ filter: 'invert(1)' }} />
         </button>
         <button
           onClick={handleCopyLink}
-          className="font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:opacity-80"
+          className="font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:opacity-80 h-10 w-20 justify-center"
           style={{
             backgroundColor: userAccentColor,
-            color: '#000000',
+            color: getContrastColor(userAccentColor),
             border: `1px solid ${userAccentColor}`
           }}
-          title="Copy share link"
+          title={copySuccess ? "Link copied!" : "Copy share link"}
         >
-          <Copy className="w-4 h-4" />
+          {copySuccess ? (
+            <Check className="w-4 h-4" />
+          ) : (
+            <Copy className="w-4 h-4" />
+          )}
         </button>
       </div>
 
