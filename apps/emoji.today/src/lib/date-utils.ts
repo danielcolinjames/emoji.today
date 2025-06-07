@@ -53,6 +53,13 @@ export function formatDateForDisplay(date: Date): string {
 }
 
 /**
+ * Format date for display (e.g., "JAN 6 2025")
+ */
+export function formatDateShortAndUppercase(date: Date): string {
+  return format(date, "MMM dd yyyy").toUpperCase()
+}
+
+/**
  * Get hours remaining until voting closes
  */
 export function getHoursRemaining(votingDay: Date): number {

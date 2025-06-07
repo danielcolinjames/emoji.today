@@ -1,0 +1,28 @@
+{
+  "crons": [
+    {
+      "path": "/api/race-commentary/opening",
+      "schedule": "5 0 * * *"
+    },
+    {
+      "path": "/api/race-commentary/1hour",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/race-commentary/halfway",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/race-commentary/final_hour",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/race-commentary/final_minutes",
+      "schedule": "55 23 * * *"
+    },
+    {
+      "path": "/api/race-commentary/daily_summary",
+      "schedule": "1 0 * * *"
+    }
+  ]
+}

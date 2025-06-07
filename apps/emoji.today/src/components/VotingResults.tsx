@@ -4,7 +4,7 @@ import Emoji from '@/components/Emoji';
 import { useState } from 'react';
 import { useLiveVotingResults, type EmojiVoteCount } from '@/hooks/useLiveVotingResults';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Copy } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 
 interface VotingResultsProps {
   userProfileUrl?: string;
@@ -12,6 +12,7 @@ interface VotingResultsProps {
 
 export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   const { data, error, isLoading, isValidating, refresh, getTimeSinceUpdate } = useLiveVotingResults();
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Helper function to convert number to ordinal
   const getOrdinal = (num: number): string => {
@@ -106,16 +107,27 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   };
 
   const handleCopyLink = async () => {
-    if (!userVote) return;
+    console.log('📋 Copy button clicked, userVote:', userVote);
+    if (!userVote) {
+      console.log('📋 No userVote, returning');
+      return;
+    }
 
     const today = new Date().toISOString().split('T')[0];
     const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
+    console.log('📋 Share URL:', shareUrl);
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      // Could add a toast notification here
+      console.log('📋 Copy successful, setting copySuccess to true, current state:', copySuccess);
+      setCopySuccess(true);
+      console.log('📋 State should now be true');
+      setTimeout(() => {
+        console.log('📋 Resetting copySuccess to false');
+        setCopySuccess(false);
+      }, 2000); // Reset after 2 seconds
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error('📋 Failed to copy:', err);
     }
   };
 
@@ -128,7 +140,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
   };
 
   return (
-    <div className="space-y-1 pb-20">
+    <div className="space-y-1">
       <p
         className="text-base text-center font-geist-mono mb-2"
         style={{ color: userAccentColor }}
@@ -146,9 +158,13 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
         <button
           onClick={handleCopyLink}
           className="bg-black text-white border border-white/20 font-semibold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2 hover:bg-white/10"
-          title="Copy share link"
+          title={copySuccess ? "Link copied!" : "Copy share link"}
         >
-          <Copy className="w-4 h-4" />
+          {copySuccess ? (
+            <span className="text-white font-bold">✓ COPIED</span>
+          ) : (
+            <Copy className="w-4 h-4 text-white" />
+          )}
         </button>
       </div>
 

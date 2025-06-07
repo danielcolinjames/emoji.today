@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { DevPanel } from './DevPanel'
 import { searchEmojis, DatabaseEmoji } from '@/lib/emojis'
+import { invalidateVotingCaches } from "@/lib/swr-utils"
+import { getCurrentVotingDateString } from "@/lib/date-utils"
 
 export function UnifiedDebugButton() {
   const env = process.env.NEXT_PUBLIC_ENVIRONMENT
@@ -10,6 +12,8 @@ export function UnifiedDebugButton() {
   const [isInterstitialOpen, setIsInterstitialOpen] = useState(false)
   const [isDevPanelOpen, setIsDevPanelOpen] = useState(false)
   const [isImageDebugOpen, setIsImageDebugOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState("")
 
   // Don't show in production
   if (!env || env === 'production') return null
@@ -40,12 +44,34 @@ export function UnifiedDebugButton() {
     setIsImageDebugOpen(true)
   }
 
+  const handleDevAction = async (action: () => Promise<any>) => {
+    setIsLoading(true)
+    try {
+      const result = await action()
+
+      // Invalidate SWR caches after successful dev action
+      if (result.success) {
+        const today = getCurrentVotingDateString()
+        invalidateVotingCaches(today)
+        console.log("🔄 Dev action completed, invalidated caches")
+      }
+
+      setMessage(result.message)
+      setTimeout(() => setMessage(""), 3000)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unknown error")
+      setTimeout(() => setMessage(""), 3000)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <>
       {/* Unified Debug Badge - Bottom Right */}
       <button
         onClick={handleBadgeClick}
-        className={`fixed bottom-6 right-5 ${getEnvColor()} backdrop-blur-lg border rounded-full px-2 py-1 font-geist-mono text-xs font-bold tracking-wider hover:opacity-80 transition-opacity duration-200 z-50 cursor-pointer`}
+        className={`fixed bottom-15 right-5 ${getEnvColor()} backdrop-blur-lg border rounded-full px-2 py-1 font-geist-mono text-xs font-bold tracking-wider hover:opacity-80 transition-opacity duration-200 z-50 cursor-pointer`}
         title="Debug Panel"
       >
         {env.toUpperCase()}
@@ -131,7 +157,13 @@ export function UnifiedDebugButton() {
       )}
 
       {/* Render the actual panels */}
-      <DevPanel isOpen={isDevPanelOpen} onClose={() => setIsDevPanelOpen(false)} />
+      <DevPanel
+        isOpen={isDevPanelOpen}
+        onClose={() => setIsDevPanelOpen(false)}
+        onDevAction={handleDevAction}
+        isLoading={isLoading}
+        message={message}
+      />
 
       {/* For image debug, we need to conditionally render the content */}
       {isImageDebugOpen && (

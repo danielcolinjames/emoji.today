@@ -225,6 +225,33 @@ export type Database = {
         }
         Relationships: []
       }
+      race_commentary_posts: {
+        Row: {
+          commentary: string
+          created_at: string | null
+          id: string
+          post_date: string
+          posted_to_farcaster: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          commentary: string
+          created_at?: string | null
+          id?: string
+          post_date: string
+          posted_to_farcaster?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          commentary?: string
+          created_at?: string | null
+          id?: string
+          post_date?: string
+          posted_to_farcaster?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string

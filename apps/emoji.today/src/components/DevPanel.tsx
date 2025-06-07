@@ -1,700 +1,328 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useSession } from 'next-auth/react'
-import { useFrame } from "./providers/FrameProvider"
-import { X, Trash2, RefreshCw, Zap, Shuffle, Target } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { X, Trash2, Zap, Shuffle, Target } from 'lucide-react'
 import { clearUserVote } from '@/lib/actions'
 import { mutate } from 'swr'
+import {
+  addQuickVoteAction,
+  generateRandomVotesAction,
+  seedVotesForEmojiAction,
+  clearAllVotesAction,
+  changeMyVoteAction
+} from '@/actions/dev-tools'
 
 interface DevPanelProps {
   isOpen: boolean
   onClose: () => void
+  onDevAction?: (action: () => Promise<any>) => Promise<void>
+  isLoading?: boolean
+  message?: string
 }
 
-export function DevPanel({ isOpen, onClose }: DevPanelProps) {
+// Curated rainbow of popular emojis for quick voting
+const QUICK_VOTE_EMOJIS = [
+  '🔥', '⚡', '🎯', '💯', '🚀', '✨', '💫', '🌟',
+  '🎉', '💪', '👍', '❤️', '😍', '😎', '🤔', '😊',
+  '🙌', '🔮', '💎', '🏆', '⭐', '💖', '🌈', '🎊'
+]
+
+export function DevPanel({ isOpen, onClose, onDevAction, isLoading, message: externalMessage }: DevPanelProps) {
   const { data: session } = useSession()
-  const { context } = useFrame()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState('')
-  const [voteCount, setVoteCount] = useState(5)
-  const [changeVoteEmoji, setChangeVoteEmoji] = useState('🎯')
-  const [seedEmoji, setSeedEmoji] = useState('🚀')
+  const [internalMessage, setInternalMessage] = useState('')
+  const [emoji, setEmoji] = useState('🎯')
+  const [count, setCount] = useState(5)
+  const [seedEmoji, setSeedEmoji] = useState('🔥')
   const [seedCount, setSeedCount] = useState(10)
-
-  // Get username from context
-  const username = context?.user?.username
-  const userFid = session?.user?.fid
-
-  // Only show for emojitoday user in staging
-  if (!username || username !== 'emojitoday' || process.env.NEXT_PUBLIC_ENVIRONMENT !== 'staging') {
-    return null
-  }
+  const [isPending, startTransition] = useTransition()
 
   if (!isOpen) return null
 
-  const revalidateResults = () => {
-    // Revalidate the SWR cache for voting results
-    // Use mutate without a filter to revalidate all SWR caches
-    mutate(() => true)
+  // Use external message if provided, otherwise use internal
+  const displayMessage = externalMessage || internalMessage
+  const isActionLoading = isLoading ?? isPending
+
+  const showMessage = (text: string) => {
+    setInternalMessage(text)
+    setTimeout(() => setInternalMessage(''), 3000)
   }
 
-  const clearMyVote = async () => {
-    if (!userFid) {
-      setMessage('No user FID found')
-      return
-    }
-
-    setIsSubmitting(true)
-    setMessage('')
-
-    try {
-      const result = await clearUserVote()
-
-      setMessage(result.message)
-
-      // Revalidate SWR cache
-      setTimeout(() => {
-        revalidateResults()
-        setMessage('')
-      }, 1500)
-    } catch (error) {
-      console.error('[clearMyVote] Error clearing vote:', error)
-      setMessage(error instanceof Error ? error.message : 'Failed to clear your vote')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const changeMyVote = async () => {
-    if (!userFid) {
-      setMessage('No user FID found')
-      return
-    }
-
-    if (!changeVoteEmoji) {
-      setMessage('Please enter an emoji')
-      return
-    }
-
-    setIsSubmitting(true)
-    setMessage('')
-
-    try {
-      const today = new Date().toISOString().split("T")[0]
-
-      // Update the vote
-      const { error } = await supabase
-        .from("votes")
-        .update({ emoji: changeVoteEmoji })
-        .eq("fid", userFid)
-        .eq("vote_date", today)
-
-      if (error) {
-        throw new Error('Failed to change your vote')
-      }
-
-      setMessage(`Vote changed to ${changeVoteEmoji}!`)
-
-      // Revalidate SWR cache
-      setTimeout(() => {
-        revalidateResults()
-        setMessage('')
-      }, 1500)
-    } catch (error) {
-      console.error('Error changing vote:', error)
-      setMessage('Failed to change your vote')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const seedRandomVotes = async () => {
-    setIsSubmitting(true)
-    setMessage('')
-
-    try {
-      const today = new Date().toISOString().split("T")[0]
-
-      // Common emojis for random selection
-      const commonEmojis = ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '🤗', '🤩', '🤔', '🤨', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '😴', '😌', '😛', '😜', '😝', '🤤', '😒', '😓', '😔', '😕', '🙃', '🤑', '😲', '☹️', '🙁', '😖', '😞', '😟', '😤', '😢', '😭', '😦', '😧', '😨', '😩', '🤯', '😬', '😰', '😱', '🥵', '🥶', '😳', '🤪', '😵', '😡', '😠', '🤬', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '😇', '🤠', '🤡', '🥳', '🥴', '🥺', '🤥', '🤫', '🤭', '🧐', '🤓', '😈', '👿', '💀', '☠️', '💩', '🤖', '👽', '👻', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '🔥', '✨', '💫', '⭐', '🌟', '💥', '💢', '💯', '🎯', '🚀', '🌈', '☀️', '🌤️', '⛅', '🌥️', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '☃️', '⛄', '🌬️', '💨', '💧', '💦', '☔', '🌊', '🎮', '🎯', '🎪', '🎨', '🎬', '🎤', '🎧', '🎼', '🎵', '🎶', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎲', '♟️', '🎳', '🎯', '🎮', '🍕', '🍔', '🍟', '🌭', '🍿', '🧂', '🥓', '🥚', '🧇', '🥞', '🧈', '🍳', '🥖', '🥨', '🥯', '🥐', '🍞', '🧀', '🥗', '🥙', '🥪', '🌮', '🌯', '🥫', '🍖', '🍗', '🥩', '🍠', '🥟', '🍱', '🍘', '🍙', '🍚', '🍛', '🍜', '🦪', '🍣', '🍤', '🍥', '🥮', '🍢', '🧆', '🥘', '🍲', '🍝', '🥣', '🥧', '🍦', '🍧', '🍨', '🍩', '🍪', '🎂', '🍰', '🧁', '🍫', '🍬', '🍭', '🍡', '🍮', '🍯', '🍼', '🥛', '☕', '🍵', '🧃', '🥤', '🧋', '🍶', '🍺', '🍻', '🥂', '🍷', '🥃', '🍸', '🍹', '🧉', '🍾']
-
-      const votes = []
-
-      for (let i = 0; i < voteCount; i++) {
-        const emoji = commonEmojis[Math.floor(Math.random() * commonEmojis.length)]
-        const fakeFid = Math.floor(Math.random() * 100000) + 1
-        votes.push({
-          emoji,
-          fid: fakeFid,
-          vote_date: today,
-          username: `user${fakeFid}`
-        })
-      }
-
-      // First, upsert test users and get their IDs
-      const { data: upsertedUsers, error: userError } = await supabase
-        .from("users")
-        .upsert(
-          votes.map(v => ({
-            fid: v.fid,
-            username: v.username,
-            updated_at: new Date().toISOString()
-          })),
-          { onConflict: 'fid' }
-        )
-        .select('id, fid')
-
-      if (userError) {
-        console.error('Failed to upsert users:', userError)
-        throw new Error('Failed to create test users')
-      }
-
-      // Create a mapping of FID to user ID
-      const fidToUserId = new Map()
-      upsertedUsers?.forEach(user => {
-        fidToUserId.set(user.fid, user.id)
+  const handleQuickVoteEmoji = (emojiToVote: string) => {
+    if (onDevAction) {
+      onDevAction(() => addQuickVoteAction(emojiToVote))
+    } else {
+      startTransition(async () => {
+        const result = await addQuickVoteAction(emojiToVote)
+        showMessage(result.message)
       })
-
-      // If we didn't get user IDs back, fetch them
-      if (!upsertedUsers || upsertedUsers.length === 0) {
-        const { data: fetchedUsers, error: fetchError } = await supabase
-          .from("users")
-          .select('id, fid')
-          .in('fid', votes.map(v => v.fid))
-
-        if (fetchError) {
-          console.error('Failed to fetch users:', fetchError)
-          throw new Error('Failed to fetch user IDs')
-        }
-
-        fetchedUsers?.forEach(user => {
-          fidToUserId.set(user.fid, user.id)
-        })
-      }
-
-      // Then insert votes with proper user_id (UUID)
-      const voteData = votes.map(v => ({
-        user_id: fidToUserId.get(v.fid),
-        fid: v.fid,
-        emoji: v.emoji,
-        vote_date: v.vote_date
-      })).filter(v => v.user_id) // Only include votes where we have a user_id
-
-      if (voteData.length === 0) {
-        throw new Error('No valid user IDs found')
-      }
-
-      const { error: voteError } = await supabase
-        .from("votes")
-        .insert(voteData)
-
-      if (voteError) {
-        throw new Error(`Failed to insert votes: ${voteError.message}`)
-      }
-
-      setMessage(`Added ${voteData.length} random votes!`)
-
-      setTimeout(() => {
-        revalidateResults()
-      }, 1500)
-    } catch (error) {
-      console.error('Error seeding random votes:', error)
-      setMessage('Failed to seed random votes')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
-  const seedVotesForEmoji = async () => {
-    if (!seedEmoji) {
-      setMessage('Please enter an emoji')
-      return
-    }
-
-    setIsSubmitting(true)
-    setMessage('')
-
-    try {
-      const today = new Date().toISOString().split("T")[0]
-      const votes = []
-      let skippedUsers = 0
-      let successfulVotes = 0
-
-      // Generate unique FIDs to avoid conflicts
-      const usedFids = new Set<number>()
-
-      for (let i = 0; i < seedCount; i++) {
-        let fakeFid: number
-        // Keep generating until we get a unique FID
-        do {
-          fakeFid = Math.floor(Math.random() * 100000) + 1
-        } while (usedFids.has(fakeFid))
-
-        usedFids.add(fakeFid)
-
-        votes.push({
-          emoji: seedEmoji,
-          fid: fakeFid,
-          vote_date: today,
-          username: `user${fakeFid}`
-        })
-      }
-
-      // First, check which users already exist
-      const fids = votes.map(v => v.fid)
-      const { data: existingUsers, error: checkError } = await supabase
-        .from("users")
-        .select("id, fid")
-        .in("fid", fids)
-
-      if (checkError) {
-        console.error('Error checking existing users:', checkError)
-      }
-
-      const existingFidsMap = new Map()
-      existingUsers?.forEach(user => {
-        existingFidsMap.set(user.fid, user.id)
+  const handleQuickAdd = () => {
+    if (onDevAction) {
+      onDevAction(() => addQuickVoteAction(emoji))
+    } else {
+      startTransition(async () => {
+        const result = await addQuickVoteAction(emoji)
+        showMessage(result.message)
       })
+    }
+  }
 
-      // Insert only new users
-      const newUsers = votes.filter(v => !existingFidsMap.has(v.fid))
+  const handleGenerateRandom = () => {
+    if (onDevAction) {
+      onDevAction(() => generateRandomVotesAction(count))
+    } else {
+      startTransition(async () => {
+        const result = await generateRandomVotesAction(count)
+        showMessage(result.message)
+      })
+    }
+  }
 
-      if (newUsers.length > 0) {
-        const { data: insertedUsers, error: insertError } = await supabase
-          .from("users")
-          .insert(
-            newUsers.map(v => ({
-              fid: v.fid,
-              username: v.username,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }))
-          )
-          .select('id, fid')
+  const handleSeedEmoji = () => {
+    if (onDevAction) {
+      onDevAction(() => seedVotesForEmojiAction(seedEmoji, seedCount))
+    } else {
+      startTransition(async () => {
+        const result = await seedVotesForEmojiAction(seedEmoji, seedCount)
+        showMessage(result.message)
+      })
+    }
+  }
 
-        if (insertError) {
-          console.error('Error inserting new users:', insertError)
-          throw new Error('Failed to create users')
-        }
-
-        // Add newly inserted users to the map
-        insertedUsers?.forEach(user => {
-          existingFidsMap.set(user.fid, user.id)
-        })
-      }
-
-      // Check which votes already exist for today
-      const { data: existingVotes, error: voteCheckError } = await supabase
-        .from("votes")
-        .select("fid")
-        .in("fid", fids)
-        .eq("vote_date", today)
-
-      if (voteCheckError) {
-        console.error('Error checking existing votes:', voteCheckError)
-      }
-
-      const existingVoteFids = new Set(existingVotes?.map(v => v.fid) || [])
-
-      // Filter out votes that already exist
-      const newVotes = votes.filter(v => !existingVoteFids.has(v.fid))
-      skippedUsers = votes.length - newVotes.length
-
-      // Insert only new votes
-      if (newVotes.length > 0) {
-        const voteData = newVotes.map(v => ({
-          user_id: existingFidsMap.get(v.fid),
-          fid: v.fid,
-          emoji: v.emoji,
-          vote_date: v.vote_date
-        })).filter(v => v.user_id) // Only include votes where we have a user_id
-
-        if (voteData.length === 0) {
-          throw new Error('No valid user IDs found')
-        }
-
-        const { data: insertedVotes, error: voteError } = await supabase
-          .from("votes")
-          .insert(voteData)
-          .select()
-
-        if (voteError) {
-          console.error('Vote insertion error details:', voteError)
-          throw new Error(`Failed to insert votes: ${voteError.message || JSON.stringify(voteError)}`)
-        }
-
-        successfulVotes = insertedVotes?.length || 0
-      }
-
-      if (successfulVotes === 0 && skippedUsers === votes.length) {
-        setMessage(`All ${skippedUsers} users already voted today`)
+  const handleClearAll = () => {
+    if (confirm('Are you sure you want to clear all votes?')) {
+      if (onDevAction) {
+        onDevAction(() => clearAllVotesAction())
       } else {
-        setMessage(`Added ${successfulVotes} votes for ${seedEmoji}!${skippedUsers > 0 ? ` (${skippedUsers} users already voted)` : ''}`)
+        startTransition(async () => {
+          const result = await clearAllVotesAction()
+          showMessage(result.message)
+        })
       }
-
-      setTimeout(() => {
-        revalidateResults()
-      }, 2000)
-    } catch (error) {
-      console.error('Error seeding votes for emoji:', error)
-      setMessage(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
-  const generateRandomVotes = async () => {
-    setIsSubmitting(true)
-    setMessage('')
-
-    try {
-      const today = new Date().toISOString().split("T")[0]
-
-      // Generate votes with random or incrementing FIDs to avoid conflicts
-      const votes = []
-      const baseFid = Math.floor(Math.random() * 900000) + 100000 // Random starting FID (6 digits)
-
-      // Use quickVoteEmojis for controlled randomness
-      for (let i = 0; i < voteCount; i++) {
-        const emoji = quickVoteEmojis[Math.floor(Math.random() * quickVoteEmojis.length)]
-        const fakeFid = baseFid + i
-        votes.push({
-          emoji,
-          fid: fakeFid,
-          vote_date: today,
-          username: `testuser${fakeFid}`
-        })
-      }
-
-      // First, upsert test users and get their IDs
-      const { data: upsertedUsers, error: userError } = await supabase
-        .from("users")
-        .upsert(
-          votes.map(v => ({
-            fid: v.fid,
-            username: v.username,
-            updated_at: new Date().toISOString()
-          })),
-          { onConflict: 'fid' }
-        )
-        .select('id, fid')
-
-      if (userError) {
-        console.error('Failed to upsert test users:', userError)
-        throw new Error('Failed to create test users')
-      }
-
-      // Create a mapping of FID to user ID
-      const fidToUserId = new Map()
-      upsertedUsers?.forEach(user => {
-        fidToUserId.set(user.fid, user.id)
+  const handleChangeMyVote = () => {
+    if (onDevAction) {
+      onDevAction(() => changeMyVoteAction(emoji))
+    } else {
+      startTransition(async () => {
+        const result = await changeMyVoteAction(emoji)
+        showMessage(result.message)
       })
-
-      // If we didn't get user IDs back, fetch them
-      if (!upsertedUsers || upsertedUsers.length === 0) {
-        const { data: fetchedUsers, error: fetchError } = await supabase
-          .from("users")
-          .select('id, fid')
-          .in('fid', votes.map(v => v.fid))
-
-        if (fetchError) {
-          console.error('Failed to fetch users:', fetchError)
-          throw new Error('Failed to fetch user IDs')
-        }
-
-        fetchedUsers?.forEach(user => {
-          fidToUserId.set(user.fid, user.id)
-        })
-      }
-
-      // Then insert votes with proper user_id (UUID)
-      const voteData = votes.map(v => ({
-        user_id: fidToUserId.get(v.fid),
-        fid: v.fid,
-        emoji: v.emoji,
-        vote_date: v.vote_date
-      })).filter(v => v.user_id) // Only include votes where we have a user_id
-
-      if (voteData.length === 0) {
-        throw new Error('No valid user IDs found')
-      }
-
-      const { error: voteError } = await supabase
-        .from("votes")
-        .insert(voteData)
-
-      if (voteError) {
-        throw new Error(`Failed to insert votes: ${voteError.message}`)
-      }
-
-      setMessage(`Successfully added ${voteData.length} test votes!`)
-
-      // Refresh the page after a short delay
-      setTimeout(() => {
-        revalidateResults()
-      }, 1500)
-    } catch (error) {
-      console.error('Error generating votes:', error)
-      setMessage('Failed to generate test votes')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
-  const clearAllVotes = async () => {
-    if (!confirm('Are you sure you want to clear ALL votes for today?')) return
-
-    setIsSubmitting(true)
-    setMessage('')
+  const handleClearMyVote = async () => {
+    if (!session?.user?.fid) return
 
     try {
-      const today = new Date().toISOString().split("T")[0]
-
-      // Delete all votes for today
-      const { error } = await supabase
-        .from("votes")
-        .delete()
-        .eq("vote_date", today)
-
-      if (error) {
-        throw new Error('Failed to clear votes')
-      }
-
-      setMessage('All votes cleared!')
-
-      setTimeout(() => {
-        revalidateResults()
-      }, 1500)
+      await clearUserVote()
+      showMessage('Your vote has been cleared.')
+      mutate('/api/user-vote')
     } catch (error) {
-      console.error('Error clearing votes:', error)
-      setMessage('Failed to clear votes')
-    } finally {
-      setIsSubmitting(false)
+      showMessage('Failed to clear your vote.')
     }
   }
-
-  // Popular emojis for quick voting
-  const quickVoteEmojis = ['🔥', '😂', '❤️', '👍', '😱']
-
-  const addQuickVote = async (emoji: string) => {
-    setIsSubmitting(true)
-    setMessage('')
-
-    try {
-      const today = new Date().toISOString().split("T")[0]
-      const fakeFid = Math.floor(Math.random() * 100000) + 1
-
-      // First, create the user
-      const { data: upsertedUser, error: userError } = await supabase
-        .from("users")
-        .upsert({
-          fid: fakeFid,
-          username: `user${fakeFid}`,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'fid' })
-        .select('id, fid')
-        .single()
-
-      if (userError) {
-        console.error('Failed to create user:', userError)
-        throw new Error('Failed to create user')
-      }
-
-      // Then insert the vote
-      const { error: voteError } = await supabase
-        .from("votes")
-        .insert({
-          user_id: upsertedUser.id,
-          fid: fakeFid,
-          emoji: emoji,
-          vote_date: today
-        })
-
-      if (voteError) {
-        throw new Error(`Failed to insert vote: ${voteError.message}`)
-      }
-
-      setMessage(`Added 1 vote for ${emoji}!`)
-
-      // Revalidate SWR cache
-      setTimeout(() => {
-        revalidateResults()
-        setMessage('')
-      }, 1000)
-    } catch (error) {
-      console.error('Error adding quick vote:', error)
-      setMessage('Failed to add vote')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  // Rainbow of sample emojis for quick voting
-  const rainbowEmojis = [
-    // Red
-    '❤️', '🔥', '🌶️', '🍎', '🌹', '🚗', '👺', '🎈',
-    // Orange  
-    '🧡', '🍊', '🥕', '🦊', '🍑', '🎃', '🧿', '🌅',
-    // Yellow
-    '💛', '⭐', '☀️', '🍌', '🌻', '⚡', '🐥', '🧀',
-    // Green
-    '💚', '🌱', '🍀', '🥬', '🐸', '🌲', '💸', '🍏',
-    // Blue
-    '💙', '🌊', '🧊', '🫐', '🐋', '💎', '🌀', '🦋',
-    // Purple
-    '💜', '🔮', '🍇', '🌂', '🦄', '👾', '🟣', '⚛️',
-    // Pink
-    '🩷', '🌸', '🦩', '💗', '🎀', '🌺', '🧠', '🍡'
-  ]
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[10000] flex items-center justify-center p-1">
-      <div className="bg-[#050505] border border-neutral-800 rounded-xl p-2 max-w-sm w-full max-h-[95vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-lg font-medium text-white">Dev Tools</h2>
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+      <div className="bg-[#050505] border border-neutral-800 rounded-2xl shadow-2xl p-5 w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-light text-white">Development tools</h2>
           <button
             onClick={onClose}
-            className="text-neutral-500 hover:text-white transition-colors p-1 rounded-full hover:bg-neutral-800"
+            className="p-1.5 rounded-full hover:bg-neutral-800 transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 text-neutral-400" />
           </button>
         </div>
 
-        <div className="space-y-2 text-xs">
-          {/* My Vote */}
-          <div className="bg-neutral-900/50 rounded-lg p-1.5">
-            <h3 className="text-xs font-medium text-white mb-1.5 flex items-center gap-1">
-              <RefreshCw className="w-3 h-3" />
-              My Vote
-            </h3>
-            <div className="space-y-1">
-              <button
-                onClick={clearMyVote}
-                disabled={isSubmitting}
-                className="w-full bg-neutral-800 hover:bg-neutral-700 text-white py-1 px-2 rounded text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1"
-              >
-                <Trash2 className="w-3 h-3" />
-                Clear Vote
-              </button>
-              <div className="flex gap-1">
-                <input
-                  type="text"
-                  value={changeVoteEmoji}
-                  onChange={(e) => setChangeVoteEmoji(e.target.value)}
-                  className="w-12 bg-black border border-neutral-700 rounded px-1.5 py-1 text-white text-center text-sm focus:outline-none focus:border-neutral-500"
-                  placeholder="🎯"
-                  maxLength={4}
-                />
-                <button
-                  onClick={changeMyVote}
-                  disabled={isSubmitting}
-                  className="flex-1 bg-white hover:bg-neutral-200 text-black text-xs py-1 px-1.5 rounded transition-all disabled:opacity-50"
-                >
-                  Change
-                </button>
-              </div>
-            </div>
+        {/* Message */}
+        {displayMessage && (
+          <div className={`mb-4 p-2.5 rounded-full text-sm font-medium border ${displayMessage.includes('Failed') || displayMessage.includes('Error') || displayMessage.includes('Unauthorized')
+            ? 'bg-red-500/10 text-red-400 border-red-500/20'
+            : 'bg-brand-primary/10 text-brand-primary border-brand-primary/20'
+            }`}>
+            {displayMessage}
           </div>
+        )}
 
-          {/* Quick Rainbow Votes */}
-          <div className="bg-neutral-900/50 rounded-lg p-1.5">
-            <h3 className="text-xs font-medium text-white mb-1.5 flex items-center gap-1">
-              <Zap className="w-3 h-3" />
-              Quick Votes
-            </h3>
-            <div className="grid grid-cols-8 gap-0.5">
-              {rainbowEmojis.map((emoji, index) => (
+        <div className="space-y-5">
+          {/* Quick Vote Rainbow */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-sm font-medium text-neutral-300">
+              <Zap className="w-4 h-4" />
+              Quick vote rainbow
+            </div>
+            <div className="grid grid-cols-8 gap-1.5">
+              {QUICK_VOTE_EMOJIS.map((quickEmoji) => (
                 <button
-                  key={`${emoji}-${index}`}
-                  onClick={() => addQuickVote(emoji)}
-                  disabled={isSubmitting}
-                  className="bg-black hover:bg-neutral-800 border border-neutral-700 aspect-square rounded text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  title={emoji}
+                  key={quickEmoji}
+                  onClick={() => handleQuickVoteEmoji(quickEmoji)}
+                  disabled={isActionLoading}
+                  className="aspect-square w-8 h-8 text-lg bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 border border-neutral-700 rounded-full transition-colors flex items-center justify-center"
+                  title={`Vote for ${quickEmoji}`}
                 >
-                  {emoji}
+                  {quickEmoji}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Generate Votes */}
-          <div className="bg-neutral-900/50 rounded-lg p-1.5">
-            <h3 className="text-xs font-medium text-white mb-1.5 flex items-center gap-1">
-              <Target className="w-3 h-3" />
-              Generate
-            </h3>
-            <div className="space-y-1">
-              <div className="flex gap-1">
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={voteCount}
-                  onChange={(e) => setVoteCount(parseInt(e.target.value) || 1)}
-                  className="w-12 bg-black border border-neutral-700 rounded px-1 py-1 text-white text-xs focus:outline-none focus:border-neutral-500"
-                  placeholder="5"
-                />
-                <button
-                  onClick={generateRandomVotes}
-                  disabled={isSubmitting}
-                  className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-1 px-1.5 rounded text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1"
-                >
-                  <Zap className="w-3 h-3" />
-                  Random
-                </button>
-              </div>
-
-              <div className="flex gap-1">
-                <input
-                  type="text"
-                  value={seedEmoji}
-                  onChange={(e) => setSeedEmoji(e.target.value)}
-                  className="w-12 bg-black border border-neutral-700 rounded px-1.5 py-1 text-white text-center text-sm focus:outline-none focus:border-neutral-500"
-                  placeholder="🚀"
-                  maxLength={4}
-                />
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={seedCount}
-                  onChange={(e) => setSeedCount(parseInt(e.target.value) || 1)}
-                  className="w-12 bg-black border border-neutral-700 rounded px-1 py-1 text-white text-xs focus:outline-none focus:border-neutral-500"
-                  placeholder="10"
-                />
-                <button
-                  onClick={seedVotesForEmoji}
-                  disabled={isSubmitting}
-                  className="flex-1 bg-white hover:bg-neutral-200 text-black text-xs py-1 px-1.5 rounded transition-all disabled:opacity-50"
-                >
-                  Seed
-                </button>
-              </div>
+          {/* Custom Quick Add */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-sm font-medium text-neutral-300">
+              <Target className="w-4 h-4" />
+              Custom emoji
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={emoji}
+                onChange={(e) => setEmoji(e.target.value)}
+                className="w-11 h-8 text-center text-lg bg-neutral-900 border border-neutral-700 rounded-full focus:ring-2 focus:ring-brand-primary focus:border-transparent text-white"
+                placeholder="🎯"
+                maxLength={4}
+              />
+              <button
+                onClick={handleQuickAdd}
+                disabled={isActionLoading}
+                className="flex-1 h-8 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-sm font-medium rounded-full transition-colors border border-neutral-700 flex items-center justify-center"
+              >
+                {isActionLoading ? (
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  'Add vote'
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Danger Zone */}
-          <div className="border border-red-900/50 bg-red-950/20 rounded-lg p-1.5">
-            <button
-              onClick={clearAllVotes}
-              disabled={isSubmitting}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1"
-            >
-              <Trash2 className="w-3 h-3" />
-              Clear ALL
-            </button>
+          {/* Generate Random */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-sm font-medium text-neutral-300">
+              <Shuffle className="w-4 h-4" />
+              Generate random votes
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={count}
+                onChange={(e) => setCount(parseInt(e.target.value) || 5)}
+                className="w-14 h-8 text-center bg-neutral-900 border border-neutral-700 rounded-full focus:ring-2 focus:ring-brand-primary focus:border-transparent text-white text-sm"
+                min="1"
+                max="50"
+              />
+              <button
+                onClick={handleGenerateRandom}
+                disabled={isActionLoading}
+                className="flex-1 h-8 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-sm font-medium rounded-full transition-colors border border-neutral-700 flex items-center justify-center"
+              >
+                {isActionLoading ? (
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  'Generate'
+                )}
+              </button>
+            </div>
           </div>
 
-          {message && (
-            <div className={`text-xs text-center p-1.5 rounded ${message.includes('Success') || message.includes('cleared') || message.includes('Added') || message.includes('changed')
-              ? 'bg-green-900/20 text-green-400'
-              : 'bg-red-900/20 text-red-400'
-              }`}>
-              {message}
+          {/* Seed Emoji */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-sm font-medium text-neutral-300">
+              <Target className="w-4 h-4" />
+              Seed specific emoji
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={seedEmoji}
+                onChange={(e) => setSeedEmoji(e.target.value)}
+                className="w-11 h-8 text-center text-lg bg-neutral-900 border border-neutral-700 rounded-full focus:ring-2 focus:ring-brand-primary focus:border-transparent text-white"
+                placeholder="🔥"
+                maxLength={4}
+              />
+              <input
+                type="number"
+                value={seedCount}
+                onChange={(e) => setSeedCount(parseInt(e.target.value) || 10)}
+                className="w-14 h-8 text-center bg-neutral-900 border border-neutral-700 rounded-full focus:ring-2 focus:ring-brand-primary focus:border-transparent text-white text-sm"
+                min="1"
+                max="50"
+              />
+              <button
+                onClick={handleSeedEmoji}
+                disabled={isActionLoading}
+                className="flex-1 h-8 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-sm font-medium rounded-full transition-colors border border-neutral-700 flex items-center justify-center"
+              >
+                {isActionLoading ? (
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  'Seed'
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* My Vote Actions */}
+          {session?.user && (
+            <div className="space-y-2.5">
+              <div className="text-sm font-medium text-neutral-300">My vote</div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleChangeMyVote}
+                  disabled={isActionLoading}
+                  className="flex-1 h-8 bg-brand-primary hover:bg-brand-secondary disabled:opacity-50 text-black text-sm font-medium rounded-full transition-colors flex items-center justify-center"
+                >
+                  {isActionLoading ? (
+                    <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  ) : (
+                    `Change to ${emoji}`
+                  )}
+                </button>
+                <button
+                  onClick={handleClearMyVote}
+                  disabled={isActionLoading}
+                  className="flex-1 h-8 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-sm font-medium rounded-full transition-colors border border-neutral-700 flex items-center justify-center"
+                >
+                  {isActionLoading ? (
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    'Clear'
+                  )}
+                </button>
+              </div>
             </div>
           )}
+
+          {/* Danger Zone */}
+          <div className="pt-3 border-t border-neutral-800">
+            <div className="flex items-center gap-2 text-sm font-medium text-red-400 mb-2.5">
+              <Trash2 className="w-4 h-4" />
+              Danger zone
+            </div>
+            <button
+              onClick={handleClearAll}
+              disabled={isActionLoading}
+              className="w-full h-8 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 text-red-400 text-sm font-medium rounded-full transition-colors border border-red-500/20 flex items-center justify-center"
+            >
+              {isActionLoading ? (
+                <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+              ) : (
+                'Clear all votes'
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-5 pt-3 border-t border-neutral-800 text-xs text-neutral-400 font-geist-mono">
+          User: {session?.user?.fid ? `FID ${session.user.fid}` : 'Not signed in'}
         </div>
       </div>
     </div>

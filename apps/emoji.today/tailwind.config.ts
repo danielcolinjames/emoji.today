@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss"
-import sharedConfig from "@emoji-today/tailwind-config/tailwind.config"
 
 const config: Config = {
   content: [
@@ -9,8 +8,12 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      ...sharedConfig.theme?.extend,
-      // App-specific extensions can go here if needed
+      fontFamily: {
+        satoshi: ["var(--font-satoshi)", "sans-serif"],
+        "geist-sans": ["var(--font-geist-sans)", "sans-serif"],
+        "geist-mono": ["var(--font-geist-mono)", "monospace"],
+        "sixtyfour-convergence": ["Sixtyfour Convergence", "monospace"],
+      },
     },
   },
   plugins: [],
