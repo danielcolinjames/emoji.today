@@ -12,7 +12,6 @@ interface MilestoneResult {
     total_votes: number
     emoji_count: number
     commentary?: string
-    chyron?: string
   }
   farcaster?: {
     success: boolean
@@ -63,7 +62,6 @@ async function createMilestoneSnapshot(
         total_votes: snapshot.total_votes,
         emoji_count: snapshot.emoji_standings.length,
         commentary: snapshot.commentary_text,
-        chyron: snapshot.chyron_text,
       },
       farcaster: farcasterResult || undefined,
     }

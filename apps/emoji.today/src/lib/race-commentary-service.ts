@@ -146,7 +146,6 @@ export async function createRaceSnapshot(
             historical_context:
               existingSnapshot.historical_context as RaceSnapshot["historical_context"],
             commentary_text: existingSnapshot.commentary_text,
-            chyron_text: existingSnapshot.chyron_text,
           } as RaceSnapshot,
         }
       }
@@ -171,12 +170,9 @@ export async function createRaceSnapshot(
       historical_context: historicalContext,
     }
 
-    // Generate commentary and chyron
+    // Generate commentary only (chyron is handled by separate cron job)
     const commentary = await generateCommentaryForMilestone(milestone, snapshot)
-    const chyron = await generateChyronText(snapshot)
-
     snapshot.commentary_text = commentary
-    snapshot.chyron_text = chyron
 
     // Store snapshot in database
     const { data: insertedSnapshot, error: insertError } =
@@ -191,7 +187,6 @@ export async function createRaceSnapshot(
           momentum_data: snapshot.momentum_data,
           historical_context: snapshot.historical_context,
           commentary_text: snapshot.commentary_text,
-          chyron_text: snapshot.chyron_text,
         })
         .select()
         .single()
@@ -500,103 +495,118 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
 
   console.log("🔍 Prompt:", prompt)
 
-  try {
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "X-Title": "emoji.today chyron",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro-preview",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 100,
-          temperature: 0.9,
-        }),
-      }
-    )
+  // Try AI generation first
+  let attempts = 0
+  const maxAttempts = 2
 
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status}`)
-    }
-
-    const data = (await response.json()) as any
-    let chyron = data.choices[0].message.content.trim()
-
-    // Extract just the first line if AI returned multiple lines
-    const lines = chyron
-      .split("\n")
-      .filter((line: string) => line.trim().length > 0)
-    const firstLine = lines[0]?.trim() || chyron
-
-    // Remove quotes if present
-    chyron = firstLine.replace(/^["']|["']$/g, "")
-
-    // Validate the chyron is complete and well-formed
-    console.log(`📺 Generated chyron: "${chyron}" (${chyron.length} chars)`)
-
-    if (chyron.length < 20 || chyron.length > 200) {
-      console.warn(
-        "Generated chyron invalid:",
-        chyron,
-        `(${chyron.length} chars)`,
-        "Reasons:",
+  while (attempts < maxAttempts) {
+    try {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
         {
-          tooShort: chyron.length < 20,
-          tooLong: chyron.length > 200,
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "X-Title": "emoji.today chyron",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-pro-preview",
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 100,
+            temperature: 0.7 + attempts * 0.2, // Increase temperature on retry
+          }),
         }
       )
-      throw new Error("Invalid chyron generated")
-    }
 
-    return chyron.toUpperCase()
-  } catch (error) {
-    console.error("Error generating chyron:", error)
-    // Creative fallback chyrons based on race dynamics
-    const leader = snapshot.emoji_standings[0]
-    const second = snapshot.emoji_standings[1]
-    const loser = snapshot.emoji_standings.find((s) => s.count === 1)
-
-    if (loser && leader !== loser) {
-      // Create stories for single-vote emojis
-      const stories = [
-        `${loser.emoji} HOLDS THE LINE • ONE BRAVE SOUL STANDS ALONE`,
-        `${loser.emoji} DEFIES THE ODDS • UNDERDOG SPIRIT LIVES ON`,
-        `${loser.emoji} FIGHTS FOR RELEVANCE • DAVID VS GOLIATH VIBES`,
-      ]
-      return stories[Math.floor(Math.random() * stories.length)]
-    } else if (leader && second) {
-      const gap = leader.count - second.count
-      if (gap === 0) {
-        const tieStories = [
-          `${leader.emoji}${second.emoji} DEADLOCK DRAMA • FATE HANGS IN BALANCE`,
-          `${leader.emoji}${second.emoji} PHOTO FINISH • EVERY VOTE MATTERS NOW`,
-          `${leader.emoji}${second.emoji} SPLIT DECISION • WORLD CAN'T CHOOSE`,
-        ]
-        return tieStories[Math.floor(Math.random() * tieStories.length)]
-      } else if (gap <= 3) {
-        const closeStories = [
-          `${leader.emoji} BARELY AHEAD • ${second.emoji} BREATHING DOWN NECK`,
-          `NAIL-BITER ALERT! ${leader.emoji} LEADS BY WHISKER`,
-          `${leader.emoji} vs ${second.emoji} • THRILLER IN PROGRESS`,
-        ]
-        return closeStories[Math.floor(Math.random() * closeStories.length)]
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status}`)
       }
-    } else if (leader) {
-      const dominationStories = [
-        `${leader.emoji} TOTAL DOMINATION • RESISTANCE IS FUTILE`,
-        `${leader.emoji} STEAMROLLS COMPETITION • CROWD GOES WILD`,
-        `${leader.emoji} UNSTOPPABLE FORCE • NEW WORLD ORDER?`,
-      ]
-      return dominationStories[
-        Math.floor(Math.random() * dominationStories.length)
-      ]
+
+      const data = (await response.json()) as any
+      let chyron = data.choices[0].message.content.trim()
+
+      // Clean up the response
+      const lines = chyron
+        .split("\n")
+        .filter((line: string) => line.trim().length > 0)
+      const firstLine = lines[0]?.trim() || chyron
+
+      // Remove quotes if present
+      chyron = firstLine.replace(/^["']|["']$/g, "")
+
+      // Validate the chyron
+      console.log(`📺 Generated chyron: "${chyron}" (${chyron.length} chars)`)
+
+      if (chyron.length >= 20 && chyron.length <= 200) {
+        return chyron.toUpperCase()
+      } else {
+        console.warn(
+          "Generated chyron invalid:",
+          chyron,
+          `(${chyron.length} chars)`,
+          "Reasons:",
+          {
+            tooShort: chyron.length < 20,
+            tooLong: chyron.length > 200,
+          }
+        )
+        attempts++
+        continue
+      }
+    } catch (error) {
+      console.error(`Error generating chyron (attempt ${attempts + 1}):`, error)
+      attempts++
+      if (attempts >= maxAttempts) break
+
+      // Wait before retry
+      await new Promise((resolve) => setTimeout(resolve, 1000))
     }
-    return getDefaultOpeningChyron()
   }
+
+  console.warn("AI chyron generation failed, using fallback")
+
+  // Enhanced fallback chyrons based on race dynamics
+  const leader = snapshot.emoji_standings[0]
+  const second = snapshot.emoji_standings[1]
+  const loser = snapshot.emoji_standings.find((s) => s.count === 1)
+
+  if (loser && leader !== loser) {
+    // Create stories for single-vote emojis
+    const stories = [
+      `${loser.emoji} HOLDS THE LINE • ONE BRAVE SOUL STANDS ALONE`,
+      `${loser.emoji} DEFIES THE ODDS • UNDERDOG SPIRIT LIVES ON`,
+      `${loser.emoji} FIGHTS FOR RELEVANCE • DAVID VS GOLIATH VIBES`,
+    ]
+    return stories[Math.floor(Math.random() * stories.length)]
+  } else if (leader && second) {
+    const gap = leader.count - second.count
+    if (gap === 0) {
+      const tieStories = [
+        `${leader.emoji}${second.emoji} DEADLOCK DRAMA • FATE HANGS IN BALANCE`,
+        `${leader.emoji}${second.emoji} PHOTO FINISH • EVERY VOTE MATTERS NOW`,
+        `${leader.emoji}${second.emoji} SPLIT DECISION • WORLD CAN'T CHOOSE`,
+      ]
+      return tieStories[Math.floor(Math.random() * tieStories.length)]
+    } else if (gap <= 3) {
+      const closeStories = [
+        `${leader.emoji} BARELY AHEAD • ${second.emoji} BREATHING DOWN NECK`,
+        `NAIL-BITER ALERT! ${leader.emoji} LEADS BY WHISKER`,
+        `${leader.emoji} vs ${second.emoji} • THRILLER IN PROGRESS`,
+      ]
+      return closeStories[Math.floor(Math.random() * closeStories.length)]
+    }
+  } else if (leader) {
+    const dominationStories = [
+      `${leader.emoji} TOTAL DOMINATION • RESISTANCE IS FUTILE`,
+      `${leader.emoji} STEAMROLLS COMPETITION • CROWD GOES WILD`,
+      `${leader.emoji} UNSTOPPABLE FORCE • NEW WORLD ORDER?`,
+    ]
+    return dominationStories[
+      Math.floor(Math.random() * dominationStories.length)
+    ]
+  }
+  return getDefaultOpeningChyron()
 }
 
 function formatStandingsForPrompt(standings: EmojiStanding[]): string {
@@ -615,27 +625,18 @@ export async function postToFarcaster(
   }
 
   try {
-    const response = await fetch("https://api.neynar.com/v2/farcaster/cast", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.NEYNAR_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        signer_uuid: process.env.FARCASTER_SIGNER_UUID,
-        text:
-          text +
-          "\n\nVote now at emoji.today @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
-      }),
+    // Use the official Neynar SDK instead of direct fetch
+    const { getNeynarClient } = await import("@/lib/neynar")
+    const client = getNeynarClient()
+
+    const response = await client.publishCast({
+      signerUuid: process.env.FARCASTER_SIGNER_UUID,
+      text:
+        text +
+        "\n\nVote now at emoji.today @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
     })
 
-    if (!response.ok) {
-      const errorData = await response.text()
-      throw new Error(`Neynar API error: ${response.status} - ${errorData}`)
-    }
-
-    const data = (await response.json()) as any
-    const castHash = data.cast?.hash
+    const castHash = response.cast?.hash
 
     // Update snapshot with successful post
     if (snapshotId && castHash) {
@@ -652,9 +653,27 @@ export async function postToFarcaster(
     return { success: true, hash: castHash }
   } catch (error) {
     console.error("Error posting to Farcaster:", error)
+
+    // Enhanced error handling with specific messages
+    let errorMessage = "Unknown error"
+    if (error instanceof Error) {
+      errorMessage = error.message
+
+      // Provide specific guidance for common issues
+      if (
+        errorMessage.includes("Invalid token") ||
+        errorMessage.includes("403")
+      ) {
+        errorMessage += " - Check NEYNAR_API_KEY in environment variables"
+      } else if (errorMessage.includes("signer")) {
+        errorMessage +=
+          " - Check FARCASTER_SIGNER_UUID in environment variables"
+      }
+    }
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: errorMessage,
     }
   }
 }
