@@ -244,28 +244,32 @@ async function calculateAccuracyLeaderboard(limit: number = 20) {
     userStats.set(vote.fid, stats)
   })
 
-  // Sort by Bayesian-adjusted win rate to reward both accuracy and volume
+  // Sort by raw win percentage, then by earlier voter, then by more total votes
   const accuracyResults = Array.from(userStats.entries())
-    .filter(([_, stats]) => stats.totalVotes >= 2)
+    .filter(([_, stats]) => stats.totalVotes >= 2) // Still require at least 2 votes
     .map(([fid, stats]) => {
-      // Bayesian average: add 1 virtual win and 1 virtual loss to everyone
-      const virtualWins = 1
-      const virtualTotal = 2
-      const bayesianScore =
-        (stats.correctVotes + virtualWins) / (stats.totalVotes + virtualTotal)
+      // Calculate raw win percentage
+      const winPercentage = (stats.correctVotes / stats.totalVotes) * 100
+
+      console.log(
+        `FID ${fid}: ${stats.correctVotes}/${
+          stats.totalVotes
+        } = ${winPercentage.toFixed(1)}%`
+      )
 
       return {
         fid,
         correctVotes: stats.correctVotes,
         totalVotes: stats.totalVotes,
-        bayesianScore: Math.round(bayesianScore * 1000), // Store as integer for precise sorting
+        winPercentage, // Use raw percentage for sorting
         earliestVote: stats.earliestVote,
       }
     })
     .sort((a, b) => {
-      // Primary sort: higher Bayesian score
-      if (b.bayesianScore !== a.bayesianScore)
-        return b.bayesianScore - a.bayesianScore
+      // Primary sort: higher win percentage
+      if (Math.abs(b.winPercentage - a.winPercentage) > 0.01) {
+        return b.winPercentage - a.winPercentage
+      }
       // Tie-break: earlier voter
       if (a.earliestVote && b.earliestVote) {
         const comp = a.earliestVote.localeCompare(b.earliestVote)
@@ -276,11 +280,21 @@ async function calculateAccuracyLeaderboard(limit: number = 20) {
     })
     .slice(0, limit)
 
+  console.log(
+    "Final accuracy results:",
+    accuracyResults.map(
+      (r) =>
+        `FID ${r.fid}: ${r.correctVotes}/${
+          r.totalVotes
+        } (${r.winPercentage.toFixed(1)}%)`
+    )
+  )
+
   return await enrichWithUserData(
     accuracyResults.map((r) => ({
       fid: r.fid,
-      value: r.correctVotes, // Store wins count for display as "X/Y wins"
-      secondaryValue: r.totalVotes, // Store total votes for display
+      value: r.correctVotes, // Raw correct votes count for display
+      secondaryValue: r.totalVotes, // Raw total votes for display
     }))
   )
 }
