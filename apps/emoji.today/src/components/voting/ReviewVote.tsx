@@ -50,10 +50,10 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
 
   const handleFarcasterShare = () => {
     const castText = `Just voted ${emoji} for ${new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric'
-    })} on emoji.today @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })} on emoji.today https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
 
     // Farcaster compose URL with pre-filled text and embedded frame
     const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(shareUrl)}`;
@@ -64,7 +64,7 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
   };
 
   const handleCopyToClipboard = async () => {
-    const textToCopy = `${shareUrl} @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
+    const textToCopy = `${shareUrl} https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
 
     try {
       await navigator.clipboard.writeText(textToCopy);

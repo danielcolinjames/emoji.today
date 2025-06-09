@@ -633,7 +633,7 @@ export async function postToFarcaster(
       signerUuid: process.env.FARCASTER_SIGNER_UUID,
       text:
         text +
-        "\n\nVote now at emoji.today @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
+        "\n\nVote now at emoji.today: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
     })
 
     const castHash = response.cast?.hash

@@ -71,7 +71,7 @@ async function testCurrentPosts() {
           console.log(`"${commentary}`)
           console.log(``)
           console.log(
-            `Vote now at emoji.today @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday"`
+            `Vote now at emoji.today: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday"`
           )
         }
 

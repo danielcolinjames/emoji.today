@@ -396,7 +396,7 @@ async function postToFarcaster(text: string): Promise<boolean> {
       body: JSON.stringify({
         signer_uuid: process.env.FARCASTER_SIGNER_UUID!,
         text:
-          text + "\n\n@https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
+          text + "\n\nhttps://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
         channel_id: "emojitoday", // Post to your channel if you have one
       }),
     })
@@ -564,7 +564,7 @@ export async function generateAndPostRaceUpdate(): Promise<{
     let posted = false
     if (shouldPost) {
       // Add emoji.today branding and URL
-      const castText = `${commentary}\n\nVote now at emoji.today @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`
+      const castText = `${commentary}\n\nVote now at emoji.today: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`
       posted = await postToFarcaster(castText)
     }
 
