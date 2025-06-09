@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { invalidateVotingCaches } from "@/lib/swr-utils"
+import { supabasePublic } from '@/lib/supabase-public'
 
 /**
  * Component that manages SWR cache invalidation across browser tabs
@@ -42,6 +43,27 @@ export function SWRCacheManager() {
     return () => {
       window.removeEventListener("storage", handleStorageChange)
       window.removeEventListener("vote-update", handleCustomVoteUpdate as EventListener)
+    }
+  }, [])
+
+  // Listen to Supabase realtime changes on live_results so all tabs refresh instantly
+  useEffect(() => {
+    const client = supabasePublic()
+    const channel = client
+      .channel('public:live_results')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'live_results' },
+        (payload) => {
+          const date = (payload.new as any)?.vote_date as string | undefined
+          console.log('📡 Realtime live_results update', date)
+          invalidateVotingCaches(date)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      client.removeChannel(channel)
     }
   }, [])
 

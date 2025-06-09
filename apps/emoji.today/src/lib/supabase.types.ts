@@ -1,6 +1,3 @@
-import { createClient } from "@supabase/supabase-js"
-
-// Generated types from Supabase
 export type Json =
   | string
   | number
@@ -68,37 +65,37 @@ export type Database = {
       }
       daily_summaries: {
         Row: {
+          created_at: string | null
+          finalized_at: string | null
           id: string
-          vote_date: string
-          winning_emoji: string
-          winning_count: number
+          top_5_emojis: Json | null
           total_votes: number
           unique_emojis: number
-          top_5_emojis: Json | null
-          finalized_at: string | null
-          created_at: string | null
+          vote_date: string
+          winning_count: number
+          winning_emoji: string
         }
         Insert: {
+          created_at?: string | null
+          finalized_at?: string | null
           id?: string
-          vote_date: string
-          winning_emoji: string
-          winning_count: number
+          top_5_emojis?: Json | null
           total_votes: number
           unique_emojis: number
-          top_5_emojis?: Json | null
-          finalized_at?: string | null
-          created_at?: string | null
+          vote_date: string
+          winning_count: number
+          winning_emoji: string
         }
         Update: {
+          created_at?: string | null
+          finalized_at?: string | null
           id?: string
-          vote_date?: string
-          winning_emoji?: string
-          winning_count?: number
+          top_5_emojis?: Json | null
           total_votes?: number
           unique_emojis?: number
-          top_5_emojis?: Json | null
-          finalized_at?: string | null
-          created_at?: string | null
+          vote_date?: string
+          winning_count?: number
+          winning_emoji?: string
         }
         Relationships: []
       }
@@ -138,6 +135,42 @@ export type Database = {
           name?: string | null
           storage_path?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      emoji_ranks: {
+        Row: {
+          accent_color: string | null
+          created_at: string | null
+          emoji: string
+          id: string
+          percentage: number | null
+          rank: number | null
+          updated_at: string | null
+          vote_count: number
+          vote_date: string
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string | null
+          emoji: string
+          id?: string
+          percentage?: number | null
+          rank?: number | null
+          updated_at?: string | null
+          vote_count?: number
+          vote_date: string
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          percentage?: number | null
+          rank?: number | null
+          updated_at?: string | null
+          vote_count?: number
+          vote_date?: string
         }
         Relationships: []
       }
@@ -224,6 +257,7 @@ export type Database = {
       }
       live_results: {
         Row: {
+          chyron_text: string | null
           created_at: string | null
           emoji_counts: Json
           id: string
@@ -232,6 +266,7 @@ export type Database = {
           vote_date: string
         }
         Insert: {
+          chyron_text?: string | null
           created_at?: string | null
           emoji_counts?: Json
           id?: string
@@ -240,6 +275,7 @@ export type Database = {
           vote_date: string
         }
         Update: {
+          chyron_text?: string | null
           created_at?: string | null
           emoji_counts?: Json
           id?: string
@@ -278,52 +314,52 @@ export type Database = {
       }
       race_commentary_snapshots: {
         Row: {
+          chyron_text: string | null
+          commentary_text: string | null
+          created_at: string | null
+          emoji_standings: Json
+          farcaster_cast_hash: string | null
+          historical_context: Json | null
           id: number
-          vote_date: string
           milestone: string
+          momentum_data: Json | null
+          posted_to_farcaster: boolean | null
           timestamp_utc: string
           total_votes: number
-          emoji_standings: Json
-          momentum_data: Json
-          historical_context: Json
-          commentary_text: string | null
-          chyron_text: string | null
-          posted_to_farcaster: boolean | null
-          farcaster_cast_hash: string | null
-          created_at: string | null
           updated_at: string | null
+          vote_date: string
         }
         Insert: {
-          id?: number
-          vote_date: string
-          milestone: string
-          timestamp_utc: string
-          total_votes: number
-          emoji_standings: Json
-          momentum_data: Json
-          historical_context: Json
-          commentary_text?: string | null
           chyron_text?: string | null
-          posted_to_farcaster?: boolean | null
-          farcaster_cast_hash?: string | null
+          commentary_text?: string | null
           created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
+          emoji_standings?: Json
+          farcaster_cast_hash?: string | null
+          historical_context?: Json | null
           id?: number
-          vote_date?: string
-          milestone?: string
+          milestone: string
+          momentum_data?: Json | null
+          posted_to_farcaster?: boolean | null
           timestamp_utc?: string
           total_votes?: number
-          emoji_standings?: Json
-          momentum_data?: Json
-          historical_context?: Json
-          commentary_text?: string | null
-          chyron_text?: string | null
-          posted_to_farcaster?: boolean | null
-          farcaster_cast_hash?: string | null
-          created_at?: string | null
           updated_at?: string | null
+          vote_date: string
+        }
+        Update: {
+          chyron_text?: string | null
+          commentary_text?: string | null
+          created_at?: string | null
+          emoji_standings?: Json
+          farcaster_cast_hash?: string | null
+          historical_context?: Json | null
+          id?: number
+          milestone?: string
+          momentum_data?: Json | null
+          posted_to_farcaster?: boolean | null
+          timestamp_utc?: string
+          total_votes?: number
+          updated_at?: string | null
+          vote_date?: string
         }
         Relationships: []
       }
@@ -444,7 +480,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_vote_rankings: {
+        Args: { target_date?: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -455,24 +494,113 @@ export type Database = {
   }
 }
 
-let _supabase: ReturnType<typeof createClient<Database>> | null = null
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
-export const supabase = new Proxy(
-  {} as ReturnType<typeof createClient<Database>>,
-  {
-    get(target, prop) {
-      if (!_supabase) {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-        if (!supabaseUrl || !supabaseAnonKey) {
-          throw new Error("Supabase environment variables are not configured")
-        }
-
-        _supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
-      }
-
-      return _supabase[prop as keyof typeof _supabase]
-    },
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
   }
-)
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+      DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] &
+      DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

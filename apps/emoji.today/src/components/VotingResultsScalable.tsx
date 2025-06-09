@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Emoji from '@/components/Emoji'
 import { Copy, Check } from 'lucide-react'
-import { useEmojiRanks, useDailySummary } from '@/hooks/useEmojiRanks'
+import { useLiveEmojiRanks, useLiveDailySummary } from '@/hooks/useLiveEmojiRanks'
 import { formatInTimeZone } from 'date-fns-tz'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { RaceChyron } from '@/components/RaceChyron'
@@ -24,7 +24,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
   // Use UTC date to match database
   const todayString = formatInTimeZone(new Date(), 'UTC', 'yyyy-MM-dd')
 
-  const { summary, isLoading: summaryLoading, isError: summaryError } = useDailySummary(todayString)
+  const { summary, isLoading: summaryLoading, isError: summaryError } = useLiveDailySummary(todayString)
   const {
     ranks,
     isLoading: ranksLoading,
@@ -32,7 +32,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     loadMore,
     isReachingEnd,
     isError: ranksError
-  } = useEmojiRanks(todayString)
+  } = useLiveEmojiRanks(todayString)
 
   // Fetch user's accent color separately if they voted
   useEffect(() => {
@@ -149,9 +149,12 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     )
   }
 
+  // Results are already timing-aware from the hook; preserve order
+  const sortedResults = ranks;
+
   // Determine which results to show
-  const visibleResults = showAll ? ranks : ranks.slice(0, 5);
-  const hasMore = ranks.length > 5;
+  const visibleResults = showAll ? sortedResults : sortedResults.slice(0, 5);
+  const hasMore = sortedResults.length > 5;
 
   // Check if user's vote is in the visible results
   const userVoteInVisible = visibleResults.some(rank => rank.emoji === userVote);
@@ -180,6 +183,11 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     }
   };
 
+  console.log("userAccentColor", userAccentColor)
+  console.log("getContrastColor(userAccentColor)", getContrastColor(userAccentColor))
+
+  const isBlack = getContrastColor(userAccentColor) === "#000000"
+
   return (
     <div className="space-y-1">
       <p
@@ -201,7 +209,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
           }}
           title="Share on Farcaster"
         >
-          <img src="/images/farcaster.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" style={{ filter: 'invert(1)' }} />
+          <img src="/images/farcaster.svg" alt="Farcaster" className="max-w-[18px] max-h-[18px]" style={{ filter: isBlack ? "none" : "invert(1)" }} />
         </button>
         <button
           onClick={handleCopyLink}
@@ -215,29 +223,24 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
         >
           {copySuccess ? (
             <Check
-              className="w-4 h-4"
-              style={{
-                color: getContrastColor(userAccentColor),
-                fill: 'currentColor',
-                stroke: 'currentColor'
-              }}
+              className="w-5 h-5"
+              style={{ color: getContrastColor(userAccentColor) }}
             />
           ) : (
             <Copy
-              className="w-4 h-4"
-              style={{
-                color: getContrastColor(userAccentColor),
-                fill: 'currentColor',
-                stroke: 'currentColor'
-              }}
+              className="w-5 h-5"
+              style={{ color: getContrastColor(userAccentColor) }}
             />
           )}
         </button>
       </div>
 
       {/* Results - Full screen width with right padding */}
-      <div className="space-y-2 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4">
-        {visibleResults.map((rank) => {
+      <div
+        key={`results-${summary?.total_votes}-${visibleResults.length}`}
+        className="space-y-2 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pr-4"
+      >
+        {visibleResults.map((rank: any) => {
           // Get accent color directly from the rank data
           const accentColor = rank.accent_color || "#FFD700"
 
@@ -248,7 +251,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
           const maxWidthPercent = 1.0;
 
           // Use visible results for width calculation when not showing all
-          const ranksForWidth = showAll ? ranks : visibleResults;
+          const ranksForWidth = showAll ? sortedResults : visibleResults;
           const maxVotes = ranksForWidth[0].vote_count;
           const minVotes = ranksForWidth[ranksForWidth.length - 1].vote_count;
 
@@ -268,7 +271,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
 
           return (
             <div
-              key={`${rank.emoji}-${rank.rank}`}
+              key={`${rank.emoji}-${rank.rank}-${rank.vote_count}-${finalWidth}`}
               className="flex items-center rounded-r-full border-r border-t border-b relative"
               style={{
                 backgroundColor: hexToRgba(accentColor, 1),
@@ -284,7 +287,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
               {/* Vote count */}
               <div className="flex items-center text-black text-sm pl-4 flex-1 relative">
                 {isUserVote ? (
-                  <span className="text-xs flex items-center gap-1.5">
+                  <span key={`user-vote-${rank.vote_count}`} className="text-xs flex items-center gap-1.5">
                     {otherVoters > 0 ? (
                       <>
                         <div className="bg-black/10 rounded-full px-2 py-0.5 text-xs text-black font-medium">
@@ -307,7 +310,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
                     )}
                   </span>
                 ) : (
-                  <span className="text-xs">
+                  <span key={`other-vote-${rank.vote_count}`} className="text-xs">
                     {rank.vote_count} voter{rank.vote_count !== 1 ? 's' : ''}
                   </span>
                 )}
@@ -343,12 +346,12 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
               <LoadingSpinner size={32} />
             </div>
           )}
-          {isReachingEnd && ranks.length > 0 && (
+          {isReachingEnd && sortedResults.length > 0 && (
             <div className="text-neutral-500 text-sm">
-              {ranks.length === summary.unique_emojis ? (
+              {sortedResults.length === summary.unique_emojis ? (
                 <p>That's all {summary.unique_emojis} emojis!</p>
               ) : (
-                <p>Showing {ranks.length} of {summary.unique_emojis} emojis</p>
+                <p>Showing {sortedResults.length} of {summary.unique_emojis} emojis</p>
               )}
             </div>
           )}

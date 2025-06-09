@@ -3,9 +3,14 @@
 import { revalidatePath } from "next/cache"
 import { getSession } from "@/auth"
 import { supabase } from "@/lib/supabase"
-import { createClient } from "@supabase/supabase-js"
+import { supabaseService } from "@/lib/supabase-service"
 import { updateChyronOnVoteChange } from "@/actions/race-commentary"
-import { getCurrentVotingDateString } from "@/lib/date-utils"
+import {
+  getCurrentVotingDateString,
+  getCurrentVotingDay,
+  formatDateForDB,
+} from "@/lib/date-utils"
+import { buildSimpleRankings } from "@/lib/simple-ranking"
 
 export interface EmojiVoteCount {
   emoji: string
@@ -231,10 +236,7 @@ export async function submitVote(
     const today = getCurrentVotingDateString()
 
     // Use service role for all database operations to avoid RLS issues with triggers
-    const serviceSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const serviceSupabase = supabaseService()
 
     // Check if user already voted today (using fid directly for efficiency)
     const { data: existingVote, error: voteCheckError } = await serviceSupabase
@@ -281,14 +283,6 @@ export async function submitVote(
         voteError
       )
       throw new Error(`Failed to submit vote: ${voteError.message}`)
-    }
-
-    // Update chyron text with new commentary reflecting the vote change
-    try {
-      await updateChyronOnVoteChange()
-    } catch (chyronError) {
-      // Don't fail the entire vote submission if chyron update fails
-      console.error("Failed to update chyron after vote:", chyronError)
     }
 
     revalidatePath("/vote")
@@ -408,78 +402,35 @@ export async function getVotingResults(limit?: number) {
       emojiDataMap.set(withVariationSelector, emoji) // With variation selector
     })
 
-    // Fetch timing data for ranking - get all votes with timestamps for today
-    // Initialize timing map first
-    const emojiTimingMap = new Map()
+    // Get vote timing data for simple ranking (vote count + latest vote tiebreaker)
+    const { data: voteTimingData, error: timingError } = await supabase
+      .from("votes")
+      .select("emoji, created_at")
+      .eq("vote_date", today)
 
-    // Skip timing fetch if too many emojis (performance optimization)
-    if (uniqueEmojis.length <= 200) {
-      const { data: voteTimingData, error: timingError } = await supabase
-        .from("votes")
-        .select("emoji, created_at")
-        .eq("vote_date", today)
-
-      if (timingError) {
-        console.error("Error fetching vote timing data:", timingError)
-        // Fall back to count-based sorting if timing data fails
-      }
-
-      // Calculate average timestamps for each emoji (for ranking)
-      if (voteTimingData) {
-        // Calculate day start for relative timing (similar to tally-votes.ts approach)
-        const dayStart = new Date(today + "T00:00:00.000Z").getTime()
-
-        // Group votes by emoji and calculate timing stats
-        const emojiTimings: { [key: string]: number[] } = {}
-        voteTimingData.forEach((vote) => {
-          if (!emojiTimings[vote.emoji]) {
-            emojiTimings[vote.emoji] = []
-          }
-          const voteTime = new Date(vote.created_at).getTime()
-          const secondsSinceStart = Math.floor((voteTime - dayStart) / 1000)
-          emojiTimings[vote.emoji].push(secondsSinceStart)
-        })
-
-        // Calculate average timestamp for each emoji
-        Object.entries(emojiTimings).forEach(([emoji, timestamps]) => {
-          const averageTimestamp =
-            timestamps.reduce((sum, ts) => sum + ts, 0) / timestamps.length
-          emojiTimingMap.set(emoji, averageTimestamp)
-        })
-      }
-    } else {
-      // Skip timing data for performance when there are too many unique emojis
+    if (timingError) {
+      console.error("Error fetching vote timing data:", timingError)
     }
 
-    // Convert to array with percentages and emoji data
-    const results: EmojiVoteCount[] = emojiEntriesToProcess
-      .map(([emoji, count]) => {
-        const emojiInfo = emojiDataMap.get(emoji)
-        return {
-          emoji,
-          count,
-          percentage: Math.round((count / totalVotes) * 100),
-          accent_color: emojiInfo?.accent_color || "#FFFFFF",
-          filename: emojiInfo?.filename || "",
-        }
-      })
-      // Sort by average timing (later votes ranked higher), then by count as secondary
-      .sort((a, b) => {
-        const aAvgTiming = emojiTimingMap.get(a.emoji) || 0
-        const bAvgTiming = emojiTimingMap.get(b.emoji) || 0
+    // Use simple ranking that matches chyron service: vote count + latest vote tiebreaker
+    const simpleRankings = buildSimpleRankings(
+      voteCounts,
+      totalVotes,
+      voteTimingData || [],
+      limit
+    )
 
-        // If timing data is available, sort by latest average first
-        if (emojiTimingMap.size > 0) {
-          const timingDiff = bAvgTiming - aAvgTiming
-          if (Math.abs(timingDiff) > 1) {
-            // Only use timing if there's a meaningful difference
-            return timingDiff
-          }
-        }
-
-        // Fall back to count-based sorting if timing is very close or unavailable
-        return b.count - a.count
-      })
+    // Convert to the format expected by the UI
+    const results: EmojiVoteCount[] = simpleRankings.map((ranking) => {
+      const emojiInfo = emojiDataMap.get(ranking.emoji)
+      return {
+        emoji: ranking.emoji,
+        count: ranking.count,
+        percentage: ranking.percentage,
+        accent_color: emojiInfo?.accent_color || "#FFFFFF",
+        filename: emojiInfo?.filename || "",
+      }
+    })
 
     return {
       results,
@@ -613,64 +564,35 @@ export async function getLiveVotingResults(limit?: number) {
       emojiDataMap.set(withVariationSelector, emoji) // With variation selector
     })
 
-    // Skip timing data when we have a limit (initial load) for better performance
-    const emojiTimingMap = new Map()
-    if (!limit && uniqueEmojis.length <= 200) {
-      const { data: voteTimingData, error: timingError } = await supabase
-        .from("votes")
-        .select("emoji, created_at")
-        .eq("vote_date", today)
+    // Get vote timing data for simple ranking (vote count + latest vote tiebreaker)
+    const { data: voteTimingData, error: timingError } = await supabase
+      .from("votes")
+      .select("emoji, created_at")
+      .eq("vote_date", today)
 
-      if (timingError) {
-        console.error("Error fetching vote timing data:", timingError)
-      }
-
-      if (voteTimingData) {
-        const dayStart = new Date(today + "T00:00:00.000Z").getTime()
-        const emojiTimings: { [key: string]: number[] } = {}
-
-        voteTimingData.forEach((vote) => {
-          if (!emojiTimings[vote.emoji]) {
-            emojiTimings[vote.emoji] = []
-          }
-          const voteTime = new Date(vote.created_at).getTime()
-          const secondsSinceStart = Math.floor((voteTime - dayStart) / 1000)
-          emojiTimings[vote.emoji].push(secondsSinceStart)
-        })
-
-        Object.entries(emojiTimings).forEach(([emoji, timestamps]) => {
-          const averageTimestamp =
-            timestamps.reduce((sum, ts) => sum + ts, 0) / timestamps.length
-          emojiTimingMap.set(emoji, averageTimestamp)
-        })
-      }
+    if (timingError) {
+      console.error("Error fetching vote timing data:", timingError)
     }
 
-    // Convert to array with percentages and emoji data
-    const results: EmojiVoteCount[] = emojiEntriesToProcess
-      .map(([emoji, count]) => {
-        const emojiInfo = emojiDataMap.get(emoji)
-        return {
-          emoji,
-          count,
-          percentage: Math.round((count / totalVotes) * 100),
-          accent_color: emojiInfo?.accent_color || "#FFFFFF",
-          filename: emojiInfo?.filename || "",
-        }
-      })
-      // Apply timing-based sorting only for full results
-      .sort((a, b) => {
-        if (!limit && emojiTimingMap.size > 0) {
-          const aAvgTiming = emojiTimingMap.get(a.emoji) || 0
-          const bAvgTiming = emojiTimingMap.get(b.emoji) || 0
-          const timingDiff = bAvgTiming - aAvgTiming
-          if (Math.abs(timingDiff) > 1) {
-            return timingDiff
-          }
-        }
-        // Already sorted by count, so maintain that order
-        return 0
-      })
+    // Use simple ranking that matches chyron service: vote count + latest vote tiebreaker
+    const simpleRankings = buildSimpleRankings(
+      voteCounts,
+      totalVotes,
+      voteTimingData || [],
+      limit
+    )
+
+    // Convert to the format expected by the UI
+    const results: EmojiVoteCount[] = simpleRankings.map((ranking) => {
+      const emojiInfo = emojiDataMap.get(ranking.emoji)
+      return {
+        emoji: ranking.emoji,
+        count: ranking.count,
+        percentage: ranking.percentage,
+        accent_color: emojiInfo?.accent_color || "#FFFFFF",
+        filename: emojiInfo?.filename || "",
+      }
+    })
 
     return {
       results,
@@ -845,10 +767,7 @@ export async function clearUserVote() {
     const today = new Date().toISOString().split("T")[0]
 
     // Use service role for the deletion to avoid RLS issues with triggers
-    const serviceSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const serviceSupabase = supabaseService()
 
     const { data, error } = await serviceSupabase
       .from("votes")
@@ -882,6 +801,9 @@ export interface UserVote {
   created_at: string
   accent_color?: string
   filename?: string
+  winning_emoji?: string
+  is_winner?: boolean
+  is_first_vote?: boolean
 }
 
 export interface UserProfile {
@@ -890,7 +812,8 @@ export interface UserProfile {
   currentStreak: number
   longestStreak: number
   totalVotes: number
-  votingHistory: UserVote[]
+  correctGuesses: number
+  votingHistory: (UserVote | { vote_date: string; is_missed_day: true })[]
 }
 
 export async function getUserVotingHistory(): Promise<UserVote[]> {
@@ -952,15 +875,72 @@ export async function getUserVotingHistory(): Promise<UserVote[]> {
       emojiDataMap.set(withVariationSelector, emoji)
     })
 
-    // Combine vote data with emoji metadata
+    // Get winning emoji data for all vote dates
+    const voteDates = Array.from(
+      new Set(userVotes.map((vote) => vote.vote_date))
+    )
+    const { data: dailySummaries } = await supabase
+      .from("daily_summaries")
+      .select("vote_date, winning_emoji")
+      .in("vote_date", voteDates)
+
+    const winnerMap = new Map(
+      dailySummaries?.map((d) => [d.vote_date, d.winning_emoji]) || []
+    )
+
+    // Check if user was first to vote for each emoji on each day
+    const firstVoteChecks = await Promise.all(
+      userVotes.map(async (vote) => {
+        const { data: earlierVotes } = await supabase
+          .from("votes")
+          .select("created_at")
+          .eq("vote_date", vote.vote_date)
+          .eq("emoji", vote.emoji)
+          .lt("created_at", vote.created_at)
+          .limit(1)
+
+        return {
+          vote_date: vote.vote_date,
+          emoji: vote.emoji,
+          created_at: vote.created_at,
+          is_first_vote: !earlierVotes || earlierVotes.length === 0,
+        }
+      })
+    )
+
+    const firstVoteMap = new Map(
+      firstVoteChecks.map((check) => [
+        `${check.vote_date}-${check.emoji}-${check.created_at}`,
+        check.is_first_vote,
+      ])
+    )
+
+    // Combine vote data with emoji metadata and winning status
     return userVotes.map((vote) => {
       const emojiInfo = emojiDataMap.get(vote.emoji)
+      const winningEmoji = winnerMap.get(vote.vote_date)
+
+      // Check if this vote was a winner (handle emoji variation selector normalization)
+      const normalizeEmoji = (emoji: string) => emoji.replace(/\uFE0F/g, "")
+      const isWinner =
+        winningEmoji &&
+        (vote.emoji === winningEmoji ||
+          normalizeEmoji(vote.emoji) === normalizeEmoji(winningEmoji))
+
+      const isFirstVote =
+        firstVoteMap.get(
+          `${vote.vote_date}-${vote.emoji}-${vote.created_at}`
+        ) || false
+
       return {
         vote_date: vote.vote_date,
         emoji: vote.emoji,
         created_at: vote.created_at,
         accent_color: emojiInfo?.accent_color,
         filename: emojiInfo?.filename,
+        winning_emoji: winningEmoji,
+        is_winner: !!isWinner,
+        is_first_vote: isFirstVote,
       }
     })
   } catch (error) {
@@ -1091,6 +1071,78 @@ export async function getUserProfile(): Promise<UserProfile> {
       calculateVotingStreak(),
     ])
 
+    // Calculate correct guesses by comparing user votes with daily winners
+    let correctGuesses = 0
+    if (votingHistory.length > 0) {
+      const voteDates = votingHistory.map((vote) => vote.vote_date)
+      const { data: dailySummaries } = await supabase
+        .from("daily_summaries")
+        .select("vote_date, winning_emoji")
+        .in("vote_date", voteDates)
+
+      if (dailySummaries) {
+        const winnerMap = new Map(
+          dailySummaries.map((d) => [d.vote_date, d.winning_emoji])
+        )
+
+        correctGuesses = votingHistory.filter((vote) => {
+          const winningEmoji = winnerMap.get(vote.vote_date)
+          if (!winningEmoji) return false
+
+          // Handle emoji variation selector normalization
+          const normalizeEmoji = (emoji: string) => emoji.replace(/\uFE0F/g, "")
+          return (
+            vote.emoji === winningEmoji ||
+            normalizeEmoji(vote.emoji) === normalizeEmoji(winningEmoji)
+          )
+        }).length
+      }
+    }
+
+    // Get all days that had votes (to identify gaps)
+    const { data: allVoteDates } = await supabase
+      .from("daily_summaries")
+      .select("vote_date")
+      .order("vote_date", { ascending: false })
+
+    const userVoteDates = new Set(votingHistory.map((vote) => vote.vote_date))
+
+    // Create combined timeline with missed days
+    const timelineEntries: (
+      | UserVote
+      | { vote_date: string; is_missed_day: true }
+    )[] = []
+
+    if (allVoteDates && allVoteDates.length > 0 && votingHistory.length > 0) {
+      // Find the earliest user vote date to limit how far back we show missed days
+      const earliestUserVote = Math.min(
+        ...votingHistory.map((vote) => new Date(vote.vote_date).getTime())
+      )
+
+      for (const { vote_date } of allVoteDates) {
+        const voteDateTime = new Date(vote_date).getTime()
+
+        // Only show missed days from when user started voting onwards
+        if (voteDateTime >= earliestUserVote) {
+          if (userVoteDates.has(vote_date)) {
+            // User voted this day - add their vote
+            const userVote = votingHistory.find(
+              (vote) => vote.vote_date === vote_date
+            )
+            if (userVote) {
+              timelineEntries.push(userVote)
+            }
+          } else {
+            // User missed this day
+            timelineEntries.push({ vote_date, is_missed_day: true })
+          }
+        }
+      }
+    } else {
+      // No voting days data or no user votes, just show user's votes
+      timelineEntries.push(...votingHistory)
+    }
+
     // Get username from session context or user table
     const { data: userData } = await supabase
       .from("users")
@@ -1104,10 +1156,225 @@ export async function getUserProfile(): Promise<UserProfile> {
       currentStreak: streakData.currentStreak,
       longestStreak: streakData.longestStreak,
       totalVotes: votingHistory.length,
-      votingHistory,
+      correctGuesses,
+      votingHistory: timelineEntries,
     }
   } catch (error) {
     console.error("Error in getUserProfile:", error)
     throw error
+  }
+}
+
+export async function updateGlobalChyron(): Promise<{
+  success: boolean
+  chyron?: string
+  error?: string
+}> {
+  try {
+    const today = getCurrentVotingDay()
+    const dateString = formatDateForDB(today)
+
+    // Get current live results
+    const { data: liveResult } = await supabase
+      .from("live_results")
+      .select("emoji_counts, total_votes")
+      .eq("vote_date", dateString)
+      .single()
+
+    if (!liveResult?.emoji_counts || liveResult.total_votes === 0) {
+      // No votes yet, use default chyron
+      const defaultChyron =
+        "THE POLLS ARE OPEN • CAST YOUR VOTE FOR TODAY'S EMOJI"
+      await updateChyronInDatabase(defaultChyron, dateString)
+      return { success: true, chyron: defaultChyron }
+    }
+
+    const voteCounts = liveResult.emoji_counts as { [key: string]: number }
+    const totalVotes = liveResult.total_votes
+
+    // Get top 3 emojis with their names and accent colors
+    const topEmojis = Object.entries(voteCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+
+    const emojiList = topEmojis.map(([emoji]) => emoji)
+    const { data: emojiData } = await supabase
+      .from("emojis")
+      .select("emoji, name")
+      .in("emoji", emojiList)
+
+    const emojiNameMap = new Map(emojiData?.map((e) => [e.emoji, e.name]) || [])
+
+    // Build standings for prompt
+    const standings = topEmojis.map(([emoji, count], index) => ({
+      emoji,
+      count,
+      name: emojiNameMap.get(emoji) || "unknown",
+      rank: index + 1,
+      percentage: Math.round((count / totalVotes) * 100),
+    }))
+
+    // Generate dramatic chyron
+    const chyron = await generateDramaticChyron(standings, totalVotes)
+
+    // Update in database
+    await updateChyronInDatabase(chyron, dateString)
+
+    return { success: true, chyron }
+  } catch (error) {
+    console.error("Error updating global chyron:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    }
+  }
+}
+
+async function generateDramaticChyron(
+  standings: any[],
+  totalVotes: number
+): Promise<string> {
+  const leader = standings[0]
+  const second = standings[1]
+  const third = standings[2]
+
+  // Calculate gaps
+  const gap1to2 = leader
+    ? second
+      ? leader.count - second.count
+      : leader.count
+    : 0
+  const gap2to3 = second && third ? second.count - third.count : 0
+
+  const prompt = `You are writing a dramatic, engaging news ticker for a live emoji election. Make it feel like exciting sports commentary with personality and intrigue.
+
+Current standings:
+${standings
+  .map(
+    (s) =>
+      `${s.rank}. ${s.emoji} (${s.name}): ${s.count} votes (${s.percentage}%)`
+  )
+  .join("\n")}
+
+Total votes: ${totalVotes}
+Gap between 1st and 2nd: ${gap1to2} votes
+${second && third ? `Gap between 2nd and 3rd: ${gap2to3} votes` : ""}
+
+Write ONE dramatic ticker line (50-80 characters). Use the actual emoji characters. Create narrative tension and intrigue. Make it feel like a thrilling race with personality.
+
+Examples of the style we want:
+"💯 DOMINATES BUT 💖 SURGES • LOVE VS PERFECTION SHOWDOWN"
+"🔥 LEADS BY A THREAD • 😴 RISING FAST • NAPTIME REBELLION?"
+"⚡ STRIKES FIRST BUT 🌊 BUILDS MOMENTUM • STORM BREWING"
+
+Focus on:
+- The emotions/themes the leading emojis represent
+- Creating dramatic tension about what might happen
+- Making it feel like a real contest with stakes
+- Being witty and engaging, not bland
+
+Just return the ticker line, nothing else.`
+
+  try {
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "X-Title": "emoji.today dramatic chyron",
+        },
+        body: JSON.stringify({
+          model: "anthropic/claude-3.5-haiku",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 100,
+          temperature: 0.9,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status}`)
+    }
+
+    const data = (await response.json()) as any
+    let chyron = data.choices[0].message.content.trim()
+
+    // Clean up response
+    chyron = chyron.replace(/^["']|["']$/g, "") // Remove quotes
+    chyron = chyron.split("\n")[0] // Take first line only
+
+    // Validate length
+    if (chyron.length < 20 || chyron.length > 120) {
+      throw new Error("Invalid chyron length")
+    }
+
+    return chyron.toUpperCase()
+  } catch (error) {
+    console.error("Error generating dramatic chyron:", error)
+
+    // Fallback to creative manual chyrons based on the data
+    if (leader && second) {
+      const gap = gap1to2
+      if (gap === 0) {
+        return `${leader.emoji}${second.emoji} PERFECT TIE • DEMOCRACY IN SUSPENSE`
+      } else if (gap === 1) {
+        return `${leader.emoji} LEADS BY ONE • ${second.emoji} ONE VOTE FROM GLORY`
+      } else if (gap <= 3) {
+        return `${leader.emoji} BARELY AHEAD • ${second.emoji} CHARGING HARD`
+      } else {
+        return `${leader.emoji} PULLS AWAY • ${second.emoji} NEEDS MIRACLE`
+      }
+    } else if (leader) {
+      return `${leader.emoji} STANDS ALONE • WAITING FOR CHALLENGERS`
+    }
+
+    return "THE BATTLE FOR TODAY'S EMOJI CONTINUES • EVERY VOTE COUNTS"
+  }
+}
+
+async function updateChyronInDatabase(
+  chyron: string,
+  dateString: string
+): Promise<void> {
+  // First, try to update existing chyron for today
+  const { data: existingChyron } = await supabase
+    .from("chyrons")
+    .select("id")
+    .eq("vote_date", dateString)
+    .single()
+
+  if (existingChyron) {
+    // Update existing
+    await supabase
+      .from("chyrons")
+      .update({ text: chyron })
+      .eq("id", existingChyron.id)
+  } else {
+    // Insert new
+    await supabase
+      .from("chyrons")
+      .insert({ text: chyron, vote_date: dateString })
+  }
+}
+
+export async function getCurrentChyron(): Promise<string | null> {
+  try {
+    const today = getCurrentVotingDay()
+    const dateString = formatDateForDB(today)
+
+    const { data: chyron } = await supabase
+      .from("chyrons")
+      .select("text")
+      .eq("vote_date", dateString)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single()
+
+    return chyron?.text || null
+  } catch (error) {
+    console.error("Error getting current chyron:", error)
+    return null
   }
 }

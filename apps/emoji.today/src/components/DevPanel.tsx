@@ -2,16 +2,18 @@
 
 import { useState, useTransition } from 'react'
 import { useSession } from 'next-auth/react'
-import { X, Trash2, Zap, Shuffle, Target } from 'lucide-react'
-import { clearUserVote } from '@/lib/actions'
+import { X, Trash2, Zap, Shuffle, Target, Calendar, Clock } from 'lucide-react'
 import { mutate } from 'swr'
 import {
   addQuickVoteAction,
   generateRandomVotesAction,
   seedVotesForEmojiAction,
   clearAllVotesAction,
-  changeMyVoteAction
+  changeMyVoteAction,
+  addVoteWithDateTimeAction
 } from '@/actions/dev-tools'
+import { clearUserVote as clearUserVoteServer } from "@/actions/clearUserVote.server"
+import { triggerVoteCacheUpdate } from '@/components/SWRCacheManager'
 
 interface DevPanelProps {
   isOpen: boolean
@@ -35,6 +37,11 @@ export function DevPanel({ isOpen, onClose, onDevAction, isLoading, message: ext
   const [count, setCount] = useState(5)
   const [seedEmoji, setSeedEmoji] = useState('🔥')
   const [seedCount, setSeedCount] = useState(10)
+  const [customDate, setCustomDate] = useState(() => {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  })
+  const [customTime, setCustomTime] = useState('12:00')
   const [isPending, startTransition] = useTransition()
 
   if (!isOpen) return null
@@ -65,6 +72,17 @@ export function DevPanel({ isOpen, onClose, onDevAction, isLoading, message: ext
     } else {
       startTransition(async () => {
         const result = await addQuickVoteAction(emoji)
+        showMessage(result.message)
+      })
+    }
+  }
+
+  const handleCustomDateTime = () => {
+    if (onDevAction) {
+      onDevAction(() => addVoteWithDateTimeAction(emoji, customDate, customTime))
+    } else {
+      startTransition(async () => {
+        const result = await addVoteWithDateTimeAction(emoji, customDate, customTime)
         showMessage(result.message)
       })
     }
@@ -120,7 +138,8 @@ export function DevPanel({ isOpen, onClose, onDevAction, isLoading, message: ext
     if (!session?.user?.fid) return
 
     try {
-      await clearUserVote()
+      await clearUserVoteServer()
+      triggerVoteCacheUpdate()
       showMessage('Your vote has been cleared.')
       mutate('/api/user-vote')
     } catch (error) {
@@ -130,199 +149,303 @@ export function DevPanel({ isOpen, onClose, onDevAction, isLoading, message: ext
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
-      <div className="bg-[#050505] border border-neutral-800 rounded-2xl shadow-2xl p-5 w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+      <div className="bg-[#050505] border border-neutral-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-auto max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-light text-white">Development tools</h2>
+        <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+          <div>
+            <h2 className="text-3xl font-light text-white">Development Panel</h2>
+            <p className="text-sm text-neutral-400 font-geist-mono mt-1">Testing & Debug Tools</p>
+          </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-neutral-800 transition-colors"
+            className="p-2 rounded-full hover:bg-neutral-800 transition-colors"
           >
-            <X className="w-4 h-4 text-neutral-400" />
+            <X className="w-5 h-5 text-neutral-400" />
           </button>
         </div>
 
         {/* Message */}
         {displayMessage && (
-          <div className={`mb-4 p-2.5 rounded-full text-sm font-medium border ${displayMessage.includes('Failed') || displayMessage.includes('Error') || displayMessage.includes('Unauthorized')
-            ? 'bg-red-500/10 text-red-400 border-red-500/20'
-            : 'bg-brand-primary/10 text-brand-primary border-brand-primary/20'
-            }`}>
-            {displayMessage}
+          <div className="p-6 border-b border-neutral-800">
+            <div className={`p-3 rounded-xl text-sm font-medium border ${displayMessage.includes('Failed') || displayMessage.includes('Error') || displayMessage.includes('Unauthorized')
+              ? 'bg-red-500/10 text-red-400 border-red-500/20'
+              : 'bg-green-500/10 text-green-400 border-green-500/20'
+              }`}>
+              {displayMessage}
+            </div>
           </div>
         )}
 
-        <div className="space-y-5">
-          {/* Quick Vote Rainbow */}
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-sm font-medium text-neutral-300">
-              <Zap className="w-4 h-4" />
-              Quick vote rainbow
+        <div className="p-6 space-y-8">
+          {/* Quick Vote Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full flex items-center justify-center">
+                <Zap className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-light text-white">Quick Actions</h3>
+                <p className="text-sm text-neutral-500">One-click voting for today</p>
+              </div>
             </div>
-            <div className="grid grid-cols-8 gap-1.5">
+            <div className="grid grid-cols-8 gap-2">
               {QUICK_VOTE_EMOJIS.map((quickEmoji) => (
                 <button
                   key={quickEmoji}
                   onClick={() => handleQuickVoteEmoji(quickEmoji)}
                   disabled={isActionLoading}
-                  className="aspect-square w-8 h-8 text-lg bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 border border-neutral-700 rounded-full transition-colors flex items-center justify-center"
+                  className="aspect-square w-full h-12 text-xl bg-neutral-900/50 hover:bg-neutral-800/50 disabled:opacity-50 border border-neutral-700/50 rounded-xl transition-all duration-200 flex items-center justify-center hover:scale-105 hover:border-neutral-600"
                   title={`Vote for ${quickEmoji}`}
                 >
                   {quickEmoji}
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* Custom Quick Add */}
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-sm font-medium text-neutral-300">
-              <Target className="w-4 h-4" />
-              Custom emoji
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={emoji}
-                onChange={(e) => setEmoji(e.target.value)}
-                className="w-11 h-8 text-center text-lg bg-neutral-900 border border-neutral-700 rounded-full focus:ring-2 focus:ring-brand-primary focus:border-transparent text-white"
-                placeholder="🎯"
-                maxLength={4}
-              />
-              <button
-                onClick={handleQuickAdd}
-                disabled={isActionLoading}
-                className="flex-1 h-8 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-sm font-medium rounded-full transition-colors border border-neutral-700 flex items-center justify-center"
-              >
-                {isActionLoading ? (
-                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  'Add vote'
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Generate Random */}
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-sm font-medium text-neutral-300">
-              <Shuffle className="w-4 h-4" />
-              Generate random votes
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                value={count}
-                onChange={(e) => setCount(parseInt(e.target.value) || 5)}
-                className="w-14 h-8 text-center bg-neutral-900 border border-neutral-700 rounded-full focus:ring-2 focus:ring-brand-primary focus:border-transparent text-white text-sm"
-                min="1"
-                max="50"
-              />
-              <button
-                onClick={handleGenerateRandom}
-                disabled={isActionLoading}
-                className="flex-1 h-8 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-sm font-medium rounded-full transition-colors border border-neutral-700 flex items-center justify-center"
-              >
-                {isActionLoading ? (
-                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  'Generate'
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Seed Emoji */}
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-sm font-medium text-neutral-300">
-              <Target className="w-4 h-4" />
-              Seed specific emoji
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={seedEmoji}
-                onChange={(e) => setSeedEmoji(e.target.value)}
-                className="w-11 h-8 text-center text-lg bg-neutral-900 border border-neutral-700 rounded-full focus:ring-2 focus:ring-brand-primary focus:border-transparent text-white"
-                placeholder="🔥"
-                maxLength={4}
-              />
-              <input
-                type="number"
-                value={seedCount}
-                onChange={(e) => setSeedCount(parseInt(e.target.value) || 10)}
-                className="w-14 h-8 text-center bg-neutral-900 border border-neutral-700 rounded-full focus:ring-2 focus:ring-brand-primary focus:border-transparent text-white text-sm"
-                min="1"
-                max="50"
-              />
-              <button
-                onClick={handleSeedEmoji}
-                disabled={isActionLoading}
-                className="flex-1 h-8 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-sm font-medium rounded-full transition-colors border border-neutral-700 flex items-center justify-center"
-              >
-                {isActionLoading ? (
-                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  'Seed'
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* My Vote Actions */}
-          {session?.user && (
-            <div className="space-y-2.5">
-              <div className="text-sm font-medium text-neutral-300">My vote</div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleChangeMyVote}
-                  disabled={isActionLoading}
-                  className="flex-1 h-8 bg-brand-primary hover:bg-brand-secondary disabled:opacity-50 text-black text-sm font-medium rounded-full transition-colors flex items-center justify-center"
-                >
-                  {isActionLoading ? (
-                    <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  ) : (
-                    `Change to ${emoji}`
-                  )}
-                </button>
-                <button
-                  onClick={handleClearMyVote}
-                  disabled={isActionLoading}
-                  className="flex-1 h-8 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-sm font-medium rounded-full transition-colors border border-neutral-700 flex items-center justify-center"
-                >
-                  {isActionLoading ? (
-                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    'Clear'
-                  )}
-                </button>
+          {/* Custom Vote Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center">
+                <Target className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-light text-white">Custom Votes</h3>
+                <p className="text-sm text-neutral-500">Precise control over vote data</p>
               </div>
             </div>
+
+            <div className="space-y-4">
+              {/* Today's Custom Vote */}
+              <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="text-sm font-medium text-neutral-300">Vote for Today</div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={emoji}
+                      onChange={(e) => setEmoji(e.target.value)}
+                      className="w-16 h-12 text-center text-xl bg-neutral-900 border border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white transition-all duration-200"
+                      placeholder="🎯"
+                      maxLength={4}
+                    />
+                  </div>
+                  <button
+                    onClick={handleQuickAdd}
+                    disabled={isActionLoading}
+                    className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-all duration-200 flex items-center justify-center"
+                  >
+                    {isActionLoading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      'Add Vote Now'
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom Date/Time Vote */}
+              <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="w-4 h-4 text-purple-400" />
+                  <div className="text-sm font-medium text-neutral-300">Vote with Custom Date & Time</div>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={emoji}
+                      onChange={(e) => setEmoji(e.target.value)}
+                      className="w-full h-12 text-center text-xl bg-neutral-900 border border-neutral-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white transition-all duration-200"
+                      placeholder="🎯"
+                      maxLength={4}
+                    />
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={customDate}
+                      onChange={(e) => setCustomDate(e.target.value)}
+                      className="w-full h-12 px-3 text-sm bg-neutral-900 border border-neutral-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white transition-all duration-200"
+                    />
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="time"
+                      value={customTime}
+                      onChange={(e) => setCustomTime(e.target.value)}
+                      className="w-full h-12 px-3 text-sm bg-neutral-900 border border-neutral-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white transition-all duration-200"
+                    />
+                  </div>
+                  <button
+                    onClick={handleCustomDateTime}
+                    disabled={isActionLoading}
+                    className="h-12 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-all duration-200 flex items-center justify-center"
+                  >
+                    {isActionLoading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      'Add'
+                    )}
+                  </button>
+                </div>
+                <div className="text-xs text-neutral-500 mt-2 font-geist-mono">
+                  Date: YYYY-MM-DD, Time: HH:MM (24h UTC)
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Bulk Operations Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500/20 to-teal-500/20 rounded-full flex items-center justify-center">
+                <Shuffle className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-light text-white">Bulk Operations</h3>
+                <p className="text-sm text-neutral-500">Generate test data at scale</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Random Votes */}
+              <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-xl p-4">
+                <div className="text-sm font-medium text-neutral-300 mb-3">Random Votes</div>
+                <div className="flex gap-3">
+                  <input
+                    type="number"
+                    value={count}
+                    onChange={(e) => setCount(parseInt(e.target.value) || 5)}
+                    className="w-20 h-10 text-center bg-neutral-900 border border-neutral-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white text-sm transition-all duration-200"
+                    min="1"
+                    max="50"
+                  />
+                  <button
+                    onClick={handleGenerateRandom}
+                    disabled={isActionLoading}
+                    className="flex-1 h-10 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center"
+                  >
+                    {isActionLoading ? (
+                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      'Generate'
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Seed Emoji */}
+              <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-xl p-4">
+                <div className="text-sm font-medium text-neutral-300 mb-3">Seed Emoji</div>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={seedEmoji}
+                    onChange={(e) => setSeedEmoji(e.target.value)}
+                    className="w-12 h-10 text-center text-lg bg-neutral-900 border border-neutral-700 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-white transition-all duration-200"
+                    placeholder="🔥"
+                    maxLength={4}
+                  />
+                  <input
+                    type="number"
+                    value={seedCount}
+                    onChange={(e) => setSeedCount(parseInt(e.target.value) || 10)}
+                    className="w-16 h-10 text-center bg-neutral-900 border border-neutral-700 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-white text-sm transition-all duration-200"
+                    min="1"
+                    max="50"
+                  />
+                  <button
+                    onClick={handleSeedEmoji}
+                    disabled={isActionLoading}
+                    className="flex-1 h-10 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center"
+                  >
+                    {isActionLoading ? (
+                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      'Seed'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Personal Actions */}
+          {session?.user && (
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-full flex items-center justify-center">
+                  <Target className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-light text-white">Personal Actions</h3>
+                  <p className="text-sm text-neutral-500">Manage your own vote</p>
+                </div>
+              </div>
+              <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-xl p-4">
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleChangeMyVote}
+                    disabled={isActionLoading}
+                    className="flex-1 h-12 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-all duration-200 flex items-center justify-center"
+                  >
+                    {isActionLoading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      `Change my vote to ${emoji}`
+                    )}
+                  </button>
+                  <button
+                    onClick={handleClearMyVote}
+                    disabled={isActionLoading}
+                    className="flex-1 h-12 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-all duration-200 border border-neutral-700 flex items-center justify-center"
+                  >
+                    {isActionLoading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      'Clear my vote'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </section>
           )}
 
           {/* Danger Zone */}
-          <div className="pt-3 border-t border-neutral-800">
-            <div className="flex items-center gap-2 text-sm font-medium text-red-400 mb-2.5">
-              <Trash2 className="w-4 h-4" />
-              Danger zone
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-light text-white">Danger Zone</h3>
+                <p className="text-sm text-neutral-500">Destructive operations</p>
+              </div>
             </div>
-            <button
-              onClick={handleClearAll}
-              disabled={isActionLoading}
-              className="w-full h-8 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 text-red-400 text-sm font-medium rounded-full transition-colors border border-red-500/20 flex items-center justify-center"
-            >
-              {isActionLoading ? (
-                <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-              ) : (
-                'Clear all votes'
-              )}
-            </button>
-          </div>
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
+              <button
+                onClick={handleClearAll}
+                disabled={isActionLoading}
+                className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-all duration-200 flex items-center justify-center"
+              >
+                {isActionLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  'Clear all votes for today'
+                )}
+              </button>
+            </div>
+          </section>
         </div>
 
         {/* Footer */}
-        <div className="mt-5 pt-3 border-t border-neutral-800 text-xs text-neutral-400 font-geist-mono">
-          User: {session?.user?.fid ? `FID ${session.user.fid}` : 'Not signed in'}
+        <div className="p-6 pt-0 border-t border-neutral-800 mt-8">
+          <div className="text-xs text-neutral-500 font-geist-mono text-center">
+            Authenticated as FID {session?.user?.fid || 'Not signed in'} • Development Environment
+          </div>
         </div>
       </div>
     </div>

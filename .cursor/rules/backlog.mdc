@@ -13,30 +13,53 @@ RINSE/D method:
 - DONE: completed stuff
 
 ## RIGHT NOW (1 thing at a time, move to DONE when done, move next Immediately up to here)
-- [ ] Fix vote results page and vote tallying
-  - Right now the way it works (veryify this for me) is that every time someone votes, it recalculates the live_results table.
-  - Instead, there should be a job that updates a new table, which maybe this new table can be daily_records, and the frontend checks the entry for that date (UTC) and pulls a certain range of those results, ranked. Maybe it just pulls the top 5 results (can we make that table update its rankings automatically? I don't know the best way to store all voted-for emojis and how many votes each one received, but that's how it should work, and it should be query-able by asking for e.g. top 5, then the user presses "View more" and it loads the next 10, then the next 10 come up when they scroll to the bottom, so it's like an infinite scroll reveal)
-  - Maybe there's a job that runs either every 5 minutes, OR gets triggered every time a user votes. I'm not sure how to accomplish that, but I think that's probably how it should work.
+- [ ] Deploy improved automated content generation system
+  - ✅ Live ticker moved to VotingResults page only (bottom above footer)
+  - ✅ Created milestone-based social posting with rich historical context
+  - ✅ Optimized AI costs: templates + selective AI usage
+  - ✅ Event-driven triggers: time milestones (12h, 6h, 3h, 1h), leadership changes, close races
+  - [ ] Run database migration `002_add_content_generation_tables.sql`
+  - [ ] Set up Railway cron: milestone checks every 15min (not hourly)
+  - [ ] Configure API keys: OPENAI_API_KEY, NEYNAR_API_KEY, FARCASTER_SIGNER_UUID, TWITTER_BEARER_TOKEN
+  - [ ] Test milestone triggers and verify posting works
+  - [ ] Monitor content quality and AI cost efficiency
 
 ## IMMEDIATELY
-- [ ] Make development environments more robust
-  - it should be a lot harder to accidentally edit production than it is now. maybe .env.staging and .env.production is part of the solution
-  - we should have nicely configured supabase setup where I can maybe see live prod stuff if I need to repro something, but I'd love to be able to maintain a copy of prod or something so that I can play around with it and then only do migrations when I know it worked.
+- [ ] General cleanup and robustness improvements (production-grade quality)
+  **Key issues identified:**
+  - Large components need breaking down: NewHomePage (375 lines), DevPanel (717 lines)
+  - Error handling inconsistencies and missing fallback states
+  - Mixed dev/production code that needs separation
+  - Type safety issues and potential runtime errors
+  - Styling inconsistencies (inline vs Tailwind)
+  - Database error handling needs improvement
+  - Missing loading states in several components
 
 ## NEXT
-- [ ] fc:frame details to make each share card become an actionable thing in the FC feed.
-- [ ] Mint your vote as an NFT. Mintable if you participated. $1 each, could batch them all.
-- [ ] Neynar User Scores to filter or prevent low-realness users (bots) from being able to sway the vote.
-- [ ] Auto social posts: X and Farcaster posts should go out upon the closing of a vote.
-- [ ] Comments under each daily vote, powered by Farcaster under the hood—maybe technically a comment thread in a daily post in the /emojitoday channel?
+- [ ] Smooth animations for VotingResults chart updates
+  - Chart bars flying up/down when rankings change
+  - New emojis sliding in smoothly from left
+  - "💦" splash toast for items not in top 5
+  - Real-time update animations every 30 seconds
+
+- [ ] Feedback and feature request system
+  - User feedback collection page (accessible via profile menu)
+  - Feature request upvoting system
+  - Admin dashboard for managing feature visibility
+  - Database tables: feedback, feature_requests, feature_votes
+
+- [ ] Fix vote results page and vote tallying optimization
+- [ ] fc:frame details to make each share card become an actionable thing in the FC feed
+- [ ] Mint your vote as an NFT. Mintable if you participated. $1 each, could batch them all
+- [ ] Neynar User Scores to filter or prevent low-realness users (bots) from being able to sway the vote
+- [ ] Auto social posts: X and Farcaster posts should go out upon the closing of a vote
+- [ ] Comments under each daily vote, powered by Farcaster under the hood
 - [ ] Make OG image generation more robust
 - [ ] Details pages for vote results
 
 ## SOON
-- [ ] Auto mint 1/1 NFT and start 24 hour auction at the end of the voting period.
-- [ ] Fix session stuff:
-  - FID isn't what's shown in regular browser profile pic circle because of auth cookie set in Farcaster mini app, username and profile pic should be saved as well ideally
-  - If you vote in one account, and sign into another one, you can vote with that one as well. Right now it says "View results" so it's picking up on maybe the cookie and thinking you're the wrong FID? I think.
+- [ ] Auto mint 1/1 NFT and start 24 hour auction at the end of the voting period
+- [ ] Fix session stuff and authentication issues between mini app and browser
 - [ ] Fix Railway cron job deployment
 - [ ] Dev mode enhancements (make each state easy to get to)
 - [ ] Code and Tailwind cleanup
@@ -45,16 +68,44 @@ RINSE/D method:
 - [ ] Redesign emoji confirmation screen ("Nice.")
 
 ## EVENTUALLY
-- A full, beautiful, Swift UI iOS app
-- dynamic, automated content engine using AI
-- Make this bigger than Wordle. A cultural phenomenon. A robust, semi-decentralized daily spectacle.
-- Our own emoji set, created and maintained by AI and a decentralized governing body like the Unicode consortium.
-- The People democratically set the title and description fields of the 1/1 NFT.
-- Cool novel economic stuff and prediction market tie-ins. Maybe a $EMOJI token and a $TODAY token with different dynamic properties.
-- Full on merch store. Maybe a sick branded kit for whoever buys the 1/1 NFT: winning emoji stiched on a hat. e.g. 🔥, with date stiched on one side and :) logo on the other
-
----
+- [ ] CLI centering improvement for dev script
+  - Use character lengths to center `${ip} // ${tunnel.url}` like a smiley face
+- [ ] Analytics dashboard for engagement tracking
+- [ ] A/B testing for social media content templates
+- [ ] Multi-language support for global audience
+- [ ] Community-driven content suggestions
+- [ ] Integration with vote prediction algorithms
+- [ ] Make yesterday's winner more prominent throughout the site
+- [ ] Add more rigorous protections and rate limiting
+- [ ] NFT integration and web3 elements
+- [ ] Full merch store and branded kits
+- [ ] A full, beautiful, Swift UI iOS app
+- [ ] Dynamic, automated content engine using AI
+- [ ] Make this bigger than Wordle. A cultural phenomenon
+- [ ] Our own emoji set, created and maintained by AI and a decentralized governing body
+- [ ] The People democratically set the title and description fields of the 1/1 NFT
+- [ ] Cool novel economic stuff and prediction market tie-ins. Maybe a $EMOJI token and a $TODAY token
+- [ ] Full on merch store with branded kits for 1/1 NFT buyers
 
 ## DONE
+- ✅ **Automated content generation system (Phase 1)**
+  - Live ticker tape with AI-powered headlines
+  - Hourly social media posting (Farcaster + 𝕏)
+  - Database schema and API endpoints
+  - Basic error handling and fallbacks
 
 ---
+
+## 📊 **Content Generation Cost Analysis**
+
+### Current Optimized Approach:
+- **Ticker**: 90% templates + 10% AI (gpt-3.5-turbo) for special events
+- **Social Posts**: Rich context with gpt-4o-mini ($0.15/1M input tokens)
+- **Frequency**: Milestone-based instead of hourly (much lower volume)
+- **Estimated monthly cost**: ~$5-15 vs $50+ for hourly AI generation
+
+### Milestone Triggers:
+- **Time**: 12h, 6h, 3h, 1h remaining
+- **Events**: Leadership changes after 10+ votes, close races (≤3 vote gap)
+- **Engagement**: Major vote count milestones
+- **Smart deduplication**: Prevents duplicate posts for same events

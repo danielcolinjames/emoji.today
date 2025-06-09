@@ -36,7 +36,7 @@ export function useLiveVotingResults(limit?: number) {
       limit ? `live-voting-results-${limit}` : "live-voting-results",
       () => fetcher(limit),
       {
-        refreshInterval: 10000, // Refresh every 10 seconds
+        refreshInterval: 5000, // Refresh every 5 seconds
         revalidateOnFocus: true,
         revalidateOnReconnect: true,
         dedupingInterval: 5000, // Prevent duplicate requests within 5 seconds

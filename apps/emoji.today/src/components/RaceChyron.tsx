@@ -1,67 +1,76 @@
 "use client";
 
-import { DEFAULT_OPENING_CHYRON } from '@/lib/constants';
 import { useState, useEffect, useRef } from 'react';
+import { DEFAULT_OPENING_CHYRON } from '@/lib/constants';
+import { supabase } from '@/lib/supabase';
 
 interface RaceChyronProps {
   className?: string;
 }
 
+function toUpperCase(text: string): string {
+  return text.toUpperCase()
+}
+
 export function RaceChyron({ className = "" }: RaceChyronProps) {
-  const [chyronText, setChyronText] = useState<string>(DEFAULT_OPENING_CHYRON);
-  const [nextChyronText, setNextChyronText] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [chyronText, setChyronText] = useState<string>(DEFAULT_OPENING_CHYRON.toUpperCase());
   const [animationDuration, setAnimationDuration] = useState(15);
   const textRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Add gap between chyron runs
-  const [showGap, setShowGap] = useState(false);
-
-  const fetchChyronUpdate = async () => {
-    if (isLoading) return; // Prevent multiple simultaneous requests
-
-    setIsLoading(true);
+  const fetchCurrentChyron = async () => {
     try {
-      // Fetch race update from API
       const response = await fetch('/api/chyron');
       const result = await response.json();
 
-      if (result.success && result.chyron) {
-        const newText = result.chyron;
-        console.log('📺 Chyron: Fetched race update from API');
-
-        // If text is different, queue it for next cycle
-        if (newText !== chyronText) {
-          setNextChyronText(newText);
-          console.log('📺 Chyron: Queued new text for next cycle');
-        } else {
-          console.log('📺 Chyron: Text unchanged');
-        }
-      } else {
-        console.log('📺 Chyron: API failed, using default');
-        setNextChyronText(DEFAULT_OPENING_CHYRON);
+      if (result.success && result.chyron && result.chyron !== chyronText) {
+        setChyronText(result.chyron);
       }
-    } catch (err) {
-      console.error("Chyron update error:", err);
-      setNextChyronText(DEFAULT_OPENING_CHYRON);
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching current chyron:", error);
     }
   };
 
   // Calculate animation duration based on text length
   const calculateAnimationDuration = () => {
-    if (!textRef.current) return 15;
+    if (!textRef.current || !containerRef.current) return 15;
 
-    const textWidth = textRef.current.scrollWidth;
-    const screenWidth = window.innerWidth;
-    const totalDistance = screenWidth + textWidth; // From right edge to completely off left edge
+    // Create a temporary element to measure text width accurately
+    const tempElement = document.createElement('span');
+    tempElement.style.cssText = `
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    `;
+    tempElement.textContent = chyronText;
+    document.body.appendChild(tempElement);
 
-    // Speed in pixels per second - adjust this value to make it faster/slower
-    const speed = 120;
+    const textWidth = tempElement.getBoundingClientRect().width;
+    document.body.removeChild(tempElement);
 
+    const containerWidth = containerRef.current.getBoundingClientRect().width;
+
+    // Total distance: text starts 100px right of container, ends 100px left of container
+    const startPosition = containerWidth + 100;
+    const endPosition = -textWidth - 100;
+    const totalDistance = startPosition - endPosition;
+
+    // Fixed speed: 100 pixels per second
+    const speed = 100;
     const duration = totalDistance / speed;
-    return Math.max(duration, 8); // Minimum 8 seconds for very short text
+
+    console.log('Chyron calculation:', {
+      textWidth,
+      containerWidth,
+      totalDistance,
+      duration: duration.toFixed(2) + 's'
+    });
+
+    return Math.max(duration, 8); // Minimum 8 seconds
   };
 
   // Update animation duration when text changes
@@ -71,80 +80,94 @@ export function RaceChyron({ className = "" }: RaceChyronProps) {
       setAnimationDuration(newDuration);
     };
 
-    // Small delay to ensure text is rendered
-    const timer = setTimeout(updateDuration, 100);
-    return () => clearTimeout(timer);
+    // Small delay to ensure DOM is ready and fonts are loaded
+    const timer = setTimeout(updateDuration, 200);
+
+    // Also update on window resize
+    const handleResize = () => updateDuration();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [chyronText]);
 
-  // Update to next text when animation completes, with gap
-  const handleAnimationIteration = () => {
-    if (nextChyronText && nextChyronText !== chyronText) {
-      // Start gap period
-      setShowGap(true);
-
-      // After gap, show new text
-      setTimeout(() => {
-        setChyronText(nextChyronText);
-        setNextChyronText(null);
-        setShowGap(false);
-        console.log('📺 Chyron: Updated to queued text after gap');
-      }, 3000); // 3 second gap
-    }
-  };
-
-  // Fetch chyron update on mount
+  // Fetch initial chyron & set up realtime subscription
   useEffect(() => {
-    fetchChyronUpdate();
-  }, []);
+    let cancelled = false;
 
-  // Auto-refresh every 5 minutes since we only show race updates now
-  useEffect(() => {
-    const interval = setInterval(fetchChyronUpdate, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
+    // 1) initial fetch (so we render something ASAP)
+    fetchCurrentChyron();
 
-  if (showGap) {
-    return (
-      <div className={`fixed bottom-0 left-0 right-0 h-14 overflow-hidden border-t border-neutral-800 z-50 ${className}`} />
-    );
-  }
+    // 2) subscribe to updates from the chyrons table
+    const channel = supabase
+      .channel('public:chyrons')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chyrons' },
+        (payload) => {
+          if (cancelled) return;
+          const newText = (payload.new as any)?.text as string | undefined;
+          if (newText) {
+            setChyronText((prev) => {
+              const upper = newText.toUpperCase();
+              return prev === upper ? prev : upper;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // 3) ultra-light fallback: poll every 5 min in case websocket drops
+    const fallbackInterval = setInterval(fetchCurrentChyron, 5 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+      clearInterval(fallbackInterval);
+    };
+  }, []);
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 h-14 overflow-hidden border-t border-neutral-800 z-50 ${className}`}>
+    <div
+      ref={containerRef}
+      className={`fixed bottom-0 left-0 right-0 h-14 overflow-hidden border-t border-neutral-900 backdrop-blur-md z-50 ${className}`}
+    >
       {/* Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/80 via-black to-neutral-900/80" />
+      <div className="absolute inset-0 bg-gradient-to-b from-neutral-900 via-black/80 to-neutral-900" />
 
       {/* Scrolling Text Container */}
       <div className="relative z-10 left-0 top-0 h-full flex items-center pb-2">
         <div
           className="animate-scroll-left whitespace-nowrap"
-          onAnimationIteration={handleAnimationIteration}
           style={{
             animationDuration: `${animationDuration}s`
           }}
         >
           <span
             ref={textRef}
-            className="text-white/50 text-lg tracking-widest font-mono grayscale-50"
+            className="text-neutral-200 text-xs tracking-widest font-geist-mono"
           >
             {chyronText}
           </span>
         </div>
       </div>
 
-      {/* CSS for scrolling animation - ensures full exit */}
+      {/* CSS for scrolling animation */}
       <style jsx>{`
         @keyframes scroll-left {
           0% {
-            transform: translateX(100vw);
+            transform: translateX(calc(100vw + 100px));
           }
           100% {
-            transform: translateX(calc(-100% - 50px));
+            transform: translateX(calc(-100% - 100px));
           }
         }
         
         .animate-scroll-left {
           animation: scroll-left linear infinite;
+          will-change: transform;
         }
       `}</style>
     </div>

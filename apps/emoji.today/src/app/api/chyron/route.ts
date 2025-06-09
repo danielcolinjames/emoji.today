@@ -1,45 +1,88 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getLatestChyronText } from "@/lib/race-commentary-service"
+import { supabase } from "@/lib/supabase"
+import { getCurrentVotingDateString } from "@/lib/date-utils"
 import { DEFAULT_OPENING_CHYRON } from "@/lib/constants"
+import { ChyronService } from "@/lib/chyron-service"
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if we're in a build environment
-    if (
-      process.env.NODE_ENV === "production" &&
-      !process.env.NEXT_PUBLIC_SUPABASE_URL
-    ) {
-      // During build time, return a static response
-      return NextResponse.json({
-        success: true,
-        chyron: DEFAULT_OPENING_CHYRON,
-        cached: true,
-        source: "build_fallback",
-        timestamp: new Date().toISOString(),
-      })
-    }
+    const today = getCurrentVotingDateString()
 
-    // Get the latest chyron text from race snapshots
-    const chyronText = await getLatestChyronText()
+    // Get the current chyron from the chyrons table
+    const { data: chyron } = await supabase
+      .from("chyrons")
+      .select("text")
+      .eq("vote_date", today)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single()
+
+    const chyronText = chyron?.text || DEFAULT_OPENING_CHYRON.toUpperCase()
 
     return NextResponse.json({
       success: true,
       chyron: chyronText,
-      cached: false, // Always fresh from the snapshot system
-      source: "race_snapshots",
+      cached: false,
+      source: "chyrons_table",
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
     console.error("Error fetching chyron text:", error)
 
-    // Fallback to default text
     return NextResponse.json({
       success: true,
-      chyron: DEFAULT_OPENING_CHYRON,
+      chyron: DEFAULT_OPENING_CHYRON.toUpperCase(),
       cached: false,
       source: "fallback",
       error: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString(),
     })
   }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Check for CRON_SECRET authentication
+    const authHeader = request.headers.get("authorization")
+    const cronSecret = process.env.CRON_SECRET
+
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Use the comprehensive chyron service
+    const chyronService = ChyronService.getInstance()
+    const result = await chyronService.updateChyron()
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.reason || "Failed to update chyron",
+        },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      chyron: result.chyron,
+      reason: result.reason,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error("Error updating chyron:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// Keep the old simple function as fallback helper
+function toUpperCase(text: string): string {
+  return text.toUpperCase()
 }

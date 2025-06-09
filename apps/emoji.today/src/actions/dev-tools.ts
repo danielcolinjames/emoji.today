@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache"
 import { getSession } from "@/auth"
 import { supabase } from "@/lib/supabase"
 import { createClient } from "@supabase/supabase-js"
-import { updateChyronOnVoteChange } from "@/actions/race-commentary"
 import { getCurrentVotingDateString } from "@/lib/date-utils"
 
 // Create service role client for admin operations
@@ -202,13 +201,6 @@ export async function addQuickVoteAction(emoji: string): Promise<{
     // Manually update live_results table for real-time SWR updates
     await updateLiveResultsManually(today)
 
-    // Update chyron text after vote
-    try {
-      await updateChyronOnVoteChange()
-    } catch (chyronError) {
-      console.error("Failed to update chyron after vote:", chyronError)
-    }
-
     // Revalidate paths
     revalidatePath("/vote")
     revalidatePath("/results")
@@ -263,11 +255,13 @@ export async function generateRandomVotesAction(count: number): Promise<{
     const fidToUserId = new Map(createdUsers.map((u) => [u.fid, u.id]))
 
     // Generate vote data with proper user_ids
-    const voteData = userInserts.map((user) => ({
+    const baseTime = Date.now()
+    const voteData = userInserts.map((user, idx) => ({
       user_id: fidToUserId.get(user.fid)!,
       fid: user.fid,
       emoji: getRandomEmoji(),
       vote_date: today,
+      created_at: new Date(baseTime + idx * 250).toISOString(),
     }))
 
     // Use admin client for batch insert
@@ -281,13 +275,6 @@ export async function generateRandomVotesAction(count: number): Promise<{
 
     // Manually update live_results table for real-time SWR updates
     await updateLiveResultsManually(today)
-
-    // Update chyron text after batch votes
-    try {
-      await updateChyronOnVoteChange()
-    } catch (chyronError) {
-      console.error("Failed to update chyron after batch votes:", chyronError)
-    }
 
     // Revalidate paths
     revalidatePath("/vote")
@@ -346,11 +333,13 @@ export async function seedVotesForEmojiAction(
     const fidToUserId = new Map(createdUsers.map((u) => [u.fid, u.id]))
 
     // Generate vote data for specific emoji with proper user_ids
-    const voteData = userInserts.map((user) => ({
+    const baseTime = Date.now()
+    const voteData = userInserts.map((user, idx) => ({
       user_id: fidToUserId.get(user.fid)!,
       fid: user.fid,
       emoji,
       vote_date: today,
+      created_at: new Date(baseTime + idx * 250).toISOString(),
     }))
 
     // Use admin client for batch insert
@@ -364,13 +353,6 @@ export async function seedVotesForEmojiAction(
 
     // Manually update live_results table for real-time SWR updates
     await updateLiveResultsManually(today)
-
-    // Update chyron text after seeding votes for specific emoji
-    try {
-      await updateChyronOnVoteChange()
-    } catch (chyronError) {
-      console.error("Failed to update chyron after seeding votes:", chyronError)
-    }
 
     // Revalidate paths
     revalidatePath("/vote")
@@ -412,15 +394,8 @@ export async function clearAllVotesAction(): Promise<{
       throw new Error("Failed to clear votes")
     }
 
-    // Update chyron text after clearing all votes
-    try {
-      await updateChyronOnVoteChange()
-    } catch (chyronError) {
-      console.error(
-        "Failed to update chyron after clearing votes:",
-        chyronError
-      )
-    }
+    // Manually update live_results table for real-time SWR updates
+    await updateLiveResultsManually(today)
 
     // Revalidate paths
     revalidatePath("/vote")
@@ -450,25 +425,51 @@ export async function changeMyVoteAction(emoji: string): Promise<{
       throw new Error("Unauthorized")
     }
 
-    const today = new Date().toISOString().split("T")[0]
+    const today = getCurrentVotingDateString()
+    const fid = session.user.fid
 
-    // Update the vote using service role
-    const { error } = await adminSupabase
+    // Delete existing vote for today
+    const { error: deleteError } = await adminSupabase
       .from("votes")
-      .update({ emoji: emoji })
-      .eq("fid", session.user.fid)
+      .delete()
+      .eq("fid", fid)
       .eq("vote_date", today)
 
-    if (error) {
-      throw new Error("Failed to change your vote")
+    if (deleteError) {
+      console.error("Error deleting existing vote:", deleteError)
     }
 
-    // Update chyron text after changing vote
-    try {
-      await updateChyronOnVoteChange()
-    } catch (chyronError) {
-      console.error("Failed to update chyron after vote change:", chyronError)
+    // Get or create user
+    const { data: userData, error: userError } = await adminSupabase
+      .from("users")
+      .upsert(
+        {
+          fid,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "fid" }
+      )
+      .select("id")
+      .single()
+
+    if (userError || !userData) {
+      throw new Error(`Failed to get user: ${userError?.message}`)
     }
+
+    // Insert new vote
+    const { error: voteError } = await adminSupabase.from("votes").insert({
+      user_id: userData.id,
+      fid,
+      emoji,
+      vote_date: today,
+    })
+
+    if (voteError) {
+      throw new Error(`Failed to insert vote: ${voteError.message}`)
+    }
+
+    // Manually update live_results table for real-time SWR updates
+    await updateLiveResultsManually(today)
 
     // Revalidate paths
     revalidatePath("/vote")
@@ -476,10 +477,102 @@ export async function changeMyVoteAction(emoji: string): Promise<{
 
     return {
       success: true,
-      message: `Vote changed to ${emoji}!`,
+      message: `Changed your vote to ${emoji}!`,
     }
   } catch (error) {
     console.error("Error changing vote:", error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Unknown error",
+    }
+  }
+}
+
+export async function addVoteWithDateTimeAction(
+  emoji: string,
+  voteDate: string,
+  voteTime: string
+): Promise<{
+  success: boolean
+  message: string
+}> {
+  try {
+    // Check if user is authenticated and authorized
+    const session = await getSession()
+    if (!session?.user?.fid || !AUTHORIZED_FIDS.includes(session.user.fid)) {
+      throw new Error("Unauthorized")
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+    if (!dateRegex.test(voteDate)) {
+      throw new Error("Invalid date format. Use YYYY-MM-DD")
+    }
+
+    // Validate time format (HH:MM)
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
+    if (!timeRegex.test(voteTime)) {
+      throw new Error("Invalid time format. Use HH:MM (24-hour)")
+    }
+
+    // Create the exact timestamp
+    const voteDateTime = new Date(`${voteDate}T${voteTime}:00.000Z`)
+    if (isNaN(voteDateTime.getTime())) {
+      throw new Error("Invalid date/time combination")
+    }
+
+    // Generate a higher FID to avoid conflicts with real users
+    const fakeFid = Math.floor(Math.random() * 900000) + 100000
+
+    // Create user first
+    const { data: userData, error: userError } = await adminSupabase
+      .from("users")
+      .upsert(
+        {
+          fid: fakeFid,
+          username: `testuser${fakeFid}`,
+          created_at: voteDateTime.toISOString(),
+          updated_at: voteDateTime.toISOString(),
+        },
+        { onConflict: "fid" }
+      )
+      .select("id")
+      .single()
+
+    if (userError || !userData) {
+      throw new Error(`Failed to create test user: ${userError?.message}`)
+    }
+
+    // Insert vote with custom date and time
+    const { error: voteError } = await adminSupabase.from("votes").insert({
+      user_id: userData.id,
+      fid: fakeFid,
+      emoji,
+      vote_date: voteDate,
+      created_at: voteDateTime.toISOString(),
+    })
+
+    if (voteError) {
+      throw new Error(`Failed to insert vote: ${voteError.message}`)
+    }
+
+    // If this is for today, update live_results
+    const today = getCurrentVotingDateString()
+    if (voteDate === today) {
+      await updateLiveResultsManually(today)
+    }
+
+    // Revalidate paths
+    revalidatePath("/vote")
+    revalidatePath("/results")
+    revalidatePath("/profile")
+
+    return {
+      success: true,
+      message: `Added vote for ${emoji} on ${voteDate} at ${voteTime} UTC!`,
+    }
+  } catch (error) {
+    console.error("Error adding vote with date/time:", error)
     return {
       success: false,
       message: error instanceof Error ? error.message : "Unknown error",

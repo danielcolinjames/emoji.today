@@ -2,6 +2,7 @@
 
 import { getSession } from "@/auth"
 import { supabase } from "@/lib/supabase"
+import { supabaseService } from "@/lib/supabase-service"
 import { createClient } from "@supabase/supabase-js"
 import {
   getCurrentVotingDateString,
@@ -216,27 +217,51 @@ async function generateCommentaryWithOpenRouter(
   let prompt = ""
 
   if (mode === "chyron") {
-    // Ultra-short ticker style for scrolling chyron
-    prompt = `You are a TV news ticker announcer covering the daily emoji election at emoji.today. Write an ultra-short, punchy update (max 60 characters) in ALL CAPS ticker style. Speculate on what world events must be happening for these emojis to be winning:
+    const standingsSnippet = context.currentStandings
+      .map((s, i) => `${i + 1}. ${s.emoji} ${s.count}V`)
+      .join(" • ")
 
-CURRENT STANDINGS (ranked by timing - later votes get better rankings):
-${context.currentStandings
-  .slice(0, 3) // Only top 3 for chyron
-  .map((s, i) => `${i + 1}. ${s.emoji}: ${s.count} votes`)
-  .join(" • ")}
+    const recentWinners = context.historicalWinners
+      .slice(0, 5)
+      .map((w) => `${w.emoji}`)
+      .join(" ")
 
-Total: ${context.totalVotes} votes • Time: ${context.timeRemaining.hours}H ${
-      context.timeRemaining.minutes
-    }M LEFT
-${
-  context.raceStats.tightestRace
-    ? "TIGHT RACE!"
-    : `${context.currentStandings[0]?.emoji} LEADS`
-}
+    const streakInfo = (() => {
+      const first = context.historicalWinners[0]
+      if (!first) return ""
+      const streakLen = context.historicalWinners.filter(
+        (w) => w.emoji === first.emoji
+      ).length
+      if (streakLen >= 2)
+        return ` • ${first.emoji} WON ${streakLen} OF LAST ${context.historicalWinners.length}`
+      return ""
+    })()
 
-NOTE: Rankings are timing-based - emojis with later average vote times rank higher, not just vote count! If two emojis have the same vote count but different rankings, the higher-ranked one "leads by timing tiebreak" - don't say they're tied!
+    prompt = `You are a breaking-news ticker announcer covering the daily emoji election on EMOJI.TODAY.
 
-Write like a TV ticker: ALL CAPS, urgent, punchy! Examples: "🔥 LEADS WITH 15 VOTES • 6H LEFT" or "TIGHT RACE! 🎯 vs 🔥 • 2 VOTE GAP" or "🔥 LEADS BY TIMING TIEBREAK • BOTH AT 8 VOTES"`
+GOAL: Write ONE punchy ticker line (ALL CAPS, max 60 chars). It should feel like live sports commentary—dramatic, witty, sometimes cheeky.
+
+CURRENT STANDINGS (timing-based ranking):
+${standingsSnippet}
+
+Total votes ${context.totalVotes} • ${context.timeRemaining.hours}H ${context.timeRemaining.minutes}M LEFT
+
+RANK ORDER ABOVE IS FINAL—#1 is the current leader even if vote counts are tied, because timing breaks ties.
+
+Feel free to comment on late surges, under-dog emojis, or wild world events that might explain an emoji's rise (e.g. "🌊 TSUNAMI OF SUPPORT"). Use emoji characters, keep it fun.
+
+RECENT WINNERS: ${recentWinners}${streakInfo}
+
+FUN FACTS: ${context.raceStats.uniqueEmojis} UNIQUE EMOJIS IN TODAY'S RACE.
+
+Think like a sports commentator-meets-tabloid editor: exaggerate drama, invent playful storylines, but keep it believable.
+
+IMPORTANT: REFER TO EMOJIS **ONLY** BY THEIR GLYPHS, NOT THEIR ENGLISH NAMES (e.g., use 🔥, not "FIRE").
+
+OUTPUT: single line, ALL CAPS. Example styles:
+"🔥 LEADS WITH 15 • 6H LEFT"
+"TIGHT RACE! 🎩 VS 💎 • 2 VOTE GAP"
+"🌱 LATE SURGE HOPES FOR MIRACLE"`
   } else if (mode === "farcaster") {
     // Optimized for social media posts
     prompt = `You are a breathless horse race announcer covering the daily emoji election at emoji.today. Write exciting commentary (1-2 sentences, under 200 chars) for Farcaster:
@@ -313,9 +338,10 @@ Write like you're calling a horse race - dramatic, energetic, and focused on the
           "X-Title": "emoji.today race commentary",
         },
         body: JSON.stringify({
-          model: "anthropic/claude-3.7-haiku",
+          model: "google/gemini-2.5-pro-preview",
           messages: [{ role: "user", content: prompt }],
-          max_tokens: mode === "chyron" ? 30 : mode === "farcaster" ? 80 : 150,
+          max_tokens:
+            mode === "chyron" ? 200 : mode === "farcaster" ? 280 : 140,
           temperature: 0.9,
         }),
       }
@@ -591,30 +617,20 @@ export async function updateChyronOnVoteChange(): Promise<{
 
     const today = new Date().toISOString().split("T")[0]
 
-    // Use service role client to bypass RLS
-    const serviceSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const serviceSupabase = supabaseService()
+
+    const { error: upsertErr } = await serviceSupabase.from("chyrons").upsert(
+      {
+        vote_date: today,
+        text: result.chyron,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "vote_date" }
     )
 
-    // Store chyron in live_results table
-    const { error: updateError } = await serviceSupabase
-      .from("live_results")
-      .upsert(
-        {
-          vote_date: today,
-          chyron_text: result.chyron,
-          last_updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "vote_date",
-          ignoreDuplicates: false,
-        }
-      )
-
-    if (updateError) {
-      console.error("Failed to store chyron:", updateError)
-      return { success: false, error: updateError.message }
+    if (upsertErr) {
+      console.error("Failed to store chyron:", upsertErr)
+      return { success: false, error: upsertErr.message }
     }
 
     console.log("📺 Chyron updated:", result.chyron)

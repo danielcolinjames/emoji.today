@@ -120,7 +120,7 @@ Examples of style:
 "🔥 SPICY FOOD SALES SURGE 400% • TASTE BUDS REBEL GLOBALLY" 
 "😴 MONDAY ENERGY CRISIS SPREADS • PILLOW SALES SKYROCKET"
 
-Be creative, unexpected, and make people think "that actually makes sense!" Focus on the winning emoji and create a plausible world scenario.`
+Be creative, unexpected, and make people think "that actually makes sense!" Focus on the winning emoji and create a plausible world scenario for its winning. Do not include hashtags like #EmojiElection or any # symbols. Never talk about any of the logic around the generating of the prompt itself. Do not include any emojis in your response unless that emoji is part of the race.`
 
 export async function createRaceSnapshot(
   milestone: string
@@ -516,10 +516,10 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
           "X-Title": "emoji.today chyron",
         },
         body: JSON.stringify({
-          model: "anthropic/claude-3.5-haiku",
+          model: "google/gemini-2.5-pro-preview",
           messages: [{ role: "user", content: prompt }],
-          max_tokens: 80,
-          temperature: 0.7,
+          max_tokens: 200,
+          temperature: 0.9,
         }),
       }
     )
@@ -543,7 +543,7 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
     // Validate the chyron is complete and well-formed
     console.log(`📺 Generated chyron: "${chyron}" (${chyron.length} chars)`)
 
-    if (chyron.length < 20 || !chyron.includes("•") || chyron.length > 65) {
+    if (chyron.length < 20 || chyron.length > 200) {
       console.warn(
         "Generated chyron invalid:",
         chyron,
@@ -551,7 +551,6 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
         "Reasons:",
         {
           tooShort: chyron.length < 20,
-          missingBullet: !chyron.includes("•"),
           tooLong: chyron.length > 200,
         }
       )

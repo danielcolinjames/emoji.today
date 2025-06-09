@@ -95,7 +95,7 @@ export function Navbar() {
           {/* Countdown - Centered */}
           {!isHomePage && (
             <div className="absolute left-1/2 transform -translate-x-1/2">
-              <div className="flex flex-row items-center gap-2">
+              <Link href="/vote" className="flex flex-row items-center gap-2">
                 <p className="text-[#727272] text-sm sm:text-xl font-geist-mono">
                   {(() => {
                     const currentDate = getCurrentVotingDay();
@@ -105,7 +105,7 @@ export function Navbar() {
                   })()}
                 </p>
                 <VotingCountdown />
-              </div>
+              </Link>
             </div>
           )}
 
@@ -140,20 +140,22 @@ export function Navbar() {
                   </div>
 
                   {/* Profile option */}
-                  <button
-                    onClick={() => {
-                      setShowComingSoon(true);
-                    }}
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsMenuOpen(false)}
                     className="block w-full text-left px-4 py-2 text-sm text-neutral-300 hover:bg-white/10 transition-colors"
                   >
-                    Profile{" "}
-                    <span
-                      className={`text-neutral-500 transition-opacity duration-300 ${showComingSoon ? 'opacity-100' : 'opacity-0'
-                        }`}
-                    >
-                      (coming soon)
-                    </span>
-                  </button>
+                    Profile
+                  </Link>
+
+                  {/* Timeline option */}
+                  <Link
+                    href="/timeline"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block w-full text-left px-4 py-2 text-sm text-neutral-300 hover:bg-white/10 transition-colors"
+                  >
+                    Timeline
+                  </Link>
 
                   {/* FAQ option */}
                   <button
@@ -171,21 +173,6 @@ export function Navbar() {
                     </span>
                   </button>
 
-                  {/* Timeline option */}
-                  <button
-                    onClick={() => {
-                      setShowComingSoon(true);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm text-neutral-300 hover:bg-white/10 transition-colors"
-                  >
-                    Timeline{" "}
-                    <span
-                      className={`text-neutral-500 transition-opacity duration-300 ${showComingSoon ? 'opacity-100' : 'opacity-0'
-                        }`}
-                    >
-                      (coming soon)
-                    </span>
-                  </button>
 
                   {/* About option */}
                   <button
