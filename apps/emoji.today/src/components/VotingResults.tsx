@@ -101,7 +101,7 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
     const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
 
     // Open Farcaster compose with the share URL
-    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`)}&embeds[]=${encodeURIComponent(shareUrl)}`;
+    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today? @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`)}&embeds[]=${encodeURIComponent(shareUrl)}`;
 
     window.open(farcasterUrl, '_blank');
   };
@@ -115,10 +115,11 @@ export function VotingResults({ userProfileUrl }: VotingResultsProps) {
 
     const today = new Date().toISOString().split('T')[0];
     const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${today}&accentColor=${encodeURIComponent(userAccentColor)}`;
-    console.log('📋 Share URL:', shareUrl);
+    const textToCopy = `${shareUrl} @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
+    console.log('📋 Share URL with mini app:', textToCopy);
 
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(textToCopy);
       console.log('📋 Copy successful, setting copySuccess to true, current state:', copySuccess);
       setCopySuccess(true);
       console.log('📋 State should now be true');

@@ -239,7 +239,7 @@ function ImageDebugModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => 
     // Food
     '🍕', '🍔', '🌮', '🌯', '🥗', '🥙',
     // Objects that might not have colors
-    '🗳️', // Ballot box (used as default)
+    '😀', // Grinning face (used as default)
     '📱', '💻', '⌨️', '🖥️', '🖨️',
     // Text symbols
     '🆘', '🅰️', '🅱️', '🅾️', '🆎',

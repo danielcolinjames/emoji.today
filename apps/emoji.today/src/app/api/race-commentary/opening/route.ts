@@ -12,8 +12,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Check for force parameter
+    const { searchParams } = new URL(request.url)
+    const force = searchParams.get("force") === "true"
+
     // Call the server action
-    const result = await createOpeningSnapshot()
+    const result = await createOpeningSnapshot(force)
 
     if (!result.success) {
       return NextResponse.json(result, { status: 500 })

@@ -58,74 +58,62 @@ export interface RaceSnapshot {
 }
 
 const MILESTONE_PROMPTS = {
-  opening: `OPENING CEREMONY: Voting is now open for the emoji of {vote_date_formatted}. Write a dignified yet compelling Farcaster post announcing the beginning of today's election. Reference any early voting patterns if present. This is a historic daily ritual - treat it with importance and gravitas. Under 280 characters.
+  opening: `THE POLLS ARE OPEN! Write like a breathless election night announcer calling citizens to choose which emoji gets enshrined in history today.
 
-Early voting data: {emoji_standings}
-Historical context: Yesterday's winner was {yesterday_winner} with {yesterday_count} votes.
+Current early returns: {emoji_standings}
+Yesterday's champion: {yesterday_winner} ({yesterday_count} votes)
 
-Tone: Authoritative, ceremonial, builds anticipation. "Today's election begins." Do not use any decorative emojis - only reference actual voting emojis. Do NOT include hashtags like #EmojiElection or any # symbols.`,
+Tone: Breathless horse race announcer meets political pundit. Self-aware drama about "digital democracy" and "historical archives." Under 160 chars! Only use actual competing emojis.`,
 
-  "1hour": `EARLY RETURNS: One hour into voting for {vote_date_formatted}. Provide an analytical breakdown of the emerging patterns. Call out significant leads, unexpected developments, or tight competitions. Reference specific vote counts and trends. Think election night coverage with substance.
-
-Current standings: {emoji_standings}
-Vote momentum: {momentum_data}
-Hourly rate: {vote_velocity} votes per hour
-
-Tone: Analytical, authoritative, insightful. "Here's what the numbers tell us." Use only voting emojis in context. Do NOT include hashtags like #EmojiElection or any # symbols.`,
-
-  halfway: `MIDDAY REPORT: We have reached the halfway point in today's election for {vote_date_formatted}. This is when decisive movements often emerge. Analyze the competitive landscape, identify momentum shifts, and assess which candidates are positioned for the final stretch.
+  "1hour": `EARLY RETURNS! Write like an election night pundit analyzing which emoji will claim its place in the eternal digital archives.
 
 Current standings: {emoji_standings}
-Momentum analysis: {momentum_data}
-Historical comparison: {historical_comparison}
+Voter turnout: {vote_velocity} votes/hour
 
-Tone: Serious analysis, strategic insight, building tension. "The race takes shape." Reference only actual competing emojis. Do NOT include hashtags like #EmojiElection or any # symbols.`,
+Tone: Political pundit meets horse race announcer. "What we're seeing here..." Self-aware about the stakes of emoji immortality. Under 160 chars! Only competing emojis.`,
 
-  final_hour: `FINAL HOUR: Sixty minutes remain in the election for {vote_date_formatted}. This is the decisive moment when late momentum can determine the outcome. Focus on viable paths to victory, tight margins, and the urgency of this closing window.
+  halfway: `MIDDAY ANALYSIS! Write like a seasoned political commentator on which emoji will earn eternal digital glory.
 
-Current standings: {emoji_standings}
-Late momentum: {momentum_data}
-Time remaining: {time_remaining}
+Current race: {emoji_standings}
+Total votes: {total_votes}
 
-Tone: Urgent, dramatic, high stakes. "Every vote matters now." Use only competing emojis. Do NOT include hashtags like #EmojiElection or any # symbols.`,
+Tone: Election night analyst meets old-school politician. "The voters are speaking!" Dramatic about historical significance. Under 160 chars! Only actual emojis.`,
 
-  final_minutes: `FINAL MOMENTS: The election for {vote_date_formatted} closes in minutes. This is the culmination of 24 hours of democratic participation. If the race is close, emphasize the drama. If there's a clear winner, acknowledge their commanding performance.
+  final_hour: `FINAL HOUR! Write like a frantic election night anchor - time is running out to determine which emoji enters the historical record!
 
-Final standings: {emoji_standings}
-Closing momentum: {momentum_data}
+Race standings: {emoji_standings}
+Time left: {time_remaining}
 
-Tone: Climactic, historic, definitive. "History is being written." Reference only the competing emojis. Do NOT include hashtags like #EmojiElection or any # symbols.`,
+Tone: Breathless urgency meets political gravitas. "History hangs in the balance!" Self-aware drama about emoji posterity. Under 160 chars! Only competing emojis.`,
 
-  daily_summary: `ELECTION NIGHT WRAP-UP: The polls have closed and all votes have been counted for {vote_date_formatted}. Provide a comprehensive summary of the completed election. Announce the official winner, highlight key moments from the day, and provide statistical insights about voter turnout and competition.
+  final_minutes: `FINAL MINUTES! Write like a horse race announcer calling the stretch run - which emoji will be immortalized in today's archives?
 
-Final official results: {emoji_standings}
-Total voter turnout: {total_votes}
-Winner: {winner_emoji} with {winner_count} votes
-Historical context: {historical_comparison}
+Current positions: {emoji_standings}
 
-Tone: Authoritative, comprehensive, celebratory of democratic participation. "The results are in." Reference the winning emoji and key competitors. Do NOT include hashtags like #EmojiElection or any # symbols.`,
+Tone: Peak breathless announcer energy. "Coming down the stretch!" Dramatic stakes about digital immortality. Under 160 chars! Only actual competing emojis.`,
+
+  daily_summary: `THE VOTES ARE IN! Write like a triumphant election night anchor announcing which emoji has been enshrined in history.
+
+Official results: {emoji_standings}
+Victor: {winner_emoji} ({winner_count} votes)
+Total turnout: {total_votes}
+
+Tone: Ceremonial gravitas meets victory announcement. "History has been written!" Celebrate the emoji's eternal glory. Under 160 chars! Only winning emoji.`,
 }
 
-const CHYRON_PROMPT = `You are a creative news ticker writer for the global emoji election. Looking at today's race, tell a vivid micro-story about what must be happening in the world for these emojis to be leading/winning. Be imaginative, witty, and paint a picture of the collective human experience driving these votes.
+const CHYRON_PROMPT = `Write a dramatic news ticker about today's emoji race. Make it feel like breaking news!
 
-Current standings: {emoji_standings}
+Current leaders: {emoji_standings}
 
-Think about:
-- What global events, moods, or phenomena would make people choose this emoji?
-- What's the human story behind these choices?
-- Create intrigue and narrative tension
+Create a fun story explaining WHY people are voting for the winning emoji. Examples:
+"🔥 SPICY FOOD TREND EXPLODES GLOBALLY"
+"😴 MONDAY BLUES HIT PEAK INTENSITY"
 
-Write one dynamic ticker line (45-65 chars max). Use the winning/leading emoji(s) as characters in your story. Make it feel like breaking news from the collective human psyche.
-
-Examples of style:
-"🌧️ STORMS ACROSS 3 CONTINENTS • WORLD SEEKS COMFORT IN RAIN"
-"🔥 SPICY FOOD SALES SURGE 400% • TASTE BUDS REBEL GLOBALLY" 
-"😴 MONDAY ENERGY CRISIS SPREADS • PILLOW SALES SKYROCKET"
-
-Be creative, unexpected, and make people think "that actually makes sense!" Focus on the winning emoji and create a plausible world scenario for its winning. Do not include hashtags like #EmojiElection or any # symbols. Never talk about any of the logic around the generating of the prompt itself. Do not include any emojis in your response unless that emoji is part of the race.`
+Style: 40-60 chars, ALL CAPS, dramatic, witty. No hashtags. Only use emojis from the race.`
 
 export async function createRaceSnapshot(
-  milestone: string
+  milestone: string,
+  force: boolean = false
 ): Promise<{ success: boolean; snapshot?: RaceSnapshot; error?: string }> {
   try {
     console.log(`📸 Creating race snapshot for milestone: ${milestone}`)
@@ -133,32 +121,37 @@ export async function createRaceSnapshot(
     const today = getCurrentVotingDateString()
     const now = new Date()
 
-    // Check if snapshot already exists for this milestone today
-    const { data: existingSnapshot } = await getServiceSupabase()
-      .from("race_commentary_snapshots")
-      .select("*")
-      .eq("vote_date", today)
-      .eq("milestone", milestone)
-      .single()
+    // Check if snapshot already exists for this milestone today (unless forced)
+    if (!force) {
+      const { data: existingSnapshot } = await getServiceSupabase()
+        .from("race_commentary_snapshots")
+        .select("*")
+        .eq("vote_date", today)
+        .eq("milestone", milestone)
+        .single()
 
-    if (existingSnapshot) {
-      console.log(`⏭️  Snapshot for ${milestone} already exists today`)
-      return {
-        success: true,
-        snapshot: {
-          vote_date: existingSnapshot.vote_date,
-          milestone: existingSnapshot.milestone,
-          timestamp_utc: existingSnapshot.timestamp_utc,
-          total_votes: existingSnapshot.total_votes,
-          emoji_standings: existingSnapshot.emoji_standings as EmojiStanding[],
-          momentum_data:
-            existingSnapshot.momentum_data as RaceSnapshot["momentum_data"],
-          historical_context:
-            existingSnapshot.historical_context as RaceSnapshot["historical_context"],
-          commentary_text: existingSnapshot.commentary_text,
-          chyron_text: existingSnapshot.chyron_text,
-        } as RaceSnapshot,
+      if (existingSnapshot) {
+        console.log(`⏭️  Snapshot for ${milestone} already exists today`)
+        return {
+          success: true,
+          snapshot: {
+            vote_date: existingSnapshot.vote_date,
+            milestone: existingSnapshot.milestone,
+            timestamp_utc: existingSnapshot.timestamp_utc,
+            total_votes: existingSnapshot.total_votes,
+            emoji_standings:
+              existingSnapshot.emoji_standings as EmojiStanding[],
+            momentum_data:
+              existingSnapshot.momentum_data as RaceSnapshot["momentum_data"],
+            historical_context:
+              existingSnapshot.historical_context as RaceSnapshot["historical_context"],
+            commentary_text: existingSnapshot.commentary_text,
+            chyron_text: existingSnapshot.chyron_text,
+          } as RaceSnapshot,
+        }
       }
+    } else {
+      console.log(`🔄 Force regenerating ${milestone} snapshot`)
     }
 
     // Get current race state
@@ -467,7 +460,7 @@ async function generateCommentaryForMilestone(
         body: JSON.stringify({
           model: "anthropic/claude-3.5-haiku",
           messages: [{ role: "user", content: processedPrompt }],
-          max_tokens: 100,
+          max_tokens: 400,
           temperature: 0.9,
         }),
       }
@@ -520,7 +513,7 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
         body: JSON.stringify({
           model: "google/gemini-2.5-pro-preview",
           messages: [{ role: "user", content: prompt }],
-          max_tokens: 200,
+          max_tokens: 100,
           temperature: 0.9,
         }),
       }
@@ -630,7 +623,9 @@ export async function postToFarcaster(
       },
       body: JSON.stringify({
         signer_uuid: process.env.FARCASTER_SIGNER_UUID,
-        text: text + "\n\nVote now at emoji.today 🗳️",
+        text:
+          text +
+          "\n\nVote now at emoji.today @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
       }),
     })
 

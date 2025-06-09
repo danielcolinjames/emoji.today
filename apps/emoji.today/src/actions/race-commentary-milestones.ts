@@ -23,13 +23,14 @@ interface MilestoneResult {
 }
 
 async function createMilestoneSnapshot(
-  milestone: string
+  milestone: string,
+  force: boolean = false
 ): Promise<MilestoneResult> {
   try {
-    console.log(`🎯 ${milestone} milestone triggered`)
+    console.log(`🎯 ${milestone} milestone triggered${force ? " (FORCE)" : ""}`)
 
     // Create race snapshot for this milestone
-    const result = await createRaceSnapshot(milestone)
+    const result = await createRaceSnapshot(milestone, force)
 
     if (!result.success) {
       console.error(`Failed to create ${milestone} snapshot:`, result.error)
@@ -76,8 +77,10 @@ async function createMilestoneSnapshot(
   }
 }
 
-export async function createOpeningSnapshot(): Promise<MilestoneResult> {
-  return createMilestoneSnapshot("opening")
+export async function createOpeningSnapshot(
+  force: boolean = false
+): Promise<MilestoneResult> {
+  return createMilestoneSnapshot("opening", force)
 }
 
 export async function create1HourSnapshot(): Promise<MilestoneResult> {

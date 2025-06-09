@@ -244,21 +244,34 @@ async function calculateAccuracyLeaderboard(limit: number = 20) {
     userStats.set(vote.fid, stats)
   })
 
-  // Sort by accuracy
+  // Sort by Bayesian-adjusted win rate to reward both accuracy and volume
   const accuracyResults = Array.from(userStats.entries())
-    .filter(([_, stats]) => stats.totalVotes >= 3)
-    .map(([fid, stats]) => ({
-      fid,
-      accuracy: Math.round((stats.correctVotes / stats.totalVotes) * 100),
-      totalVotes: stats.totalVotes,
-      earliestVote: stats.earliestVote,
-    }))
+    .filter(([_, stats]) => stats.totalVotes >= 2)
+    .map(([fid, stats]) => {
+      // Bayesian average: add 1 virtual win and 1 virtual loss to everyone
+      const virtualWins = 1
+      const virtualTotal = 2
+      const bayesianScore =
+        (stats.correctVotes + virtualWins) / (stats.totalVotes + virtualTotal)
+
+      return {
+        fid,
+        correctVotes: stats.correctVotes,
+        totalVotes: stats.totalVotes,
+        bayesianScore: Math.round(bayesianScore * 1000), // Store as integer for precise sorting
+        earliestVote: stats.earliestVote,
+      }
+    })
     .sort((a, b) => {
-      if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy
+      // Primary sort: higher Bayesian score
+      if (b.bayesianScore !== a.bayesianScore)
+        return b.bayesianScore - a.bayesianScore
+      // Tie-break: earlier voter
       if (a.earliestVote && b.earliestVote) {
         const comp = a.earliestVote.localeCompare(b.earliestVote)
         if (comp !== 0) return comp
       }
+      // Final tie-break: more total votes
       return b.totalVotes - a.totalVotes
     })
     .slice(0, limit)
@@ -266,8 +279,8 @@ async function calculateAccuracyLeaderboard(limit: number = 20) {
   return await enrichWithUserData(
     accuracyResults.map((r) => ({
       fid: r.fid,
-      value: r.accuracy,
-      secondaryValue: r.totalVotes,
+      value: r.correctVotes, // Store wins count for display as "X/Y wins"
+      secondaryValue: r.totalVotes, // Store total votes for display
     }))
   )
 }

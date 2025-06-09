@@ -53,10 +53,10 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
       weekday: 'long',
       month: 'long',
       day: 'numeric'
-    })} on emoji.today`;
+    })} on emoji.today @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
 
     // Farcaster compose URL with pre-filled text and embedded frame
-    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(shareUrl)}`;
+    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(shareUrl)}`;
     window.open(farcasterUrl, '_blank');
 
     // Call the callback as well
@@ -64,15 +64,17 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
   };
 
   const handleCopyToClipboard = async () => {
+    const textToCopy = `${shareUrl} @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
+
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
-      textArea.value = shareUrl;
+      textArea.value = textToCopy;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');

@@ -14,7 +14,7 @@ interface SharePageProps {
 
 export async function generateMetadata({ searchParams }: SharePageProps): Promise<Metadata> {
   const params = await searchParams;
-  const emoji = params.emoji || '🗳️';
+  const emoji = params.emoji || '😀';
   const date = params.date || new Date().toISOString().split('T')[0];
   const accentColor = params.accentColor || '#FFFFFF';
   const isWinner = params.winner === 'true';

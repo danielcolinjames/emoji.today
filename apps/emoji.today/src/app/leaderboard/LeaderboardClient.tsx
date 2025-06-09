@@ -20,8 +20,8 @@ const tabs: TabData[] = [
   },
   {
     id: 'accuracy',
-    label: 'Win %',
-    description: 'Users who pick winning emojis most often'
+    label: 'Win Rate',
+    description: 'Voters with the best win/loss record (min. 2 votes)'
   },
   {
     id: 'ogs',
@@ -38,7 +38,7 @@ function LeaderboardItem({ user, rank, tabType, isLast }: { user: LeaderboardUse
       case 'streak':
         return `${user.value} day${user.value !== 1 ? 's' : ''}`;
       case 'accuracy':
-        return `${user.value}%`;
+        return `${user.value}/${user.secondaryValue} wins`;
       case 'ogs':
         return `FID ${user.value}`;
       default:
@@ -51,7 +51,8 @@ function LeaderboardItem({ user, rank, tabType, isLast }: { user: LeaderboardUse
       case 'streak':
         return `${user.secondaryValue} total votes`;
       case 'accuracy':
-        return `${user.secondaryValue} total votes`;
+        const winRate = user.secondaryValue ? Math.round((user.value / user.secondaryValue) * 100) : 0;
+        return `${winRate}% win rate`;
       case 'ogs':
         return `${user.secondaryValue} vote${user.secondaryValue !== 1 ? 's' : ''}`;
       default:
@@ -72,7 +73,7 @@ function LeaderboardItem({ user, rank, tabType, isLast }: { user: LeaderboardUse
   const displayName = user.displayName || user.username || `User ${user.fid}`;
 
   return (
-    <div className={`flex items-start gap-3 py-3 hover:bg-neutral-900/20 transition-colors ${!isLast ? 'border-b border-neutral-800/30' : ''}`}>
+    <div className={`flex items-start gap-3 py-3 ${!isLast ? 'border-b border-neutral-800/30' : ''}`} style={!isLast ? { borderBottomColor: 'rgba(38, 38, 38, 0.3)' } : {}}>
       {/* Rank */}
       <div className="flex-shrink-0 w-6 pt-1">
         <span className="text-sm font-light text-neutral-400 font-geist-mono">
@@ -175,12 +176,12 @@ export function LeaderboardClient() {
   return (
     <div className="space-y-4">
       {/* Tab Navigation */}
-      <div className="flex gap-1 p-1 bg-neutral-900/50 rounded-xl border border-neutral-800/50">
+      <div className="flex gap-0.5 p-0.5 bg-neutral-900/50 rounded-xl border border-neutral-800/50">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === tab.id
+            className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${activeTab === tab.id
               ? 'bg-white text-black'
               : 'text-neutral-300 hover:text-white hover:bg-neutral-800/50'
               }`}
@@ -192,7 +193,7 @@ export function LeaderboardClient() {
 
       {/* Tab Description */}
       <div className="text-center">
-        <p className="text-neutral-400 text-sm sm:text-base">
+        <p className="text-neutral-400 text-xs">
           {tabs.find(tab => tab.id === activeTab)?.description}
         </p>
       </div>

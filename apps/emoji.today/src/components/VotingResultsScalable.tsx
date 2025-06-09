@@ -164,7 +164,7 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     if (!userVote) return;
 
     const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${todayString}&accentColor=${encodeURIComponent(userAccentColor)}`;
-    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today?`)}&embeds[]=${encodeURIComponent(shareUrl)}`;
+    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today? @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`)}&embeds[]=${encodeURIComponent(shareUrl)}`;
 
     window.open(farcasterUrl, '_blank');
   };
@@ -173,9 +173,10 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
     if (!userVote) return;
 
     const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${todayString}&accentColor=${encodeURIComponent(userAccentColor)}`;
+    const textToCopy = `${shareUrl} @https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
 
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(textToCopy);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {

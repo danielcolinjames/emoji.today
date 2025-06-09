@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const accentColor = searchParams.get("accentColor");
 
   // Default values
-  const displayEmoji = emoji || "🗳️";
+  const displayEmoji = emoji || "😀";
   const displayDate = date || new Date().toISOString().split('T')[0];
 
   // Use normalized emoji lookup to handle variation selectors
