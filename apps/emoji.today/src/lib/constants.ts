@@ -24,7 +24,11 @@ export const APP_OG_TITLE = "emoji.today"
 export const APP_OG_DESCRIPTION = "What emoji is today?"
 export const APP_OG_IMAGE_URL_FINAL = `${APP_URL}/og.png`
 
-const currentDate = getCurrentVotingDay()
-export const DEFAULT_OPENING_CHYRON = `VOTING UNDERWAY FOR ${formatDateShortAndUppercase(
-  currentDate
-)}`
+// Generate the default chyron dynamically to ensure correct date
+export function getDefaultOpeningChyron(): string {
+  const currentDate = getCurrentVotingDay()
+  return `VOTING UNDERWAY FOR ${formatDateShortAndUppercase(currentDate)}`
+}
+
+// Legacy constant for backward compatibility (but now dynamic)
+export const DEFAULT_OPENING_CHYRON = getDefaultOpeningChyron()

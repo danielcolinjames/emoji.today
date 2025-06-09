@@ -157,6 +157,15 @@ export function Navbar() {
                     Timeline
                   </Link>
 
+                  {/* Leaderboard option */}
+                  <Link
+                    href="/leaderboard"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block w-full text-left px-4 py-2 text-sm text-neutral-300 hover:bg-white/10 transition-colors"
+                  >
+                    Leaderboard
+                  </Link>
+
                   {/* FAQ option */}
                   <button
                     onClick={() => {
@@ -172,7 +181,6 @@ export function Navbar() {
                       (coming soon)
                     </span>
                   </button>
-
 
                   {/* About option */}
                   <button

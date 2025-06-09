@@ -1353,3 +1353,130 @@ export async function getCurrentChyron(): Promise<string | null> {
     return null
   }
 }
+
+// Leaderboard interfaces and functions
+export interface LeaderboardUser {
+  fid: number
+  username?: string
+  displayName?: string
+  pfpUrl?: string
+  value: number // The main metric (streak, accuracy %, etc.)
+  secondaryValue?: number // Additional context (total votes, etc.)
+}
+
+export async function getLongestStreakLeaderboard(
+  limit: number = 20
+): Promise<LeaderboardUser[]> {
+  try {
+    // Use service client with updated types that include leaderboards table
+    const serviceSupabase = supabaseService()
+
+    // Try to get cached data first
+    const { data: leaderboardData, error } = await (serviceSupabase as any)
+      .from("leaderboards")
+      .select("*")
+      .eq("category", "streak")
+      .order("rank", { ascending: true })
+      .limit(limit)
+
+    if (error) {
+      console.error("Error fetching cached streak leaderboard:", error)
+      throw error
+    }
+
+    if (!leaderboardData || leaderboardData.length === 0) {
+      console.warn("No cached streak leaderboard data found")
+      return []
+    }
+
+    return leaderboardData.map((entry: any) => ({
+      fid: entry.fid,
+      username: entry.username || undefined,
+      displayName: entry.display_name || undefined,
+      pfpUrl: entry.pfp_url || undefined,
+      value: entry.value,
+      secondaryValue: entry.secondary_value || undefined,
+    }))
+  } catch (error) {
+    console.error("Error getting longest streak leaderboard:", error)
+    throw error
+  }
+}
+
+export async function getBestAccuracyLeaderboard(
+  limit: number = 20
+): Promise<LeaderboardUser[]> {
+  try {
+    // Use service client with updated types
+    const serviceSupabase = supabaseService()
+
+    // Try to get cached data first
+    const { data: leaderboardData, error } = await (serviceSupabase as any)
+      .from("leaderboards")
+      .select("*")
+      .eq("category", "accuracy")
+      .order("rank", { ascending: true })
+      .limit(limit)
+
+    if (error) {
+      console.error("Error fetching cached accuracy leaderboard:", error)
+      throw error
+    }
+
+    if (!leaderboardData || leaderboardData.length === 0) {
+      console.warn("No cached accuracy leaderboard data found")
+      return []
+    }
+
+    return leaderboardData.map((entry: any) => ({
+      fid: entry.fid,
+      username: entry.username || undefined,
+      displayName: entry.display_name || undefined,
+      pfpUrl: entry.pfp_url || undefined,
+      value: entry.value,
+      secondaryValue: entry.secondary_value || undefined,
+    }))
+  } catch (error) {
+    console.error("Error getting best accuracy leaderboard:", error)
+    throw error
+  }
+}
+
+export async function getBiggestOGsLeaderboard(
+  limit: number = 20
+): Promise<LeaderboardUser[]> {
+  try {
+    // Use service client with updated types
+    const serviceSupabase = supabaseService()
+
+    // Try to get cached data first
+    const { data: leaderboardData, error } = await (serviceSupabase as any)
+      .from("leaderboards")
+      .select("*")
+      .eq("category", "ogs")
+      .order("rank", { ascending: true })
+      .limit(limit)
+
+    if (error) {
+      console.error("Error fetching cached OGs leaderboard:", error)
+      throw error
+    }
+
+    if (!leaderboardData || leaderboardData.length === 0) {
+      console.warn("No cached OGs leaderboard data found")
+      return []
+    }
+
+    return leaderboardData.map((entry: any) => ({
+      fid: entry.fid,
+      username: entry.username || undefined,
+      displayName: entry.display_name || undefined,
+      pfpUrl: entry.pfp_url || undefined,
+      value: entry.value,
+      secondaryValue: entry.secondary_value || undefined,
+    }))
+  } catch (error) {
+    console.error("Error getting biggest OGs leaderboard:", error)
+    throw error
+  }
+}

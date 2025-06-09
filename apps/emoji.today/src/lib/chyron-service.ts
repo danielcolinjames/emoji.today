@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase"
 import { getCurrentVotingDateString } from "@/lib/date-utils"
-import { DEFAULT_OPENING_CHYRON } from "@/lib/constants"
+import { getDefaultOpeningChyron } from "@/lib/constants"
 import { supabaseService } from "@/lib/supabase-service"
 import { buildSimpleRankings } from "@/lib/simple-ranking"
 
@@ -434,7 +434,7 @@ Return ONLY the ticker line, nothing else.`
     const second = context.currentStandings[1]
 
     if (!leader) {
-      return DEFAULT_OPENING_CHYRON.toUpperCase()
+      return getDefaultOpeningChyron().toUpperCase()
     }
 
     if (!second) {

@@ -2,7 +2,9 @@ import { supabase } from "./supabase"
 import { createClient } from "@supabase/supabase-js"
 import { getCurrentVotingDateString } from "./date-utils"
 import { getRemainingTimeToMidnightUTC } from "./utils"
-import { DEFAULT_OPENING_CHYRON } from "./constants"
+import { getDefaultOpeningChyron } from "./constants"
+import { supabaseService } from "@/lib/supabase-service"
+import { format } from "date-fns"
 
 // Service role client for bypassing RLS - lazy initialization
 let _serviceSupabase: ReturnType<typeof createClient> | null = null
@@ -600,7 +602,7 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
         Math.floor(Math.random() * dominationStories.length)
       ]
     }
-    return DEFAULT_OPENING_CHYRON
+    return getDefaultOpeningChyron()
   }
 }
 
@@ -703,6 +705,6 @@ export async function getLatestChyronText(): Promise<string> {
     return chyron
   } catch (error) {
     console.error("Error generating fallback chyron:", error)
-    return DEFAULT_OPENING_CHYRON
+    return getDefaultOpeningChyron()
   }
 }

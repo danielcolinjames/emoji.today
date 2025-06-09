@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { getCurrentVotingDateString } from "@/lib/date-utils"
-import { DEFAULT_OPENING_CHYRON } from "@/lib/constants"
+import { getDefaultOpeningChyron } from "@/lib/constants"
 import { ChyronService } from "@/lib/chyron-service"
 
 export async function GET(request: NextRequest) {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       .limit(1)
       .single()
 
-    const chyronText = chyron?.text || DEFAULT_OPENING_CHYRON.toUpperCase()
+    const chyronText = chyron?.text || getDefaultOpeningChyron().toUpperCase()
 
     return NextResponse.json({
       success: true,
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      chyron: DEFAULT_OPENING_CHYRON.toUpperCase(),
+      chyron: getDefaultOpeningChyron().toUpperCase(),
       cached: false,
       source: "fallback",
       error: error instanceof Error ? error.message : "Unknown error",

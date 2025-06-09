@@ -69,33 +69,33 @@ export type Database = {
           finalized_at: string | null
           id: string
           top_5_emojis: Json | null
-          total_votes: number
-          unique_emojis: number
+          total_votes: number | null
+          unique_emojis: number | null
           vote_date: string
-          winning_count: number
-          winning_emoji: string
+          winning_count: number | null
+          winning_emoji: string | null
         }
         Insert: {
           created_at?: string | null
           finalized_at?: string | null
           id?: string
           top_5_emojis?: Json | null
-          total_votes: number
-          unique_emojis: number
+          total_votes?: number | null
+          unique_emojis?: number | null
           vote_date: string
-          winning_count: number
-          winning_emoji: string
+          winning_count?: number | null
+          winning_emoji?: string | null
         }
         Update: {
           created_at?: string | null
           finalized_at?: string | null
           id?: string
           top_5_emojis?: Json | null
-          total_votes?: number
-          unique_emojis?: number
+          total_votes?: number | null
+          unique_emojis?: number | null
           vote_date?: string
-          winning_count?: number
-          winning_emoji?: string
+          winning_count?: number | null
+          winning_emoji?: string | null
         }
         Relationships: []
       }
@@ -255,9 +255,50 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboards: {
+        Row: {
+          category: string
+          created_at: string
+          display_name: string | null
+          fid: number
+          id: string
+          last_updated: string
+          pfp_url: string | null
+          rank: number
+          secondary_value: number | null
+          username: string | null
+          value: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          display_name?: string | null
+          fid: number
+          id?: string
+          last_updated?: string
+          pfp_url?: string | null
+          rank: number
+          secondary_value?: number | null
+          username?: string | null
+          value: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          display_name?: string | null
+          fid?: number
+          id?: string
+          last_updated?: string
+          pfp_url?: string | null
+          rank?: number
+          secondary_value?: number | null
+          username?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
       live_results: {
         Row: {
-          chyron_text: string | null
           created_at: string | null
           emoji_counts: Json
           id: string
@@ -266,7 +307,6 @@ export type Database = {
           vote_date: string
         }
         Insert: {
-          chyron_text?: string | null
           created_at?: string | null
           emoji_counts?: Json
           id?: string
@@ -275,7 +315,6 @@ export type Database = {
           vote_date: string
         }
         Update: {
-          chyron_text?: string | null
           created_at?: string | null
           emoji_counts?: Json
           id?: string
@@ -452,7 +491,7 @@ export type Database = {
         Insert: {
           created_at?: string
           emoji: string
-          fid: number
+          fid?: number
           id?: string
           user_id: string
           vote_date: string
@@ -481,7 +520,7 @@ export type Database = {
     }
     Functions: {
       update_vote_rankings: {
-        Args: { target_date?: string }
+        Args: { target_date: string }
         Returns: undefined
       }
     }

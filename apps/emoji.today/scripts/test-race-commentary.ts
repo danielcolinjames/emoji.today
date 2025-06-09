@@ -7,7 +7,7 @@
  * Usage: yarn workspace emoji.today tsx scripts/test-race-commentary.ts
  */
 
-import { DEFAULT_OPENING_CHYRON } from "@/lib/constants"
+import { getDefaultOpeningChyron } from "@/lib/constants"
 import {
   createRaceSnapshot,
   postToFarcaster,
@@ -241,7 +241,7 @@ function generateMockChyron(
     return `${leader.emoji} LEADS WITH ${leader.count} VOTES • ${totalVotes} VOTES AND COUNTING!`
   }
 
-  return DEFAULT_OPENING_CHYRON
+  return getDefaultOpeningChyron()
 }
 
 function formatOutput(title: string, content: string, chyron?: string) {
