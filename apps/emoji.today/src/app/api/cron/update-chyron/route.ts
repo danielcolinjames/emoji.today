@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    // Check for CRON_SECRET authentication
-    const authHeader = request.headers.get("authorization")
-    const cronSecret = process.env.CRON_SECRET
+    console.log("📺 Chyron update cron triggered")
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    // Verify this is a cron request
+    const authHeader = request.headers.get("authorization")
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      console.warn("Unauthorized cron request")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${baseUrl}/api/chyron`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${cronSecret}`,
+        Authorization: `Bearer ${process.env.CRON_SECRET}`,
         "Content-Type": "application/json",
       },
     })
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error("Error in cron job:", error)
+    console.error("Error in chyron cron job:", error)
     return NextResponse.json(
       {
         success: false,

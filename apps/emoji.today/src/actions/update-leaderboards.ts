@@ -32,10 +32,19 @@ export async function updateLeaderboards(): Promise<{
     ])
 
     // Clear existing data
-    await (serviceSupabase as any)
+    const { error: deleteError } = await (serviceSupabase as any)
       .from("leaderboards")
       .delete()
       .neq("id", "00000000-0000-0000-0000-000000000000")
+
+    if (deleteError) {
+      console.error("Delete error:", deleteError)
+      throw new Error(
+        `Failed to clear existing leaderboards: ${
+          deleteError.message || JSON.stringify(deleteError)
+        }`
+      )
+    }
 
     // Insert new data
     const allEntries: LeaderboardEntry[] = [
@@ -71,12 +80,21 @@ export async function updateLeaderboards(): Promise<{
       })),
     ]
 
+    console.log(`📊 Inserting ${allEntries.length} leaderboard entries`)
+
     const { error: insertError } = await (serviceSupabase as any)
       .from("leaderboards")
       .insert(allEntries)
 
     if (insertError) {
-      throw new Error(`Failed to insert leaderboards: ${insertError.message}`)
+      console.error("Insert error:", insertError)
+      throw new Error(
+        `Failed to insert leaderboards: ${
+          insertError.message ||
+          insertError.details ||
+          JSON.stringify(insertError)
+        }`
+      )
     }
 
     console.log(`✅ Updated leaderboards with ${allEntries.length} entries`)
