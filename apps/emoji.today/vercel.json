@@ -13,6 +13,14 @@
       "schedule": "0 12 * * *"
     },
     {
+      "path": "/api/race-commentary/6hours_left",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/race-commentary/3hours_left",
+      "schedule": "0 21 * * *"
+    },
+    {
       "path": "/api/race-commentary/final_hour",
       "schedule": "0 23 * * *"
     },

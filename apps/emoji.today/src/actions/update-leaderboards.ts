@@ -266,11 +266,11 @@ async function calculateAccuracyLeaderboard(limit: number = 20) {
       }
     })
     .sort((a, b) => {
-      // Primary sort: higher win percentage
-      if (Math.abs(b.winPercentage - a.winPercentage) > 0.01) {
-        return b.winPercentage - a.winPercentage
+      // Primary sort: more correct votes (3 beats 2, even if both have 100%)
+      if (b.correctVotes !== a.correctVotes) {
+        return b.correctVotes - a.correctVotes
       }
-      // Tie-break: earlier voter
+      // Tie-break: earlier voter (if same number of correct votes)
       if (a.earliestVote && b.earliestVote) {
         const comp = a.earliestVote.localeCompare(b.earliestVote)
         if (comp !== 0) return comp

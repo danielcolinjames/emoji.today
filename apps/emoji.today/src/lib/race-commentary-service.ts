@@ -79,6 +79,20 @@ Total votes: {total_votes}
 
 Tone: Election night analyst meets old-school politician. "The voters are speaking!" Dramatic about historical significance. Under 160 chars! Only actual emojis.`,
 
+  "6hours_left": `AFTERNOON CHECK-IN! Write a fun, shorter observation about the leading emoji. Share a quirky fact, cultural insight, or playful speculation about why this emoji is resonating today.
+
+Current leader: {emoji_standings}
+Hours remaining: 6
+
+Tone: Casual but witty pundit. Think fun trivia meets social commentary. Make an interesting connection or observation about the winning emoji. Under 120 chars! Focus on the leader.`,
+
+  "3hours_left": `EVENING UPDATE! Write a brief, entertaining take on the race. Maybe a fun fact about the winning emoji or a witty observation about voting patterns.
+
+Current standings: {emoji_standings}  
+Time left: 3 hours
+
+Tone: Casual evening news anchor with personality. Share something surprising or amusing about the leader. Keep it light and engaging. Under 100 chars! Lead with the emoji.`,
+
   final_hour: `FINAL HOUR! Write like a frantic election night anchor - time is running out to determine which emoji enters the historical record!
 
 Race standings: {emoji_standings}

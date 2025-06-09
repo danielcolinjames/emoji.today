@@ -89,6 +89,14 @@ export async function createHalfwaySnapshot(): Promise<MilestoneResult> {
   return createMilestoneSnapshot("halfway")
 }
 
+export async function create6HoursLeftSnapshot(): Promise<MilestoneResult> {
+  return createMilestoneSnapshot("6hours_left")
+}
+
+export async function create3HoursLeftSnapshot(): Promise<MilestoneResult> {
+  return createMilestoneSnapshot("3hours_left")
+}
+
 export async function createFinalHourSnapshot(): Promise<MilestoneResult> {
   return createMilestoneSnapshot("final_hour")
 }
@@ -110,6 +118,8 @@ export async function createManualSnapshot(
     "opening",
     "1hour",
     "halfway",
+    "6hours_left",
+    "3hours_left",
     "final_hour",
     "final_minutes",
     "daily_summary",

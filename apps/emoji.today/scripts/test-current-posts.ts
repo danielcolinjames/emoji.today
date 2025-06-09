@@ -26,6 +26,8 @@ async function testCurrentPosts() {
     { name: "opening", description: "Race starts - Opening bell" },
     { name: "1hour", description: "Early momentum check" },
     { name: "halfway", description: "Midday drama analysis" },
+    { name: "6hours_left", description: "Afternoon fun facts" },
+    { name: "3hours_left", description: "Evening observations" },
     { name: "final_hour", description: "Crunch time urgency" },
     { name: "final_minutes", description: "Climactic finish" },
     { name: "daily_summary", description: "Results announcement" },

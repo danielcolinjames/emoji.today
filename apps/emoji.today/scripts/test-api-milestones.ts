@@ -28,6 +28,8 @@ const MILESTONES = [
   { name: "opening", description: "Polls just opened (00:05 UTC)" },
   { name: "1hour", description: "One hour in (01:00 UTC)" },
   { name: "halfway", description: "Halfway point (12:00 UTC)" },
+  { name: "6hours_left", description: "Afternoon check-in (18:00 UTC)" },
+  { name: "3hours_left", description: "Evening update (21:00 UTC)" },
   { name: "final_hour", description: "Final hour (23:00 UTC)" },
   { name: "final_minutes", description: "Final minutes (23:55 UTC)" },
   { name: "daily_summary", description: "Election wrap-up (00:01 UTC)" },

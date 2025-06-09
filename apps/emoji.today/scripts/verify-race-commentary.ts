@@ -75,6 +75,8 @@ async function verifyRaceCommentarySystem() {
       "/api/race-commentary/opening",
       "/api/race-commentary/1hour",
       "/api/race-commentary/halfway",
+      "/api/race-commentary/6hours_left",
+      "/api/race-commentary/3hours_left",
       "/api/race-commentary/final_hour",
       "/api/race-commentary/final_minutes",
     ]

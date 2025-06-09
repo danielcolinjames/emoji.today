@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS race_commentary_posts (
 CREATE TABLE IF NOT EXISTS race_commentary_snapshots (
   id BIGSERIAL PRIMARY KEY,
   vote_date DATE NOT NULL,
-  milestone TEXT NOT NULL CHECK (milestone IN ('opening', '1hour', 'halfway', 'final_hour', 'final_minutes', 'daily_summary')),
+  milestone TEXT NOT NULL CHECK (milestone IN ('opening', '1hour', 'halfway', '6hours_left', '3hours_left', 'final_hour', 'final_minutes', 'daily_summary')),
   timestamp_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   total_votes INTEGER NOT NULL DEFAULT 0,
   emoji_standings JSONB NOT NULL DEFAULT '[]'::jsonb,
