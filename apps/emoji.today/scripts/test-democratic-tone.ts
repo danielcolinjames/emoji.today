@@ -49,7 +49,7 @@ Tone: Dignified but urgent civic duty. "Citizens, the polls are open!" CRITICAL:
     const data = (await response.json()) as any
     const commentary = data.choices[0].message.content.trim()
 
-    const fullPost = `${commentary}\n\nVote now at emoji.today: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`
+    const fullPost = `${commentary}\n\nVote now: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`
 
     console.log(`📢 DEMOCRATIC COMMENTARY:`)
     console.log(`"${commentary}"`)

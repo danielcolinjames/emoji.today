@@ -63,48 +63,62 @@ const MILESTONE_PROMPTS = {
 Current early returns: {emoji_standings}
 Yesterday's champion: {yesterday_winner} ({yesterday_count} votes)
 
-Tone: Breathless horse race announcer meets political pundit. Self-aware drama about "digital democracy" and "historical archives." Under 160 chars! Only use actual competing emojis.`,
+Tone: Breathless horse race announcer meets political pundit. Self-aware drama about "digital democracy" and "historical archives." Under 160 chars! 
+
+CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the actual competing emojis from the race.`,
 
   "1hour": `EARLY RETURNS! Write like an election night pundit analyzing which emoji will claim its place in the eternal digital archives.
 
 Current standings: {emoji_standings}
 Voter turnout: {vote_velocity} votes/hour
 
-Tone: Political pundit meets horse race announcer. "What we're seeing here..." Self-aware about the stakes of emoji immortality. Under 160 chars! Only competing emojis.`,
+Tone: Political pundit meets horse race announcer. "What we're seeing here..." Self-aware about the stakes of emoji immortality. Under 160 chars! 
+
+CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
 
   halfway: `MIDDAY ANALYSIS! Write like a seasoned political commentator on which emoji will earn eternal digital glory.
 
 Current race: {emoji_standings}
 Total votes: {total_votes}
 
-Tone: Election night analyst meets old-school politician. "The voters are speaking!" Dramatic about historical significance. Under 160 chars! Only actual emojis.`,
+Tone: Election night analyst meets old-school politician. "The voters are speaking!" Dramatic about historical significance. Under 160 chars! 
+
+CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the actual competing emojis from the race.`,
 
   "6hours_left": `AFTERNOON CHECK-IN! Write a fun, shorter observation about the leading emoji. Share a quirky fact, cultural insight, or playful speculation about why this emoji is resonating today.
 
 Current leader: {emoji_standings}
 Hours remaining: 6
 
-Tone: Casual but witty pundit. Think fun trivia meets social commentary. Make an interesting connection or observation about the winning emoji. Under 120 chars! Focus on the leader.`,
+Tone: Casual but witty pundit. Think fun trivia meets social commentary. Make an interesting connection or observation about the winning emoji. Under 120 chars! 
+
+CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
 
   "3hours_left": `EVENING UPDATE! Write a brief, entertaining take on the race. Maybe a fun fact about the winning emoji or a witty observation about voting patterns.
 
 Current standings: {emoji_standings}  
 Time left: 3 hours
 
-Tone: Casual evening news anchor with personality. Share something surprising or amusing about the leader. Keep it light and engaging. Under 100 chars! Lead with the emoji.`,
+Tone: Casual evening news anchor with personality. Share something surprising or amusing about the leader. Keep it light and engaging. Under 100 chars! 
+
+CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
 
   final_hour: `FINAL HOUR! Write like a frantic election night anchor - time is running out to determine which emoji enters the historical record!
 
 Race standings: {emoji_standings}
 Time left: {time_remaining}
 
-Tone: Breathless urgency meets political gravitas. "History hangs in the balance!" Self-aware drama about emoji posterity. Under 160 chars! Only competing emojis.`,
+Tone: Breathless urgency meets political gravitas. "History hangs in the balance!" Self-aware drama about emoji posterity. Under 160 chars! 
+
+CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the actual competing emojis from the race.`,
 
   final_minutes: `FINAL MINUTES! Write like a horse race announcer calling the stretch run - which emoji will be immortalized in today's archives?
 
 Current positions: {emoji_standings}
 
-Tone: Peak breathless announcer energy. "Coming down the stretch!" Dramatic stakes about digital immortality. Under 160 chars! Only actual competing emojis.`,
+Tone: Peak breathless announcer energy. "Coming down the stretch!" Dramatic stakes about digital immortality. Under 160 chars! 
+
+CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
 
   daily_summary: `THE VOTES ARE IN! Write like a triumphant election night anchor announcing which emoji has been enshrined in history.
 
@@ -112,7 +126,9 @@ Official results: {emoji_standings}
 Victor: {winner_emoji} ({winner_count} votes)
 Total turnout: {total_votes}
 
-Tone: Ceremonial gravitas meets victory announcement. "History has been written!" Celebrate the emoji's eternal glory. Under 160 chars! Only winning emoji.`,
+Tone: Ceremonial gravitas meets victory announcement. "History has been written!" Celebrate the emoji's eternal glory. Under 160 chars! 
+
+CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the winning emoji and competing emojis from the race.`,
 }
 
 const CHYRON_PROMPT = `Write a dramatic news ticker about today's emoji race. Make it feel like breaking news!
@@ -123,7 +139,9 @@ Create a fun story explaining WHY people are voting for the winning emoji. Examp
 "🔥 SPICY FOOD TREND EXPLODES GLOBALLY"
 "😴 MONDAY BLUES HIT PEAK INTENSITY"
 
-Style: 40-60 chars, ALL CAPS, dramatic, witty. No hashtags. Only use emojis from the race.`
+Style: 40-60 chars, ALL CAPS, dramatic, witty. No hashtags. 
+
+CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO additional emojis. Only the actual competing emojis from the race.`
 
 export async function createRaceSnapshot(
   milestone: string,
@@ -480,7 +498,39 @@ async function generateCommentaryForMilestone(
     }
 
     const data = (await response.json()) as any
-    return data.choices[0].message.content.trim()
+    let commentary = data.choices[0].message.content.trim()
+
+    // Validate that only racing emojis are used
+    const validEmojis = snapshot.emoji_standings.map((s) => s.emoji)
+    const validEmojisSet = new Set(validEmojis)
+
+    // Find all emojis in the commentary using Unicode emoji regex
+    const emojiRegex = /[\uD83C-\uDBFF\uDC00-\uDFFF]+|[\u2600-\u27BF]/g
+    const foundEmojis = commentary.match(emojiRegex) || []
+
+    // Check if any invalid emojis are present
+    const invalidEmojis = foundEmojis.filter(
+      (emoji: string) => !validEmojisSet.has(emoji)
+    )
+
+    if (invalidEmojis.length > 0) {
+      console.warn(
+        `Generated commentary contains invalid emojis: ${invalidEmojis.join(
+          ", "
+        )}`
+      )
+      console.warn(`Valid emojis: ${validEmojis.join(", ")}`)
+      console.warn(`Original commentary: ${commentary}`)
+
+      // Remove invalid emojis
+      invalidEmojis.forEach((invalidEmoji: string) => {
+        commentary = commentary.replace(new RegExp(invalidEmoji, "g"), "")
+      })
+
+      console.log(`Cleaned commentary: ${commentary}`)
+    }
+
+    return commentary
   } catch (error) {
     console.error("Error generating commentary:", error)
     // Fallback commentary
@@ -548,6 +598,26 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
 
       // Remove quotes if present
       chyron = firstLine.replace(/^["']|["']$/g, "")
+
+      // Validate that only racing emojis are used in chyron too
+      const validEmojis = snapshot.emoji_standings.map((s) => s.emoji)
+      const validEmojisSet = new Set(validEmojis)
+      const emojiRegex = /[\uD83C-\uDBFF\uDC00-\uDFFF]+|[\u2600-\u27BF]/g
+      const foundEmojis = chyron.match(emojiRegex) || []
+      const invalidEmojis = foundEmojis.filter(
+        (emoji: string) => !validEmojisSet.has(emoji)
+      )
+
+      if (invalidEmojis.length > 0) {
+        console.warn(
+          `Generated chyron contains invalid emojis: ${invalidEmojis.join(
+            ", "
+          )}`
+        )
+        invalidEmojis.forEach((invalidEmoji: string) => {
+          chyron = chyron.replace(new RegExp(invalidEmoji, "g"), "")
+        })
+      }
 
       // Validate the chyron
       console.log(`📺 Generated chyron: "${chyron}" (${chyron.length} chars)`)
@@ -647,7 +717,7 @@ export async function postToFarcaster(
       signerUuid: process.env.FARCASTER_SIGNER_UUID,
       text:
         text +
-        "\n\nVote now at emoji.today: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
+        "\n\nVote now: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
     })
 
     const castHash = response.cast?.hash

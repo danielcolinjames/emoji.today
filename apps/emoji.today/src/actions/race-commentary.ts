@@ -564,7 +564,7 @@ export async function generateAndPostRaceUpdate(): Promise<{
     let posted = false
     if (shouldPost) {
       // Add emoji.today branding and URL
-      const castText = `${commentary}\n\nVote now at emoji.today: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`
+      const castText = `${commentary}\n\nVote now: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`
       posted = await postToFarcaster(castText)
     }
 
