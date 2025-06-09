@@ -37,13 +37,13 @@ export function ProfilePicture({ username, size = 'large', className = '' }: Pro
     <div className={`${className}`}>
       {profileImage && !imageError ? (
         <img
-          className={`${sizeClasses} mx-auto rounded-full object-cover border-2 border-neutral-700`}
+          className={`${sizeClasses} mx-auto rounded-full object-cover`}
           src={profileImage}
           alt={username}
           onError={() => setImageError(true)}
         />
       ) : (
-        <div className={`${sizeClasses} mx-auto rounded-full bg-orange-500 flex items-center justify-center text-white ${textSizeClasses} font-medium border-2 border-neutral-700`}>
+        <div className={`${sizeClasses} mx-auto rounded-full bg-orange-500 flex items-center justify-center text-white ${textSizeClasses} font-medium`}>
           {getInitials(username)}
         </div>
       )}

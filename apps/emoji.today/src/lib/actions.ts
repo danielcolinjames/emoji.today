@@ -1071,33 +1071,8 @@ export async function getUserProfile(): Promise<UserProfile> {
       calculateVotingStreak(),
     ])
 
-    // Calculate correct guesses by comparing user votes with daily winners
-    let correctGuesses = 0
-    if (votingHistory.length > 0) {
-      const voteDates = votingHistory.map((vote) => vote.vote_date)
-      const { data: dailySummaries } = await supabase
-        .from("daily_summaries")
-        .select("vote_date, winning_emoji")
-        .in("vote_date", voteDates)
-
-      if (dailySummaries) {
-        const winnerMap = new Map(
-          dailySummaries.map((d) => [d.vote_date, d.winning_emoji])
-        )
-
-        correctGuesses = votingHistory.filter((vote) => {
-          const winningEmoji = winnerMap.get(vote.vote_date)
-          if (!winningEmoji) return false
-
-          // Handle emoji variation selector normalization
-          const normalizeEmoji = (emoji: string) => emoji.replace(/\uFE0F/g, "")
-          return (
-            vote.emoji === winningEmoji ||
-            normalizeEmoji(vote.emoji) === normalizeEmoji(winningEmoji)
-          )
-        }).length
-      }
-    }
+    // Calculate correct guesses from already-calculated is_winner flags
+    const correctGuesses = votingHistory.filter((vote) => vote.is_winner).length
 
     // Get all days that had votes (to identify gaps)
     const { data: allVoteDates } = await supabase
