@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { ChyronService } from "@/lib/chyron-service"
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,22 +12,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Trigger the main chyron update endpoint
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-    const response = await fetch(`${baseUrl}/api/chyron`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.CRON_SECRET}`,
-        "Content-Type": "application/json",
-      },
-    })
+    // Use the ChyronService directly instead of making an internal fetch
+    const chyronService = ChyronService.getInstance()
+    const result = await chyronService.updateChyron()
 
-    const result = await response.json()
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.reason || "Failed to update chyron",
+        },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Chyron update triggered",
+      message: "Chyron update completed",
       chyron: result.chyron,
+      reason: result.reason,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
