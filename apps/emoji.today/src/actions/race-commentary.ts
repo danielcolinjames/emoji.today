@@ -43,9 +43,14 @@ interface RaceContext {
   }
 }
 
-async function buildRaceContext(): Promise<RaceContext> {
-  // Use proper date utilities
-  const today = getCurrentVotingDateString()
+/**
+ * Build the full context for a given voting day.
+ *
+ * @param voteDate Optional date string (YYYY-MM-DD). If omitted, the current voting day is used.
+ */
+async function buildRaceContext(voteDate?: string): Promise<RaceContext> {
+  // Determine which day we are building context for
+  const today = voteDate ?? getCurrentVotingDateString()
 
   // Get current standings from live results
   const { data: liveResult } = await supabase
@@ -263,29 +268,27 @@ OUTPUT: single line, ALL CAPS. Example styles:
 "TIGHT RACE! 🎩 VS 💎 • 2 VOTE GAP"
 "🌱 LATE SURGE HOPES FOR MIRACLE"`
   } else if (mode === "farcaster") {
-    // Optimized for social media posts
-    prompt = `You are a breathless horse race announcer covering the daily emoji election at emoji.today. Write exciting commentary (1-2 sentences, under 200 chars) for Farcaster:
+    // Optimized for social media posts (Farcaster)
+    prompt = `You are a larger-than-life master of ceremonies announcing the daily emoji election on emoji.today. Only ONE emoji will capture today's vibe and echo through history. Write 1–2 punchy sentences (≤ 200 chars) that:
 
-CURRENT STANDINGS (ranked by timing - later votes get better rankings, not just vote count):
+• Spotlight the frontrunner (ranked by timing-based leader board below).
+• Tease the challengers and any late surges.
+• Remind people they can still tip the scales if voting is open.
+• Convey epic stakes – future humans may judge this choice!
++• If a challenger has just 1–2 votes, it's only high because of the timing tiebreak – feel free to call that out as a flashy "last-minute rocket!" note.
+
+Rankings (timing-weighted – later votes rank higher):
 ${context.currentStandings
   .map((s, i) => `${i + 1}. ${s.emoji}: ${s.count} votes (${s.percentage}%)`)
   .join("\n")}
 
-Total votes: ${context.totalVotes}
-Time remaining: ${context.timeRemaining.hours}H ${
+Total votes so far: ${context.totalVotes}
+Time remaining: ${context.timeRemaining.hours}h ${
       context.timeRemaining.minutes
-    }M LEFT
-${
-  context.raceStats.tightestRace
-    ? "TIGHT RACE!"
-    : `Leader ahead by ${context.raceStats.frontrunnerLead} votes`
-}
+    }m
+Momentum: ${context.momentum.map((m) => `${m.emoji}: ${m.trend}`).join(", ")}
 
-MOMENTUM: ${context.momentum.map((m) => `${m.emoji}: ${m.trend}`).join(", ")}
-
-IMPORTANT: Rankings use timing-based algorithm where later votes give better rankings! An emoji with fewer votes but more recent timing can rank higher! If two emojis have the same vote count but different rankings, the higher-ranked one "leads by timing tiebreak" - they're not tied!
-
-Write like a horse race announcer - dramatic, energetic! Reference specific emojis and vote counts. Keep under 200 characters for Farcaster!`
+Tone: Think sports commentator meets royal herald – dramatic, witty, a dash of cheek. Use emoji glyphs only, NO hashtags, no URLs.`
   } else {
     // Original web version
     prompt = `You are a breathless, exciting horse race announcer covering the daily emoji election at emoji.today. Write a short, energetic commentary (1-2 sentences max) about the current race based on this data:
@@ -327,35 +330,48 @@ CRITICAL: The rankings use a timing-based algorithm where emojis with later aver
 Write like you're calling a horse race - dramatic, energetic, and focused on the most exciting current developments. Reference specific emojis by their actual emoji character, mention vote counts, and capture the drama of the moment. Keep it concise but thrilling!`
   }
 
-  try {
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "X-Title": "emoji.today race commentary",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro-preview",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens:
-            mode === "chyron" ? 200 : mode === "farcaster" ? 280 : 140,
-          temperature: 0.9,
-        }),
+  const modelCandidates = [
+    "x-ai/grok-3-beta", // primary
+    "google/gemini-2.5-pro-preview", // fallback
+  ]
+
+  for (const modelName of modelCandidates) {
+    try {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "X-Title": "emoji.today race commentary",
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [{ role: "user", content: prompt }],
+            max_tokens:
+              mode === "chyron" ? 200 : mode === "farcaster" ? 280 : 140,
+            temperature: 0.9,
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        // Try next candidate
+        console.warn(`Model ${modelName} failed with status ${response.status}`)
+        continue
       }
-    )
 
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status}`)
+      const data = (await response.json()) as any
+      return data.choices[0].message.content.trim()
+    } catch (error) {
+      console.warn(`Model ${modelName} threw error`, error)
+      // Try next model
     }
+  }
 
-    const data = (await response.json()) as any
-    return data.choices[0].message.content.trim()
-  } catch (error) {
-    console.error("Error generating commentary:", error)
-    // Fallback commentary based on mode
+  // If all models fail, produce fallback
+  try {
     const leader = context.currentStandings[0]
     const second = context.currentStandings[1]
     if (leader) {
@@ -382,7 +398,21 @@ Write like you're calling a horse race - dramatic, energetic, and focused on the
     return mode === "chyron"
       ? "EMOJI RACE HEATING UP!"
       : "🏁 The emoji race is heating up! Every vote counts as we approach the finish line!"
+  } catch (error) {
+    console.error("Error generating commentary:", error)
+    return mode === "chyron"
+      ? "EMOJI RACE HEATING UP!"
+      : "🏁 The emoji race is heating up! Every vote counts as we approach the finish line!"
   }
+}
+
+// Utility to remove all hashtags from the generated commentary
+function stripHashtags(text: string): string {
+  // Remove hashtags (words that start with # and continue until a whitespace or punctuation)
+  return text
+    .replace(/#[\w-]+/g, "") // strip hashtags themselves
+    .replace(/\s{2,}/g, " ") // collapse multiple spaces created by removals
+    .trim()
 }
 
 async function postToFarcaster(text: string): Promise<boolean> {
@@ -395,8 +425,7 @@ async function postToFarcaster(text: string): Promise<boolean> {
       },
       body: JSON.stringify({
         signer_uuid: process.env.FARCASTER_SIGNER_UUID!,
-        text:
-          text + "\n\nhttps://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
+        text,
         channel_id: "emojitoday", // Post to your channel if you have one
       }),
     })
@@ -541,8 +570,18 @@ export async function generateAndPostRaceUpdate(): Promise<{
   error?: string
 }> {
   try {
-    // Build race context
-    const context = await buildRaceContext()
+    // Decide which day to pull results for – if it's shortly after UTC midnight, use the previous day
+    const now = new Date()
+    const isJustAfterMidnightUTC =
+      now.getUTCHours() === 0 && now.getUTCMinutes() < 30
+
+    const previousDateString = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0]
+
+    const context = await buildRaceContext(
+      isJustAfterMidnightUTC ? previousDateString : undefined
+    )
 
     // Only proceed if there are votes to comment on
     if (context.totalVotes === 0) {
@@ -552,20 +591,21 @@ export async function generateAndPostRaceUpdate(): Promise<{
       }
     }
 
-    // Generate Farcaster-optimized commentary
-    const commentary = await generateCommentaryWithOpenRouter(
+    // Generate Farcaster-optimised commentary
+    const rawCommentary = await generateCommentaryWithOpenRouter(
       context,
       "farcaster"
     )
+
+    // Remove any hashtags to keep the feed clean
+    const commentary = stripHashtags(rawCommentary)
 
     // Check if we should post this commentary
     const shouldPost = await shouldPostNewCommentary(commentary)
 
     let posted = false
     if (shouldPost) {
-      // Add emoji.today branding and URL
-      const castText = `${commentary}\n\nVote now: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`
-      posted = await postToFarcaster(castText)
+      posted = await postToFarcaster(commentary)
     }
 
     // Log the attempt
