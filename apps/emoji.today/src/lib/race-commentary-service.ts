@@ -1,6 +1,9 @@
 import { supabase } from "./supabase"
 import { createClient } from "@supabase/supabase-js"
-import { getCurrentVotingDateString } from "./date-utils"
+import {
+  getCurrentVotingDateString,
+  getPreviousVotingDateString,
+} from "./date-utils"
 import { getRemainingTimeToMidnightUTC } from "./utils"
 import { getDefaultOpeningChyron } from "./constants"
 import { supabaseService } from "@/lib/supabase-service"
@@ -151,7 +154,10 @@ export async function createRaceSnapshot(
   try {
     console.log(`📸 Creating race snapshot for milestone: ${milestone}`)
 
-    const today = getCurrentVotingDateString()
+    const today =
+      milestone === "daily_summary"
+        ? getPreviousVotingDateString()
+        : getCurrentVotingDateString()
     const now = new Date()
 
     // Check if snapshot already exists for this milestone today (unless forced)

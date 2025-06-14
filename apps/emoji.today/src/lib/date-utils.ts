@@ -1,4 +1,4 @@
-import { format, parseISO, startOfDay, endOfDay } from "date-fns"
+import { format, parseISO, startOfDay, endOfDay, addDays } from "date-fns"
 import { UTCDate } from "@date-fns/utc"
 
 // Global timezone for the application - using UTC for consistency
@@ -81,4 +81,18 @@ export function getCurrentVotingDateString(): string {
  */
 export function isVotingPeriodActive(): boolean {
   return isVotingOpen(getCurrentVotingDay())
+}
+
+/**
+ * Get the previous voting day (UTC), normalized to start of day.
+ */
+export function getPreviousVotingDay(): Date {
+  return startOfDay(addDays(new UTCDate(), -1))
+}
+
+/**
+ * Get the previous voting date string for database queries (YYYY-MM-DD)
+ */
+export function getPreviousVotingDateString(): string {
+  return formatDateForDB(getPreviousVotingDay())
 }
