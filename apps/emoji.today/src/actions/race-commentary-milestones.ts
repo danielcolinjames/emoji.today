@@ -45,7 +45,10 @@ async function createMilestoneSnapshot(
 
     // Post to Farcaster if we have commentary
     if (snapshot.commentary_text) {
-      farcasterResult = await postToFarcaster(snapshot.commentary_text)
+      farcasterResult = await postToFarcaster(
+        snapshot.commentary_text,
+        snapshot.id
+      )
     }
 
     console.log(`✅ ${milestone} milestone completed:`, {

@@ -1,0 +1,1 @@
+export { GET, runtime } from "../../race_status/[snapshotId]/route"; 

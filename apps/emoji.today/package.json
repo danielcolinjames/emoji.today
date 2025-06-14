@@ -16,7 +16,8 @@
     "reassign-vote": "node scripts/clear-votes.js reassign",
     "migrate-db": "node scripts/migrate-add-fid-and-usernames.js",
     "env:staging": "cp .env.staging .env.local",
-    "env:production": "cp .env.production .env.local"
+    "env:production": "cp .env.production .env.local",
+    "snapshot:create": "tsx scripts/createSnapshot.ts --force"
   },
   "dependencies": {
     "@date-fns/utc": "^2.1.0",

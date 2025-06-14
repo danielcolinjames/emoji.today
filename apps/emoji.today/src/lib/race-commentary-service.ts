@@ -55,6 +55,7 @@ export interface RaceSnapshot {
   }
   commentary_text?: string
   chyron_text?: string
+  id?: number
 }
 
 const MILESTONE_PROMPTS = {
@@ -63,7 +64,7 @@ const MILESTONE_PROMPTS = {
 Current early returns: {emoji_standings}
 Yesterday's champion: {yesterday_winner} ({yesterday_count} votes)
 
-Tone: Breathless horse race announcer meets political pundit. Self-aware drama about "digital democracy" and "historical archives." Under 160 chars! 
+Tone: Breathless horse race announcer meets political pundit. Self-aware drama about "digital democracy" and "historical archives." Under 120 chars! 
 
 CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the actual competing emojis from the race.`,
 
@@ -72,7 +73,7 @@ CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. N
 Current standings: {emoji_standings}
 Voter turnout: {vote_velocity} votes/hour
 
-Tone: Political pundit meets horse race announcer. "What we're seeing here..." Self-aware about the stakes of emoji immortality. Under 160 chars! 
+Tone: Political pundit meets horse race announcer. "What we're seeing here..." Self-aware about the stakes of emoji immortality. Under 120 chars! 
 
 CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
 
@@ -81,7 +82,7 @@ CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. N
 Current race: {emoji_standings}
 Total votes: {total_votes}
 
-Tone: Election night analyst meets old-school politician. "The voters are speaking!" Dramatic about historical significance. Under 160 chars! 
+Tone: Election night analyst meets old-school politician. "The voters are speaking!" Dramatic about historical significance. Under 120 chars! 
 
 CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the actual competing emojis from the race.`,
 
@@ -108,7 +109,7 @@ CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. N
 Race standings: {emoji_standings}
 Time left: {time_remaining}
 
-Tone: Breathless urgency meets political gravitas. "History hangs in the balance!" Self-aware drama about emoji posterity. Under 160 chars! 
+Tone: Breathless urgency meets political gravitas. "History hangs in the balance!" Self-aware drama about emoji posterity. Under 120 chars! 
 
 CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the actual competing emojis from the race.`,
 
@@ -116,7 +117,7 @@ CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. N
 
 Current positions: {emoji_standings}
 
-Tone: Peak breathless announcer energy. "Coming down the stretch!" Dramatic stakes about digital immortality. Under 160 chars! 
+Tone: Peak breathless announcer energy. "Coming down the stretch!" Dramatic stakes about digital immortality. Under 120 chars! 
 
 CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
 
@@ -126,7 +127,7 @@ Official results: {emoji_standings}
 Victor: {winner_emoji} ({winner_count} votes)
 Total turnout: {total_votes}
 
-Tone: Ceremonial gravitas meets victory announcement. "History has been written!" Celebrate the emoji's eternal glory. Under 160 chars! 
+Tone: Ceremonial gravitas meets victory announcement. "History has been written!" Celebrate the emoji's eternal glory. Under 120 chars! 
 
 CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the winning emoji and competing emojis from the race.`,
 }
@@ -178,6 +179,7 @@ export async function createRaceSnapshot(
             historical_context:
               existingSnapshot.historical_context as RaceSnapshot["historical_context"],
             commentary_text: existingSnapshot.commentary_text,
+            id: existingSnapshot.id,
           } as RaceSnapshot,
         }
       }
@@ -200,6 +202,7 @@ export async function createRaceSnapshot(
       emoji_standings: raceContext.standings,
       momentum_data: raceContext.momentum,
       historical_context: historicalContext,
+      id: undefined,
     }
 
     // Generate commentary only (chyron is handled by separate cron job)
@@ -226,6 +229,11 @@ export async function createRaceSnapshot(
     if (insertError) {
       console.error("Error inserting snapshot:", insertError)
       return { success: false, error: insertError.message }
+    }
+
+    // Attach generated id to snapshot
+    if (insertedSnapshot && typeof insertedSnapshot.id === "number") {
+      snapshot.id = insertedSnapshot.id
     }
 
     console.log(
@@ -715,9 +723,16 @@ export async function postToFarcaster(
 
     const response = await client.publishCast({
       signerUuid: process.env.FARCASTER_SIGNER_UUID,
-      text:
-        text +
-        "\n\nVote now: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday",
+      text: text,
+      embeds: [
+        {
+          url: `${
+            process.env.NODE_ENV === "development"
+              ? "http://localhost:3000"
+              : process.env.NEXT_PUBLIC_URL || "https://emoji.today"
+          }/podium-snapshot/${snapshotId}`,
+        },
+      ],
     })
 
     const castHash = response.cast?.hash
@@ -796,6 +811,7 @@ export async function getLatestChyronText(): Promise<string> {
       emoji_standings: raceContext.standings,
       momentum_data: raceContext.momentum,
       historical_context: historicalContext,
+      id: undefined,
     }
 
     // Generate chyron without saving to database
