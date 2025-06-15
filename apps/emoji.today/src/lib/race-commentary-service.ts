@@ -322,11 +322,17 @@ async function buildRaceContext(dateString: string) {
       name: undefined,
     }))
     .sort((a, b) => {
-      if (emojiTimingMap.size > 0) {
-        const timingDiff = b.timing_score - a.timing_score
-        if (Math.abs(timingDiff) > 1) return timingDiff
+      // First sort by count (descending)
+      if (a.count !== b.count) {
+        return b.count - a.count
       }
-      return b.count - a.count
+
+      // For ties, use timing as tiebreaker (earlier votes win)
+      if (emojiTimingMap.size > 0) {
+        return a.timing_score - b.timing_score
+      }
+
+      return 0
     })
     .map((standing, index) => ({ ...standing, rank: index + 1 }))
     .slice(0, 10)
