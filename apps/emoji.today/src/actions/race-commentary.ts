@@ -331,7 +331,7 @@ Write like you're calling a horse race - dramatic, energetic, and focused on the
   }
 
   const modelCandidates = [
-    "x-ai/grok-3-beta", // primary
+    "x-ai/grok-3-mini-beta", // primary
     "google/gemini-2.5-pro-preview", // fallback
   ]
 

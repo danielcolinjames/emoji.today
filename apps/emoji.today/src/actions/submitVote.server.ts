@@ -25,6 +25,14 @@ export async function submitVote(
     const fid = session.user.fid
     const today = getCurrentVotingDateString()
 
+    console.log("[submitVote.server] Debug - Date calculation:", {
+      today,
+      currentTime: new Date().toISOString(),
+      utcTime: new Date().toUTCString(),
+      fid,
+      emoji,
+    })
+
     const serviceSupabase = supabaseService()
 
     // Early-exit if user already voted
@@ -82,12 +90,18 @@ export async function submitVote(
     }
 
     // Insert vote
-    const { error: voteError } = await serviceSupabase.from("votes").insert({
+    const voteData = {
       user_id: userId,
       fid,
       emoji,
       vote_date: today,
-    })
+    }
+
+    console.log("[submitVote.server] Debug - About to insert vote:", voteData)
+
+    const { error: voteError } = await serviceSupabase
+      .from("votes")
+      .insert(voteData)
 
     if (voteError) {
       throw new Error(`Failed to submit vote: ${voteError.message}`)
