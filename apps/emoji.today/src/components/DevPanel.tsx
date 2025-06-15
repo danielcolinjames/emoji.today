@@ -14,6 +14,8 @@ import {
 } from '@/actions/dev-tools'
 import { clearUserVote as clearUserVoteServer } from "@/actions/clearUserVote.server"
 import { triggerVoteCacheUpdate } from '@/components/SWRCacheManager'
+import { generateCommentaryAction } from '@/actions/generate-commentary'
+import { getCurrentVotingDateString } from '@/lib/date-utils'
 
 interface DevPanelProps {
   isOpen: boolean
@@ -38,11 +40,17 @@ export function DevPanel({ isOpen, onClose, onDevAction, isLoading, message: ext
   const [seedEmoji, setSeedEmoji] = useState('🔥')
   const [seedCount, setSeedCount] = useState(10)
   const [customDate, setCustomDate] = useState(() => {
-    const today = new Date()
-    return today.toISOString().split('T')[0]
+    return getCurrentVotingDateString()
   })
   const [customTime, setCustomTime] = useState('12:00')
   const [isPending, startTransition] = useTransition()
+
+  // Commentary tester state
+  const [commentaryDate, setCommentaryDate] = useState(() => {
+    return getCurrentVotingDateString()
+  })
+  const [commentaryMilestone, setCommentaryMilestone] = useState('opening')
+  const [generatedCommentary, setGeneratedCommentary] = useState('')
 
   if (!isOpen) return null
 
@@ -144,6 +152,17 @@ export function DevPanel({ isOpen, onClose, onDevAction, isLoading, message: ext
       mutate('/api/user-vote')
     } catch (error) {
       showMessage('Failed to clear your vote.')
+    }
+  }
+
+  // Commentary tester handler
+  const handleGenerateCommentary = () => {
+    if (onDevAction) {
+      onDevAction(async () => {
+        const res = await generateCommentaryAction(commentaryDate, commentaryMilestone as any)
+        setGeneratedCommentary(res.commentary || '')
+        return { success: true, message: 'Generated' }
+      })
     }
   }
 
@@ -437,6 +456,32 @@ export function DevPanel({ isOpen, onClose, onDevAction, isLoading, message: ext
                   'Clear all votes for today'
                 )}
               </button>
+            </div>
+          </section>
+
+          {/* Commentary Tester */}
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500/20 to-sky-500/20 rounded-full flex items-center justify-center">
+                <Clock className="w-5 h-5 text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-light text-white">Commentary Tester</h3>
+                <p className="text-sm text-neutral-500">Generate commentary for any day/milestone</p>
+              </div>
+            </div>
+
+            <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-xl p-4 space-y-4">
+              <div className="grid grid-cols-3 gap-3 items-center">
+                <input type="date" value={commentaryDate} onChange={e => setCommentaryDate(e.target.value)} className="w-full h-10 px-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm" />
+                <select value={commentaryMilestone} onChange={e => setCommentaryMilestone(e.target.value)} className="w-full h-10 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm px-2">
+                  {['opening', '1hour', 'halfway', '6hours_left', '3hours_left', 'final_hour', 'final_minutes', 'daily_summary'].map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <button onClick={handleGenerateCommentary} disabled={isActionLoading} className="h-10 bg-gradient-to-r from-indigo-600 to-sky-600 text-white rounded-lg text-sm">Generate</button>
+              </div>
+              {generatedCommentary && (
+                <textarea readOnly value={generatedCommentary} className="w-full h-32 bg-neutral-950 text-white text-xs p-2 rounded-lg border border-neutral-700" />
+              )}
             </div>
           </section>
         </div>

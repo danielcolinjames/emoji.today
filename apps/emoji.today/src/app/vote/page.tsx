@@ -107,8 +107,13 @@ function VotePageContent() {
         context?.user?.displayName
       );
 
+      // Check if the vote was successful
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to submit vote');
+      }
+
       // Trigger cache invalidation for real-time updates across tabs
-      if (result.success && result.voteDate) {
+      if (result.voteDate) {
         triggerVoteCacheUpdate(result.voteDate);
         console.log("🔄 Vote submitted, invalidated caches");
       }

@@ -114,7 +114,11 @@ export function VotingResultsScalable({ userVote }: VotingResultsScalableProps) 
 
   // Log errors and no-data in useEffect to avoid setState during render
   useEffect(() => {
-    if (summaryError || ranksError) {
+    const hasRealError =
+      (summaryError && summaryError instanceof Error) ||
+      (ranksError && ranksError instanceof Error)
+
+    if (hasRealError) {
       console.error('VotingResultsScalable - errors:', {
         summaryError,
         ranksError,

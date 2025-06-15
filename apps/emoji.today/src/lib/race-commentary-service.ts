@@ -147,17 +147,27 @@ Style: 40-60 chars, ALL CAPS, dramatic, witty. No hashtags.
 
 CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO additional emojis. Only the actual competing emojis from the race.`
 
+// === OpenRouter model configuration ===
+// Override via environment variables without touching code.
+export const OPENROUTER_COMMENTARY_MODEL =
+  process.env.OPENROUTER_COMMENTARY_MODEL || "x-ai/grok-3-mini-beta"
+
+export const OPENROUTER_CHYRON_MODEL =
+  process.env.OPENROUTER_CHYRON_MODEL || "google/gemini-2.5-pro-preview"
+
 export async function createRaceSnapshot(
   milestone: string,
-  force: boolean = false
+  force: boolean = false,
+  dateOverride?: string
 ): Promise<{ success: boolean; snapshot?: RaceSnapshot; error?: string }> {
   try {
     console.log(`📸 Creating race snapshot for milestone: ${milestone}`)
 
-    const today =
-      milestone === "daily_summary"
-        ? getPreviousVotingDateString()
-        : getCurrentVotingDateString()
+    const effectiveDateStr = dateOverride
+      ? dateOverride
+      : milestone === "daily_summary"
+      ? getPreviousVotingDateString()
+      : getCurrentVotingDateString()
     const now = new Date()
 
     // Check if snapshot already exists for this milestone today (unless forced)
@@ -165,7 +175,7 @@ export async function createRaceSnapshot(
       const { data: existingSnapshot } = await getServiceSupabase()
         .from("race_commentary_snapshots")
         .select("*")
-        .eq("vote_date", today)
+        .eq("vote_date", effectiveDateStr)
         .eq("milestone", milestone)
         .single()
 
@@ -193,15 +203,21 @@ export async function createRaceSnapshot(
       console.log(`🔄 Force regenerating ${milestone} snapshot`)
     }
 
-    // Get current race state
-    const raceContext = await buildRaceContext(today)
+    // Get race state. For daily_summary we reference finalized daily_results to avoid zero-count bug.
+    const raceContext =
+      milestone === "daily_summary"
+        ? await buildDailySummaryContext(effectiveDateStr)
+        : await buildRaceContext(effectiveDateStr)
 
     // Get historical context
-    const historicalContext = await buildHistoricalContext(today, milestone)
+    const historicalContext = await buildHistoricalContext(
+      effectiveDateStr,
+      milestone
+    )
 
     // Build the snapshot
     const snapshot: RaceSnapshot = {
-      vote_date: today,
+      vote_date: effectiveDateStr,
       milestone,
       timestamp_utc: now.toISOString(),
       total_votes: raceContext.totalVotes,
@@ -306,11 +322,17 @@ async function buildRaceContext(dateString: string) {
       name: undefined,
     }))
     .sort((a, b) => {
-      if (emojiTimingMap.size > 0) {
-        const timingDiff = b.timing_score - a.timing_score
-        if (Math.abs(timingDiff) > 1) return timingDiff
+      // First sort by count (descending)
+      if (a.count !== b.count) {
+        return b.count - a.count
       }
-      return b.count - a.count
+
+      // For ties, use timing as tiebreaker (earlier votes win)
+      if (emojiTimingMap.size > 0) {
+        return a.timing_score - b.timing_score
+      }
+
+      return 0
     })
     .map((standing, index) => ({ ...standing, rank: index + 1 }))
     .slice(0, 10)
@@ -489,30 +511,67 @@ async function generateCommentaryForMilestone(
     )
 
   try {
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "X-Title": "emoji.today race commentary",
-        },
-        body: JSON.stringify({
-          model: "anthropic/claude-3.5-haiku",
-          messages: [{ role: "user", content: processedPrompt }],
-          max_tokens: 400,
-          temperature: 0.9,
-        }),
-      }
-    )
+    let commentary = ""
+    let attempts = 0
+    const maxAttempts = 3
 
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status}`)
+    while (attempts < maxAttempts && commentary === "") {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "X-Title": "emoji.today race commentary",
+          },
+          body: JSON.stringify({
+            model: OPENROUTER_COMMENTARY_MODEL,
+            messages: [
+              {
+                role: "system",
+                content:
+                  'You are an energetic, globally minded election-night announcer. Reply ONLY in valid JSON like {"commentary":"TEXT"}. No other keys. No references to any country (e.g., USA). Only emojis listed are allowed. NO hashtags. Very brief and concise.',
+              },
+              { role: "user", content: processedPrompt },
+            ],
+            max_tokens: 400,
+            temperature: 0.8 + attempts * 0.1,
+            response_format: { type: "json_object" },
+          }),
+        }
+      )
+
+      if (!response.ok) throw new Error(`OpenRouter API ${response.status}`)
+
+      const json = (await response.json()) as any
+      let rawContent = json.choices?.[0]?.message?.content?.trim() || ""
+
+      // Try parse JSON
+      try {
+        const parsed = JSON.parse(rawContent)
+        commentary = parsed.commentary?.trim() || ""
+      } catch (e) {
+        // If content is not pure JSON, attempt to extract between braces
+        const match = rawContent.match(/\{[\s\S]*\}/)
+        if (match) {
+          try {
+            const parsed = JSON.parse(match[0])
+            commentary = parsed.commentary?.trim() || ""
+          } catch (_) {}
+        }
+      }
+
+      commentary = stripMetaCommentary(commentary)
+
+      // Validate forbidden references
+      const geoPattern = /(america|usa|united states|u\.s\.?)/i
+      if (geoPattern.test(commentary)) commentary = ""
+
+      attempts++
     }
 
-    const data = (await response.json()) as any
-    let commentary = data.choices[0].message.content.trim()
+    if (!commentary) throw new Error("Failed to get clean commentary")
 
     // Validate that only racing emojis are used
     const validEmojis = snapshot.emoji_standings.map((s) => s.emoji)
@@ -557,6 +616,36 @@ async function generateCommentaryForMilestone(
   }
 }
 
+// Utility: remove meta explanations (e.g., "Whoops, here's a corrected version") to keep commentary "pure".
+function stripMetaCommentary(text: string): string {
+  // Split into lines, drop any that contain common apology/correction phrases
+  const forbiddenPatterns =
+    /whoops|correct(ed|ion)|apolog(y|ies)|sorry|here's a corrected|here is a corrected/i
+
+  // Remove entire lines that reference specific countries (America/USA/etc.) to keep global framing
+  const geoPatterns =
+    /\b(america|american|americans|usa|united states|u\.s\.?|us)\b/i
+
+  const cleanedLines = text
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(
+      (l) => l.length > 0 && !forbiddenPatterns.test(l) && !geoPatterns.test(l)
+    )
+
+  let cleaned = cleanedLines
+    .join(" ")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+
+  // In the rare case the model included multiple versions separated by parenthesis, keep the first sentence up to the first newline or 280 chars.
+  if (cleaned.length > 280) {
+    cleaned = cleaned.slice(0, 279).trim()
+  }
+
+  return cleaned
+}
+
 async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
   const prompt = CHYRON_PROMPT.replace(
     "{vote_date_formatted}",
@@ -589,7 +678,7 @@ async function generateChyronText(snapshot: RaceSnapshot): Promise<string> {
             "X-Title": "emoji.today chyron",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-pro-preview",
+            model: OPENROUTER_CHYRON_MODEL,
             messages: [{ role: "user", content: prompt }],
             max_tokens: 100,
             temperature: 0.7 + attempts * 0.2, // Increase temperature on retry
@@ -826,5 +915,77 @@ export async function getLatestChyronText(): Promise<string> {
   } catch (error) {
     console.error("Error generating fallback chyron:", error)
     return getDefaultOpeningChyron()
+  }
+}
+
+// Build finalized context for daily summary (uses daily_results table instead of live_results)
+async function buildDailySummaryContext(dateString: string) {
+  // Try daily_results for comprehensive emoji_votes
+  const { data: dailyResult } = await supabase
+    .from("daily_results")
+    .select("emoji_votes, total_votes")
+    .eq("vote_date", dateString)
+    .single()
+
+  // Fallback to daily_summaries (has top_5 only)
+  const { data: dailySummary } = await supabase
+    .from("daily_summaries")
+    .select("top_5_emojis, total_votes")
+    .eq("vote_date", dateString)
+    .single()
+
+  // Build voteCounts map
+  const voteCounts: { [key: string]: number } =
+    (dailyResult?.emoji_votes as any) || {}
+
+  if (!dailyResult && dailySummary?.top_5_emojis) {
+    // Convert array of objects to map if necessary
+    const arr = dailySummary.top_5_emojis as unknown as {
+      emoji: string
+      count: number
+    }[]
+    arr.forEach((e) => {
+      voteCounts[e.emoji] = e.count
+    })
+  }
+
+  const totalVotes = dailyResult?.total_votes || dailySummary?.total_votes || 0
+
+  // Build standings sorted by count desc
+  const standings: EmojiStanding[] = Object.entries(voteCounts)
+    .map(([emoji, count]) => ({
+      emoji,
+      count,
+      percentage: totalVotes ? Math.round((count / totalVotes) * 100) : 0,
+      rank: 0,
+      timing_score: 0,
+      name: undefined,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .map((standing, idx) => ({ ...standing, rank: idx + 1 }))
+    .slice(0, 10)
+
+  // Fetch names for top emojis
+  if (standings.length) {
+    const { data: emojiNames } = await supabase
+      .from("emojis")
+      .select("emoji, name")
+      .in(
+        "emoji",
+        standings.map((s) => s.emoji)
+      )
+
+    const map = new Map(emojiNames?.map((e) => [e.emoji, e.name]) || [])
+    standings.forEach((s) => (s.name = map.get(s.emoji)))
+  }
+
+  return {
+    totalVotes,
+    standings,
+    momentum: {
+      recent_leaders: [],
+      vote_velocity: 0,
+      dramatic_moments: [],
+    },
   }
 }

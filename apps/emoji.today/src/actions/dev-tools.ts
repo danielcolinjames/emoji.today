@@ -382,7 +382,7 @@ export async function clearAllVotesAction(): Promise<{
       throw new Error("Unauthorized")
     }
 
-    const today = new Date().toISOString().split("T")[0]
+    const today = getCurrentVotingDateString()
 
     // Delete all votes for today using service role
     const { error } = await adminSupabase

@@ -9,14 +9,23 @@ export const APP_TIMEZONE = "UTC"
  */
 export function getCurrentVotingDay(): Date {
   const now = new UTCDate()
-  return startOfDay(now)
+  // Create a new UTCDate at start of day to avoid timezone conversion
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth()
+  const day = now.getUTCDate()
+  return new UTCDate(year, month, day, 0, 0, 0, 0)
 }
 
 /**
  * Format a date for database storage (YYYY-MM-DD)
  */
 export function formatDateForDB(date: Date): string {
-  return format(date, "yyyy-MM-dd")
+  // Manually format to avoid date-fns version conflicts
+  const utcDate = date instanceof UTCDate ? date : new UTCDate(date)
+  const year = utcDate.getUTCFullYear()
+  const month = String(utcDate.getUTCMonth() + 1).padStart(2, "0")
+  const day = String(utcDate.getUTCDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
 }
 
 /**
@@ -30,8 +39,14 @@ export function parseDateFromDB(dateString: string): Date {
  * Get the start and end timestamps for a voting day
  */
 export function getVotingDayBounds(date: Date): { start: Date; end: Date } {
-  const start = startOfDay(date)
-  const end = endOfDay(date)
+  // Ensure we're working with UTC dates
+  const utcDate = new UTCDate(date)
+  const year = utcDate.getUTCFullYear()
+  const month = utcDate.getUTCMonth()
+  const day = utcDate.getUTCDate()
+
+  const start = new UTCDate(year, month, day, 0, 0, 0, 0)
+  const end = new UTCDate(year, month, day, 23, 59, 59, 999)
 
   return { start, end }
 }
@@ -49,14 +64,47 @@ export function isVotingOpen(votingDay: Date): boolean {
  * Format date for display (e.g., "Wednesday, January 28, 2025")
  */
 export function formatDateForDisplay(date: Date): string {
-  return format(date, "MMMM d, yyyy")
+  const utcDate = date instanceof UTCDate ? date : new UTCDate(date)
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ]
+  return `${
+    months[utcDate.getUTCMonth()]
+  } ${utcDate.getUTCDate()}, ${utcDate.getUTCFullYear()}`
 }
 
 /**
  * Format date for display (e.g., "JAN 6 2025")
  */
 export function formatDateShortAndUppercase(date: Date): string {
-  return format(date, "MMM dd yyyy").toUpperCase()
+  const utcDate = date instanceof UTCDate ? date : new UTCDate(date)
+  const months = [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+  ]
+  const day = String(utcDate.getUTCDate()).padStart(2, "0")
+  return `${months[utcDate.getUTCMonth()]} ${day} ${utcDate.getUTCFullYear()}`
 }
 
 /**
@@ -87,7 +135,13 @@ export function isVotingPeriodActive(): boolean {
  * Get the previous voting day (UTC), normalized to start of day.
  */
 export function getPreviousVotingDay(): Date {
-  return startOfDay(addDays(new UTCDate(), -1))
+  const now = new UTCDate()
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth()
+  const day = now.getUTCDate()
+  // Subtract one day
+  const yesterday = new UTCDate(year, month, day - 1, 0, 0, 0, 0)
+  return yesterday
 }
 
 /**

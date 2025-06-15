@@ -39,7 +39,38 @@ const fetchLiveEmojiRanks = async (date: string, offset: number) => {
       .single()
 
     if (liveError || !liveResult?.emoji_counts) {
-      return []
+      // Build counts directly from votes if live_results not ready
+      const { data: votes } = await supabase
+        .from("votes")
+        .select("emoji")
+        .eq("vote_date", date)
+
+      if (!votes || votes.length === 0) return []
+
+      const voteCounts: Record<string, number> = {}
+      votes.forEach((v) => {
+        voteCounts[v.emoji] = (voteCounts[v.emoji] || 0) + 1
+      })
+
+      const totalVotes = votes.length
+
+      const simpleRankings = buildSimpleRankings(
+        voteCounts,
+        totalVotes,
+        [],
+        offset + PAGE_SIZE
+      )
+
+      // no accent color fetch for fallback
+      return simpleRankings.slice(offset, offset + PAGE_SIZE).map((r) => ({
+        id: `${date}-${r.emoji}-${r.rank}`,
+        vote_date: date,
+        emoji: r.emoji,
+        vote_count: r.count,
+        rank: r.rank,
+        percentage: r.percentage,
+        accent_color: "#FFD700",
+      }))
     }
 
     const voteCounts = liveResult.emoji_counts as { [key: string]: number }
@@ -87,7 +118,7 @@ const fetchLiveEmojiRanks = async (date: string, offset: number) => {
       accent_color: emojiColorMap.get(ranking.emoji) || "#FFD700",
     }))
   } catch (error) {
-    console.error("Error in fetchLiveEmojiRanks:", error)
+    console.warn("Error in fetchLiveEmojiRanks:", error)
     return []
   }
 }
@@ -103,7 +134,37 @@ const fetchLiveDailySummary = async (date: string) => {
       .single()
 
     if (liveError || !liveResult?.emoji_counts) {
-      throw new Error("No live results found")
+      // fallback build from votes
+      const { data: votes } = await supabase
+        .from("votes")
+        .select("emoji")
+        .eq("vote_date", date)
+
+      if (!votes || votes.length === 0) return null
+
+      const voteCounts: Record<string, number> = {}
+      votes.forEach((v) => {
+        voteCounts[v.emoji] = (voteCounts[v.emoji] || 0) + 1
+      })
+
+      const totalVotes = votes.length
+      const simpleRankings = buildSimpleRankings(voteCounts, totalVotes, [], 5)
+
+      const winner = simpleRankings[0]
+      const top5 = simpleRankings.map((r) => ({
+        emoji: r.emoji,
+        count: r.count,
+        percentage: r.percentage,
+      }))
+
+      return {
+        vote_date: date,
+        winning_emoji: winner?.emoji || "",
+        winning_count: winner?.count || 0,
+        total_votes: totalVotes,
+        unique_emojis: Object.keys(voteCounts).length,
+        top_5_emojis: top5,
+      }
     }
 
     const voteCounts = liveResult.emoji_counts as { [key: string]: number }
@@ -140,8 +201,8 @@ const fetchLiveDailySummary = async (date: string) => {
       top_5_emojis: top5,
     }
   } catch (error) {
-    console.error("Error in fetchLiveDailySummary:", error)
-    throw error
+    console.warn("Error in fetchLiveDailySummary:", error)
+    return null
   }
 }
 
