@@ -74,7 +74,7 @@ export function Navbar() {
   // Authenticated state: logo on left, countdown centered, profile on right
   return (
     <nav
-      className="fixed top-0 sm:top-10 left-0 right-0 z-50 bg-[#050505]/80 backdrop-blur-sm transition-all duration-200"
+      className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/80 backdrop-blur-sm transition-all duration-200"
     >
       <div className="px-4 sm:px-8 lg:px-10 py-4 sm:py-5">
         <div className="flex justify-between items-center">

@@ -13,13 +13,13 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "emoji": "turbo run dev --filter=emoji.today",
-    "emoji:build": "turbo run build --filter=emoji.today",
-    "emoji:cleanup": "turbo run cleanup --filter=emoji.today",
+    "lfg": "turbo run dev --filter=emoji.today",
+    "lfg:build": "turbo run build --filter=emoji.today",
+    "lfg:cleanup": "turbo run cleanup --filter=emoji.today",
     "staging": "turbo run dev --filter=staging.emoji.today",
     "staging:build": "turbo run build --filter=staging.emoji.today",
-    "site": "turbo run dev --filter=emoji.today",
-    "site:build": "turbo run build --filter=emoji.today"
+    "admin": "turbo run dev --filter=admin.emoji.today",
+    "admin:build": "turbo run build --filter=admin.emoji.today"
   },
   "devDependencies": {
     "@types/range-parser": "^1.2.7",
@@ -28,5 +28,9 @@
   "packageManager": "yarn@1.22.22",
   "dependencies": {
     "node-vibrant": "4.0.3"
+  },
+  "resolutions": {
+    "next": "15.0.3",
+    "@neynar/react/next": "15.0.3"
   }
 }

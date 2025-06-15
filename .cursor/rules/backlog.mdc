@@ -18,11 +18,7 @@ RINSE/D method:
   - ✅ Created milestone-based social posting with rich historical context
   - ✅ Optimized AI costs: templates + selective AI usage
   - ✅ Event-driven triggers: time milestones (12h, 6h, 3h, 1h), leadership changes, close races
-  - [ ] Run database migration `002_add_content_generation_tables.sql`
-  - [ ] Set up Railway cron: milestone checks every 15min (not hourly)
-  - [ ] Configure API keys: OPENAI_API_KEY, NEYNAR_API_KEY, FARCASTER_SIGNER_UUID, TWITTER_BEARER_TOKEN
-  - [ ] Test milestone triggers and verify posting works
-  - [ ] Monitor content quality and AI cost efficiency
+
 
 ## IMMEDIATELY
 - [ ] General cleanup and robustness improvements (production-grade quality)
@@ -36,6 +32,40 @@ RINSE/D method:
   - Missing loading states in several components
 
 ## NEXT
+
+### Shared Package Migration – @emoji-today/core-data
+
+We're splitting reusable data helpers out of `apps/emoji.today` so both the main mini-app and the upcoming admin dashboard share logic.
+
+Migration checklist (tick off as we go):
+
+- [ ] Scaffold `packages/core-data` with shared `supabase.ts` client.
+
+**Tier-0 (needed for first admin release)**
+    - [ ] getLiveVotingResultsAdmin (new)  
+    - [ ] getDailySummaries  
+    - [ ] getDailyResultsData
+
+**Tier-1**
+    - [ ] getVotingResults  
+    - [ ] getUserVotingHistory (genericised to any fid)  
+    - [ ] getUserProfile (genericised)  
+    - [ ] calculateVotingStreak  
+    - [ ] clearUserVote (admin ability)  
+    - [ ] submitVote (future tooling)
+
+**Tier-2 (leaderboards / content engine)**
+    - [ ] getLongestStreakLeaderboard  
+    - [ ] getBestAccuracyLeaderboard  
+    - [ ] getBiggestOGsLeaderboard  
+    - [ ] getCurrentChyron  
+    - [ ] updateGlobalChyron
+
+Utilities that will move when referenced:
+    - simple-ranking.ts  
+    - date-utils.ts, constants.ts (if imported)  
+    - React hooks: useLiveVotingResults ➔ eventually export from a `web-hooks` package.
+
 - [ ] Smooth animations for VotingResults chart updates
   - Chart bars flying up/down when rankings change
   - New emojis sliding in smoothly from left
