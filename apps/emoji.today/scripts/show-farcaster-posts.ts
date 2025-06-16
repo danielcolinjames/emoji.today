@@ -80,7 +80,7 @@ async function showFarcasterPosts() {
         const votes = result.snapshot.total_votes || 0
 
         // This is exactly what gets posted to Farcaster
-        const finalPostText = `${commentary}\n\nVote now: https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`
+        const finalPostText = `${commentary}`
 
         console.log(`📊 Votes: ${votes}`)
         console.log(`📏 Length: ${finalPostText.length} chars`)
