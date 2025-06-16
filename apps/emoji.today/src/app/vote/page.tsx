@@ -7,7 +7,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { SelectEmoji } from "@/components/voting/SelectEmoji";
 import { ConfirmEmoji } from "@/components/voting/ConfirmEmoji";
 import { ReviewVote } from "@/components/voting/ReviewVote";
-import { VotingResultsScalable } from "@/components/VotingResultsScalable";
+import { VotingResults } from "@/components/VotingResults";
 import { getLiveVotingResults } from "@/lib/actions";
 import { submitVote } from "@/actions/submitVote.server";
 import { clearUserVote as clearUserVoteServer } from "@/actions/clearUserVote.server";
@@ -260,7 +260,7 @@ function VotePageContent() {
           </button>
         </div>
       ) : step === 'results' ? (
-        <VotingResultsScalable
+        <VotingResults
           userVote={selectedEmoji || undefined}
         />
       ) : step === 'review' && selectedEmoji ? (

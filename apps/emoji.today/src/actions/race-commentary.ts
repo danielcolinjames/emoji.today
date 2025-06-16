@@ -246,12 +246,12 @@ async function generateCommentaryWithOpenRouter(
 
 GOAL: Write ONE punchy ticker line (ALL CAPS, max 60 chars). It should feel like live sports commentary—dramatic, witty, sometimes cheeky.
 
-CURRENT STANDINGS (timing-based ranking):
+CURRENT STANDINGS:
 ${standingsSnippet}
 
 Total votes ${context.totalVotes} • ${context.timeRemaining.hours}H ${context.timeRemaining.minutes}M LEFT
 
-RANK ORDER ABOVE IS FINAL—#1 is the current leader even if vote counts are tied, because timing breaks ties.
+RANK ORDER ABOVE IS FINAL—#1 is the current leader. When vote counts are tied, the emoji that got a vote most recently ranks higher.
 
 Feel free to comment on late surges, under-dog emojis, or wild world events that might explain an emoji's rise (e.g. "🌊 TSUNAMI OF SUPPORT"). Use emoji characters, keep it fun.
 
@@ -271,13 +271,13 @@ OUTPUT: single line, ALL CAPS. Example styles:
     // Optimized for social media posts (Farcaster)
     prompt = `You are a larger-than-life master of ceremonies announcing the daily emoji election on emoji.today. Only ONE emoji will capture today's vibe and echo through history. Write 1–2 punchy sentences (≤ 200 chars) that:
 
-• Spotlight the frontrunner (ranked by timing-based leader board below).
+• Spotlight the frontrunner (based on vote count, with latest vote as tiebreaker).
 • Tease the challengers and any late surges.
 • Remind people they can still tip the scales if voting is open.
 • Convey epic stakes – future humans may judge this choice!
-+• If a challenger has just 1–2 votes, it's only high because of the timing tiebreak – feel free to call that out as a flashy "last-minute rocket!" note.
+• If emojis are tied in votes, the one with more recent activity ranks higher.
 
-Rankings (timing-weighted – later votes rank higher):
+Rankings (vote count first, latest vote breaks ties):
 ${context.currentStandings
   .map((s, i) => `${i + 1}. ${s.emoji}: ${s.count} votes (${s.percentage}%)`)
   .join("\n")}
@@ -293,7 +293,7 @@ Tone: Think sports commentator meets royal herald – dramatic, witty, a dash of
     // Original web version
     prompt = `You are a breathless, exciting horse race announcer covering the daily emoji election at emoji.today. Write a short, energetic commentary (1-2 sentences max) about the current race based on this data:
 
-CURRENT STANDINGS (ranked by timing-based algorithm - later votes = better rankings):
+CURRENT STANDINGS (ranked by vote count, with latest vote time as tiebreaker):
 ${context.currentStandings
   .map(
     (s, i) =>
@@ -325,7 +325,7 @@ ${context.historicalWinners
   .map((h) => `${h.date}: ${h.emoji} won with ${h.winningCount} votes`)
   .join("\n")}
 
-CRITICAL: The rankings use a timing-based algorithm where emojis with later average vote times rank higher! This means an emoji with fewer total votes but more recent voting activity can rank above one with more votes but earlier timing. When two emojis have the same vote count but different rankings, the higher-ranked one "leads by timing tiebreak" - they're not tied! This creates strategic late-game dynamics!
+CRITICAL: The rankings use vote count first, then LATEST vote time as a tiebreaker. When two emojis have the same vote count, the one that received a vote most recently ranks higher - they're not tied! The higher-ranked emoji "leads by timing tiebreak". This creates strategic late-game dynamics where a last-minute vote can shift rankings!
 
 Write like you're calling a horse race - dramatic, energetic, and focused on the most exciting current developments. Reference specific emojis by their actual emoji character, mention vote counts, and capture the drama of the moment. Keep it concise but thrilling!`
   }

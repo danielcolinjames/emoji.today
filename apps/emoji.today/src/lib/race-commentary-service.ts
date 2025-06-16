@@ -8,6 +8,7 @@ import { getRemainingTimeToMidnightUTC } from "./utils"
 import { getDefaultOpeningChyron } from "./constants"
 import { supabaseService } from "@/lib/supabase-service"
 import { format } from "date-fns"
+import { buildSimpleRankings } from "./simple-ranking"
 
 // Service role client for bypassing RLS - lazy initialization
 let _serviceSupabase: ReturnType<typeof createClient> | null = null
@@ -62,77 +63,75 @@ export interface RaceSnapshot {
 }
 
 const MILESTONE_PROMPTS = {
-  opening: `THE POLLS ARE OPEN! Write like a breathless election night announcer calling citizens to choose which emoji gets enshrined in history today.
-
-Current early returns: {emoji_standings}
-Yesterday's champion: {yesterday_winner} ({yesterday_count} votes)
-
-Tone: Breathless horse race announcer meets political pundit. Self-aware drama about "digital democracy" and "historical archives." Under 120 chars! 
-
-CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the actual competing emojis from the race.`,
-
-  "1hour": `EARLY RETURNS! Write like an election night pundit analyzing which emoji will claim its place in the eternal digital archives.
+  opening: `You're covering today's emoji election. The day has just begun and the first votes are coming in!
 
 Current standings: {emoji_standings}
-Voter turnout: {vote_velocity} votes/hour
+Yesterday's winner: {yesterday_winner} ({yesterday_count} votes)
 
-Tone: Political pundit meets horse race announcer. "What we're seeing here..." Self-aware about the stakes of emoji immortality. Under 120 chars! 
+Write an energetic, creative opening announcement about the race. Mix political drama with playful observation. Be inventive with your metaphors and framing. Keep it under 140 chars.
 
-CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
+CRITICAL: Only use emojis shown in the standings above.`,
 
-  halfway: `MIDDAY ANALYSIS! Write like a seasoned political commentator on which emoji will earn eternal digital glory.
+  "1hour": `Early returns are coming in for today's emoji election.
 
-Current race: {emoji_standings}
+Current standings: {emoji_standings}
+Vote velocity: {vote_velocity} votes/hour
+
+Analyze the early trends with fresh perspective. What story is emerging? Find a unique angle - could be cultural, temporal, emotional. Keep it witty and under 140 chars.
+
+CRITICAL: Only use emojis shown in the standings above.`,
+
+  halfway: `We're at the midpoint of today's emoji election.
+
+Current standings: {emoji_standings}
 Total votes: {total_votes}
 
-Tone: Election night analyst meets old-school politician. "The voters are speaking!" Dramatic about historical significance. Under 120 chars! 
+Share a creative midday observation. Could be about momentum shifts, voter psychology, or cultural significance. Be imaginative but concise. Under 140 chars.
 
-CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the actual competing emojis from the race.`,
+CRITICAL: Only use emojis shown in the standings above.`,
 
-  "6hours_left": `AFTERNOON CHECK-IN! Write a fun, shorter observation about the leading emoji. Share a quirky fact, cultural insight, or playful speculation about why this emoji is resonating today.
+  "6hours_left": `Six hours remain in today's emoji vote.
 
 Current leader: {emoji_standings}
-Hours remaining: 6
 
-Tone: Casual but witty pundit. Think fun trivia meets social commentary. Make an interesting connection or observation about the winning emoji. Under 120 chars! 
+Share an interesting insight, fun fact, or witty observation about why this emoji might be resonating today. Keep it light and engaging. Under 120 chars.
 
-CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
+CRITICAL: Only use emojis shown in the standings above.`,
 
-  "3hours_left": `EVENING UPDATE! Write a brief, entertaining take on the race. Maybe a fun fact about the winning emoji or a witty observation about voting patterns.
+  "3hours_left": `Three hours left in today's emoji election.
 
 Current standings: {emoji_standings}  
-Time left: 3 hours
 
-Tone: Casual evening news anchor with personality. Share something surprising or amusing about the leader. Keep it light and engaging. Under 100 chars! 
+Make a brief, entertaining observation. Could be about the leader, a surprise underdog, or voting patterns. Be creative and conversational. Under 100 chars.
 
-CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
+CRITICAL: Only use emojis shown in the standings above.`,
 
-  final_hour: `FINAL HOUR! Write like a frantic election night anchor - time is running out to determine which emoji enters the historical record!
+  final_hour: `The final hour of today's emoji election!
 
-Race standings: {emoji_standings}
-Time left: {time_remaining}
+Current standings: {emoji_standings}
+Time remaining: {time_remaining}
 
-Tone: Breathless urgency meets political gravitas. "History hangs in the balance!" Self-aware drama about emoji posterity. Under 120 chars! 
+Create urgency with creative flair. What's at stake? Who might pull ahead? Keep the energy high and unique. Under 140 chars.
 
-CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the actual competing emojis from the race.`,
+CRITICAL: Only use emojis shown in the standings above.`,
 
-  final_minutes: `FINAL MINUTES! Write like a horse race announcer calling the stretch run - which emoji will be immortalized in today's archives?
+  final_minutes: `Minutes remain in today's emoji election!
 
-Current positions: {emoji_standings}
+Current standings: {emoji_standings}
 
-Tone: Peak breathless announcer energy. "Coming down the stretch!" Dramatic stakes about digital immortality. Under 120 chars! 
+Write a thrilling final stretch announcement. Make it dramatic but fresh - avoid clichés. What makes this moment special? Under 140 chars.
 
-CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO additional emojis. Only the actual competing emojis from the race.`,
+CRITICAL: Only use emojis shown in the standings above.`,
 
-  daily_summary: `THE VOTES ARE IN! Write like a triumphant election night anchor announcing which emoji has been enshrined in history.
+  daily_summary: `Today's emoji election has concluded!
 
-Official results: {emoji_standings}
-Victor: {winner_emoji} ({winner_count} votes)
+Final results: {emoji_standings}
+Winner: {winner_emoji} ({winner_count} votes)
 Total turnout: {total_votes}
 
-Tone: Ceremonial gravitas meets victory announcement. "History has been written!" Celebrate the emoji's eternal glory. Under 120 chars! 
+Announce the winner with creative ceremony. What does this victory mean? How did they win? Make it memorable and fun. Under 140 chars.
 
-CRITICAL: DO NOT USE ANY EMOJIS except the ones listed in the standings above. NO decorative emojis, NO flag emojis, NO chart emojis. Only the winning emoji and competing emojis from the race.`,
+CRITICAL: Only use emojis shown in the standings above.`,
 }
 
 const CHYRON_PROMPT = `Write a dramatic news ticker about today's emoji race. Make it feel like breaking news!
@@ -289,53 +288,23 @@ async function buildRaceContext(dateString: string) {
     .select("emoji, created_at")
     .eq("vote_date", dateString)
 
-  // Calculate timing-based rankings
-  const emojiTimingMap = new Map()
-  if (voteTimingData && voteTimingData.length > 0) {
-    const dayStart = new Date(dateString + "T00:00:00.000Z").getTime()
-    const emojiTimings: { [key: string]: number[] } = {}
+  // Use the same ranking logic as VotingResults
+  const simpleRankings = buildSimpleRankings(
+    voteCounts,
+    totalVotes,
+    voteTimingData || [],
+    10 // Top 10 for race context
+  )
 
-    voteTimingData.forEach((vote) => {
-      if (!emojiTimings[vote.emoji]) {
-        emojiTimings[vote.emoji] = []
-      }
-      const voteTime = new Date(vote.created_at).getTime()
-      const secondsSinceStart = Math.floor((voteTime - dayStart) / 1000)
-      emojiTimings[vote.emoji].push(secondsSinceStart)
-    })
-
-    Object.entries(emojiTimings).forEach(([emoji, timestamps]) => {
-      const averageTimestamp =
-        timestamps.reduce((sum, ts) => sum + ts, 0) / timestamps.length
-      emojiTimingMap.set(emoji, averageTimestamp)
-    })
-  }
-
-  // Build standings with timing-based ranking
-  const standings: EmojiStanding[] = Object.entries(voteCounts)
-    .map(([emoji, count]) => ({
-      emoji,
-      count,
-      percentage: Math.round((count / totalVotes) * 100),
-      rank: 0, // Will be set after sorting
-      timing_score: emojiTimingMap.get(emoji) || 0,
-      name: undefined,
-    }))
-    .sort((a, b) => {
-      // First sort by count (descending)
-      if (a.count !== b.count) {
-        return b.count - a.count
-      }
-
-      // For ties, use timing as tiebreaker (earlier votes win)
-      if (emojiTimingMap.size > 0) {
-        return a.timing_score - b.timing_score
-      }
-
-      return 0
-    })
-    .map((standing, index) => ({ ...standing, rank: index + 1 }))
-    .slice(0, 10)
+  // Convert to EmojiStanding format
+  const standings: EmojiStanding[] = simpleRankings.map((ranking) => ({
+    emoji: ranking.emoji,
+    count: ranking.count,
+    percentage: ranking.percentage,
+    rank: ranking.rank,
+    timing_score: 0, // Not used with simple rankings
+    name: undefined,
+  }))
 
   // Get emoji names
   const topEmojis = standings.map((s) => s.emoji)
@@ -465,155 +434,213 @@ function formatDateForCommentary(dateString: string): string {
   return `${month} ${day}, ${year}`
 }
 
+export async function generateModularCommentary(
+  milestone: string,
+  snapshot: RaceSnapshot
+): Promise<string> {
+  const formattedDate = formatDateForCommentary(snapshot.vote_date)
+  const validEmojis = snapshot.emoji_standings.map((s) => s.emoji)
+  const leader = snapshot.emoji_standings[0]
+  const second = snapshot.emoji_standings[1]
+  const third = snapshot.emoji_standings[2]
+  const totalVotes = snapshot.total_votes
+
+  // If no votes yet, use simple fallback
+  if (totalVotes === 0) {
+    switch (milestone) {
+      case "opening":
+        return `Polls are open for ${formattedDate}! Be the first to cast your vote and set the tone for today.`
+      case "1hour":
+        return `One hour in and the emoji election awaits its first voter. Will you be the one to break the silence?`
+      default:
+        return `Voting continues for the emoji of ${formattedDate}. Cast your vote at emoji.today`
+    }
+  }
+
+  try {
+    let prompt = ""
+
+    switch (milestone) {
+      case "opening":
+        prompt = `Write a creative announcement for the opening of emoji voting on ${formattedDate}. 
+        ${totalVotes} early voters have cast ballots. ${
+          leader.emoji
+        } leads with ${leader.count} votes.
+        Make it energetic and playful. About 100-140 chars. Use only these emojis: ${validEmojis
+          .slice(0, 5)
+          .join(", ")}`
+        break
+
+      case "1hour":
+        prompt = `Write about early returns in the emoji election. ${
+          leader.emoji
+        } has ${leader.count} votes, ${second?.emoji || "❓"} has ${
+          second?.count || 0
+        }.
+        Total turnout: ${totalVotes}. Make a witty observation about early voting patterns. 100-140 chars.`
+        break
+
+      case "halfway":
+        prompt = `It's midday in the emoji race. ${leader.emoji} leads with ${leader.count} votes (${leader.percentage}%).
+        Total votes: ${totalVotes}. Write something creative about the halfway point dynamics. 100-140 chars.`
+        break
+
+      case "6hours_left":
+        prompt = `Six hours left! ${leader.emoji} is winning. Write a fun fact or cultural observation about why ${leader.emoji} might be resonating today.
+        Keep it light and entertaining. About 80-120 chars.`
+        break
+
+      case "3hours_left":
+        prompt = `Three hours remain. Current leader: ${leader.emoji} with ${
+          leader.count
+        } votes.
+        Write a brief, witty evening update. Maybe mention ${
+          second?.emoji || "others"
+        } trying to catch up. Under 100 chars.`
+        break
+
+      case "final_hour":
+        const timeRemaining = getRemainingTimeToMidnightUTC()
+        prompt = `Final hour! ${leader.emoji} leads but ${
+          second?.emoji || "challengers"
+        } could still surge.
+        ${timeRemaining.hours}h ${
+          timeRemaining.minutes
+        }m left. Create urgency without being cliché. 100-140 chars.`
+        break
+
+      case "final_minutes":
+        prompt = `Minutes left in today's emoji election! ${leader.emoji} vs ${
+          second?.emoji || "the field"
+        }.
+        ${
+          leader.count === second?.count
+            ? "TIED!"
+            : `${leader.emoji} ahead by ${leader.count - (second?.count || 0)}`
+        }
+        Write dramatic final moments commentary. 100-140 chars.`
+        break
+
+      case "daily_summary":
+        prompt = `${leader.emoji} wins ${formattedDate} with ${
+          leader.count
+        } votes! Total turnout: ${totalVotes}.
+        ${second?.emoji || "No one"} came second with ${
+          second?.count || 0
+        } votes.
+        Write a celebratory winner announcement. Make it memorable. 100-140 chars.`
+        break
+
+      default:
+        prompt = `Write about the emoji election on ${formattedDate}. ${leader.emoji} leads with ${leader.count} votes.
+        Be creative and witty. About 100-140 chars.`
+    }
+
+    // Add system context
+    const fullPrompt = `${prompt}
+    
+    Important: Be creative and unique. Avoid formulaic phrases. No hashtags. No country-specific references.`
+
+    const generated = await generateSinglePart(fullPrompt)
+
+    if (generated) {
+      return generated
+    }
+
+    // Fallback if generation fails
+    console.warn("Generation failed, using fallback")
+  } catch (error) {
+    console.error("Error in modular generation:", error)
+  }
+
+  // Simple fallback
+  return `${leader.emoji} leads with ${leader.count} votes in the election for ${formattedDate}. Total turnout: ${totalVotes} votes.`
+}
+
+async function generateSinglePart(prompt: string): Promise<string> {
+  try {
+    console.log(
+      `🧩 Generating part with prompt: ${prompt.substring(0, 100)}...`
+    )
+
+    // Try different models in order of preference
+    const models = [
+      "openai/gpt-3.5-turbo",
+      "anthropic/claude-3-haiku",
+      "google/gemini-flash-1.5",
+      process.env.OPENROUTER_COMMENTARY_MODEL || "x-ai/grok-3-mini-beta",
+    ]
+
+    for (const model of models) {
+      try {
+        console.log(`🤖 Trying model: ${model}`)
+
+        const response = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+              "X-Title": "emoji.today commentary part",
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "You are a witty election commentator. Respond with ONLY the requested sentence. No quotes, no explanation.",
+                },
+                { role: "user", content: prompt },
+              ],
+              max_tokens: 100,
+              temperature: 0.9,
+            }),
+          }
+        )
+
+        if (!response.ok) {
+          console.error(`❌ Model ${model} error: ${response.status}`)
+          continue // Try next model
+        }
+
+        const json = (await response.json()) as any
+        const content = json.choices?.[0]?.message?.content?.trim() || ""
+
+        if (content) {
+          console.log(`✅ Got response from ${model}: "${content}"`)
+
+          // Basic cleanup
+          const cleaned = content
+            .replace(/^["']|["']$/g, "") // Remove quotes
+            .replace(/#\w+/g, "") // Remove hashtags
+            .trim()
+
+          console.log(`✨ Cleaned part: "${cleaned}"`)
+          return cleaned
+        } else {
+          console.warn(`⚠️ Model ${model} returned empty content`)
+        }
+      } catch (error) {
+        console.error(`❌ Model ${model} failed:`, error)
+      }
+    }
+
+    console.error("❌ All models failed to generate content")
+    return ""
+  } catch (error) {
+    console.error("Error generating part:", error)
+    return ""
+  }
+}
+
 async function generateCommentaryForMilestone(
   milestone: string,
   snapshot: RaceSnapshot
 ): Promise<string> {
-  const prompt = MILESTONE_PROMPTS[milestone as keyof typeof MILESTONE_PROMPTS]
-  if (!prompt) {
-    throw new Error(`No prompt defined for milestone: ${milestone}`)
-  }
-
-  // Replace template variables
-  const winner = snapshot.emoji_standings[0]
-  const processedPrompt = prompt
-    .replace(
-      "{vote_date_formatted}",
-      formatDateForCommentary(snapshot.vote_date)
-    )
-    .replace(
-      "{emoji_standings}",
-      formatStandingsForPrompt(snapshot.emoji_standings)
-    )
-    .replace("{momentum_data}", JSON.stringify(snapshot.momentum_data, null, 2))
-    .replace("{vote_velocity}", snapshot.momentum_data.vote_velocity.toFixed(1))
-    .replace("{total_votes}", snapshot.total_votes.toString())
-    .replace("{winner_emoji}", winner?.emoji || "❓")
-    .replace("{winner_count}", winner?.count?.toString() || "0")
-    .replace(
-      "{yesterday_winner}",
-      snapshot.historical_context.recent_winners?.[0]?.emoji || "❓"
-    )
-    .replace(
-      "{yesterday_count}",
-      snapshot.historical_context.recent_winners?.[0]?.count?.toString() || "0"
-    )
-    .replace(
-      "{time_remaining}",
-      getRemainingTimeToMidnightUTC().hours +
-        "h " +
-        getRemainingTimeToMidnightUTC().minutes +
-        "m"
-    )
-    .replace(
-      "{historical_comparison}",
-      JSON.stringify(snapshot.historical_context, null, 2)
-    )
-
-  try {
-    let commentary = ""
-    let attempts = 0
-    const maxAttempts = 3
-
-    while (attempts < maxAttempts && commentary === "") {
-      const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "X-Title": "emoji.today race commentary",
-          },
-          body: JSON.stringify({
-            model: OPENROUTER_COMMENTARY_MODEL,
-            messages: [
-              {
-                role: "system",
-                content:
-                  'You are an energetic, globally minded election-night announcer. Reply ONLY in valid JSON like {"commentary":"TEXT"}. No other keys. No references to any country (e.g., USA). Only emojis listed are allowed. NO hashtags. Very brief and concise.',
-              },
-              { role: "user", content: processedPrompt },
-            ],
-            max_tokens: 400,
-            temperature: 0.8 + attempts * 0.1,
-            response_format: { type: "json_object" },
-          }),
-        }
-      )
-
-      if (!response.ok) throw new Error(`OpenRouter API ${response.status}`)
-
-      const json = (await response.json()) as any
-      let rawContent = json.choices?.[0]?.message?.content?.trim() || ""
-
-      // Try parse JSON
-      try {
-        const parsed = JSON.parse(rawContent)
-        commentary = parsed.commentary?.trim() || ""
-      } catch (e) {
-        // If content is not pure JSON, attempt to extract between braces
-        const match = rawContent.match(/\{[\s\S]*\}/)
-        if (match) {
-          try {
-            const parsed = JSON.parse(match[0])
-            commentary = parsed.commentary?.trim() || ""
-          } catch (_) {}
-        }
-      }
-
-      commentary = stripMetaCommentary(commentary)
-
-      // Validate forbidden references
-      const geoPattern = /(america|usa|united states|u\.s\.?)/i
-      if (geoPattern.test(commentary)) commentary = ""
-
-      attempts++
-    }
-
-    if (!commentary) throw new Error("Failed to get clean commentary")
-
-    // Validate that only racing emojis are used
-    const validEmojis = snapshot.emoji_standings.map((s) => s.emoji)
-    const validEmojisSet = new Set(validEmojis)
-
-    // Find all emojis in the commentary using Unicode emoji regex
-    const emojiRegex = /[\uD83C-\uDBFF\uDC00-\uDFFF]+|[\u2600-\u27BF]/g
-    const foundEmojis = commentary.match(emojiRegex) || []
-
-    // Check if any invalid emojis are present
-    const invalidEmojis = foundEmojis.filter(
-      (emoji: string) => !validEmojisSet.has(emoji)
-    )
-
-    if (invalidEmojis.length > 0) {
-      console.warn(
-        `Generated commentary contains invalid emojis: ${invalidEmojis.join(
-          ", "
-        )}`
-      )
-      console.warn(`Valid emojis: ${validEmojis.join(", ")}`)
-      console.warn(`Original commentary: ${commentary}`)
-
-      // Remove invalid emojis
-      invalidEmojis.forEach((invalidEmoji: string) => {
-        commentary = commentary.replace(new RegExp(invalidEmoji, "g"), "")
-      })
-
-      console.log(`Cleaned commentary: ${commentary}`)
-    }
-
-    return commentary
-  } catch (error) {
-    console.error("Error generating commentary:", error)
-    // Fallback commentary
-    const leader = snapshot.emoji_standings[0]
-    const formattedDate = formatDateForCommentary(snapshot.vote_date)
-    if (leader) {
-      return `${leader.emoji} leads with ${leader.count} votes in the election for ${formattedDate}. Total turnout: ${snapshot.total_votes} votes.`
-    }
-    return `Voting continues for the emoji of ${formattedDate}. Cast your vote at emoji.today`
-  }
+  // Use modular generation for all milestones now
+  return generateModularCommentary(milestone, snapshot)
 }
 
 // Utility: remove meta explanations (e.g., "Whoops, here's a corrected version") to keep commentary "pure".
@@ -951,19 +978,29 @@ async function buildDailySummaryContext(dateString: string) {
 
   const totalVotes = dailyResult?.total_votes || dailySummary?.total_votes || 0
 
-  // Build standings sorted by count desc
-  const standings: EmojiStanding[] = Object.entries(voteCounts)
-    .map(([emoji, count]) => ({
-      emoji,
-      count,
-      percentage: totalVotes ? Math.round((count / totalVotes) * 100) : 0,
-      rank: 0,
-      timing_score: 0,
-      name: undefined,
-    }))
-    .sort((a, b) => b.count - a.count)
-    .map((standing, idx) => ({ ...standing, rank: idx + 1 }))
-    .slice(0, 10)
+  // Get timing data for proper ranking (even for daily summary)
+  const { data: voteTimingData } = await supabase
+    .from("votes")
+    .select("emoji, created_at")
+    .eq("vote_date", dateString)
+
+  // Use the same ranking logic as VotingResults
+  const simpleRankings = buildSimpleRankings(
+    voteCounts,
+    totalVotes,
+    voteTimingData || [],
+    10 // Top 10 for consistency
+  )
+
+  // Convert to EmojiStanding format
+  const standings: EmojiStanding[] = simpleRankings.map((ranking) => ({
+    emoji: ranking.emoji,
+    count: ranking.count,
+    percentage: ranking.percentage,
+    rank: ranking.rank,
+    timing_score: 0, // Not used with simple rankings
+    name: undefined,
+  }))
 
   // Fetch names for top emojis
   if (standings.length) {
