@@ -2,14 +2,14 @@
 
 import type { Session } from "next-auth"
 import { SessionProvider } from "next-auth/react"
-import { FrameProvider } from "@/components/providers/FrameProvider"
+import { MiniKitContextProvider } from "@/components/providers/MiniKitProvider";
 
 export function Providers({ session, children }: { session: Session | null, children: React.ReactNode }) {
   return (
     <SessionProvider session={session}>
-      <FrameProvider>
+      <MiniKitContextProvider>
         {children}
-      </FrameProvider>
+      </MiniKitContextProvider>
     </SessionProvider>
   );
 } 

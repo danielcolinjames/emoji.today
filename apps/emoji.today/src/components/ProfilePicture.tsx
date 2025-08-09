@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useFrame } from "./providers/FrameProvider";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 interface ProfilePictureProps {
   username: string;
@@ -10,7 +10,7 @@ interface ProfilePictureProps {
 }
 
 export function ProfilePicture({ username, size = 'large', className = '' }: ProfilePictureProps) {
-  const { context } = useFrame();
+  const { context } = useMiniKit();
   const [imageError, setImageError] = useState(false);
 
   const profileImage = context?.user?.pfpUrl;
