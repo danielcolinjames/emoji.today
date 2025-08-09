@@ -1,7 +1,6 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useFrame } from "./providers/FrameProvider";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import LoadingSpinner from "./LoadingSpinner";
@@ -52,7 +51,6 @@ export function AuthWrapper({
   fallback
 }: AuthWrapperProps) {
   const { data: session, status } = useSession();
-  const { context } = useFrame();
   const router = useRouter();
 
   // Handle redirect when unauthenticated and auth is required

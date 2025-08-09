@@ -5,15 +5,16 @@ import Link from 'next/link';
 import { useEffect, useState, useCallback } from "react";
 import { useSession, getCsrfToken, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import sdk, { SignIn as SignInCore } from "@farcaster/frame-sdk";
+import sdk from "@farcaster/miniapp-sdk";
 import Emoji from '@/components/Emoji';
 import { getRandomEmoji, type DatabaseEmoji } from "@/lib/emojis";
 import { getContrastTextColor } from "@/lib/utils";
-import { useFrame } from "@/components/providers/FrameProvider";
+// import { useFrame } from "@/components/providers/FrameProvider";
 import { getVotingResults } from "@/lib/actions";
 import { ArrowRight } from 'lucide-react';
 import { VotingCountdown } from '@/components/VotingCountdown';
 import { getCurrentVotingDay, formatDateForDisplay } from "@/lib/date-utils";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 const FADE_DURATION_MS = 500;
 
@@ -32,8 +33,18 @@ export default function NewHomePage() {
   const [isCheckingVote, setIsCheckingVote] = useState(false);
 
   const { data: session, status } = useSession();
-  const { context } = useFrame();
+  // const { context } = useFrame();
   const router = useRouter();
+
+  const { setFrameReady, isFrameReady } = useMiniKit();
+
+  useEffect(() => {
+    console.log('isFrameReady', isFrameReady);
+    console.log('hello!!!!!!!');
+    if (!isFrameReady) {
+      setFrameReady();
+    }
+  }, [setFrameReady, isFrameReady]);
 
   const loadRandomEmoji = async (updateColorsImmediately = false) => {
     try {
@@ -63,7 +74,7 @@ export default function NewHomePage() {
   }, []);
 
   const handleSignIn = useCallback(async () => {
-    if (!context) {
+    if (!isFrameReady) {
       // Not in Farcaster, open in Farcaster
       window.open("https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday", "_blank");
       return;
@@ -86,7 +97,7 @@ export default function NewHomePage() {
     } finally {
       setIsSigningIn(false);
     }
-  }, [getNonce, context]);
+  }, [getNonce, isFrameReady]);
 
   // Check if user has voted today (only when authenticated)
   useEffect(() => {
@@ -183,7 +194,7 @@ export default function NewHomePage() {
   const getButtonText = () => {
     if (status === "authenticated") {
       return hasVoted ? "View results" : "Cast your vote";
-    } else if (context) {
+    } else if (isFrameReady) {
       return "Sign in to vote";
     }
     return "Vote in Farcaster";
@@ -202,6 +213,21 @@ export default function NewHomePage() {
   // Use UTC date from date utils
   const currentDate = getCurrentVotingDay();
   const formattedDate = formatDateForDisplay(currentDate);
+
+
+  if (!isFrameReady) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#050505]">
+        <Image
+          src="/images/logo-white.svg"
+          alt="Loading"
+          width={48}
+          height={48}
+          className="animate-spin"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-between text-white bg-[#050505] pt-4 sm:pt-10 md:pt-12 lg:pt-16">
@@ -301,7 +327,7 @@ export default function NewHomePage() {
               />
             ) : (
               <div className="flex items-center gap-3">
-                {status !== "authenticated" && context && (
+                {status !== "authenticated" && isFrameReady && (
                   <img
                     src="/images/farcaster-white.svg"
                     alt="Farcaster"
@@ -311,7 +337,7 @@ export default function NewHomePage() {
                     }}
                   />
                 )}
-                {status !== "authenticated" && !context && (
+                {status !== "authenticated" && !isFrameReady && (
                   <img
                     src="/images/farcaster-white.svg"
                     alt="Farcaster"
@@ -337,7 +363,7 @@ export default function NewHomePage() {
           </button>
 
           {/* Legacy text or Terms text based on context and auth status */}
-          {context && status !== "authenticated" ? (
+          {isFrameReady && status !== "authenticated" ? (
             <p className="text-xs text-neutral-600 text-center mt-2 sm:mt-4 font-geist-mono max-w-[220px] mx-auto">
               By signing in, you accept our{" "}
               <a href="/terms-and-conditions" className="text-neutral-500 hover:text-neutral-400 hover:underline transition-colors">

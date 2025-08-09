@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useFrame } from "./providers/FrameProvider";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -12,7 +12,7 @@ import { clearSessionAndSignOut } from "./AuthWrapper";
 
 export function Navbar() {
   const { data: session } = useSession();
-  const { context } = useFrame();
+  const { context } = useMiniKit();
   const router = useRouter();
   const pathname = usePathname();
   const [imageError, setImageError] = useState(false);

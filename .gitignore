@@ -80,3 +80,5 @@ apps/emoji.today/public/emoji-assets
 .env.staging
 .env.production
 .env.*.local
+
+/ref

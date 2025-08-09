@@ -11,7 +11,7 @@ import { VotingResults } from "@/components/VotingResults";
 import { getLiveVotingResults } from "@/lib/actions";
 import { submitVote } from "@/actions/submitVote.server";
 import { clearUserVote as clearUserVoteServer } from "@/actions/clearUserVote.server";
-import { useFrame } from "@/components/providers/FrameProvider";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { triggerVoteCacheUpdate } from "@/components/SWRCacheManager";
 
@@ -19,7 +19,7 @@ type VotingStep = 'select' | 'confirm' | 'review' | 'results';
 
 function VotePageContent() {
   const { data: session, status } = useSession();
-  const { context } = useFrame();
+  const { context } = useMiniKit();
   const [step, setStep] = useState<VotingStep>('select');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
