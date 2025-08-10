@@ -82,8 +82,9 @@ export default function NewHomePage() {
   }, []);
 
   const handleSignIn = useCallback(async () => {
-    if (!isFrameReady) {
-      // Not in Farcaster, open in Farcaster
+    const isMiniApp = await sdk.isInMiniApp().catch(() => false);
+    if (!isMiniApp) {
+      // Not in Farcaster Mini App, open in Farcaster
       window.open("https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday", "_blank");
       return;
     }
@@ -383,7 +384,7 @@ export default function NewHomePage() {
           {/* Legacy text or Terms text based on context and auth status */}
           {isFrameReady && status !== "authenticated" ? (
             <p className="text-xs text-neutral-600 text-center mt-2 sm:mt-4 font-geist-mono max-w-[220px] mx-auto">
-              By casting your vote, you accept our{" "}
+              By signing in, you accept our{" "}
               <a href="/terms-and-conditions" className="text-neutral-500 hover:text-neutral-400 hover:underline transition-colors">
                 Terms and Conditions
               </a>
