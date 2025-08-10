@@ -51,6 +51,7 @@ const Emoji: React.FC<EmojiProps> = ({
     <div style={componentStyle}>
       {emojiImageUrl ? (
         <Image
+          unoptimized
           src={emojiImageUrl}
           alt={emoji}
           width={imageSize}

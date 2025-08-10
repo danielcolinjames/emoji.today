@@ -99,13 +99,14 @@ export default function NewHomePage() {
         message: result.message,
         signature: result.signature,
         redirect: false,
+        acceptAuthAddress: true,
       });
-      // If Farcaster auth fails, attempt wallet-only auth to establish a Base session
       if (!res || (res as any).error || (res as any).ok === false) {
         await signIn("wallet", {
           message: result.message,
           signature: result.signature,
           redirect: false,
+          acceptAuthAddress: true,
         });
       }
 

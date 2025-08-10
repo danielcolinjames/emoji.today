@@ -87,6 +87,7 @@ export const authOptions: AuthOptions = {
             signature: credentials?.signature as `0x${string}`,
             domain: verifyDomain as string,
             nonce: siweNonce as string,
+            acceptAuthAddress: true,
           })
           const anyResp = verifyResponse as any
           const ok = (anyResp?.success ?? anyResp?.verified ?? false) as boolean
@@ -148,6 +149,7 @@ export const authOptions: AuthOptions = {
             signature,
             domain: verifyDomain,
             nonce,
+            acceptAuthAddress: true,
           })
           const anyResp = verifyResponse as any
           const ok = (anyResp?.success ?? anyResp?.verified ?? false) as boolean
