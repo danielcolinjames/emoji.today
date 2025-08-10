@@ -81,6 +81,15 @@ function VotePageContent() {
           setHasVoted(true);
           setSelectedEmoji(userVote.emoji);
           if (step === 'select') setStep('results');
+          // Ensure totalVotes is populated so subtitle doesn't show "Tallying results..."
+          try {
+            const latest = await getLiveVotingResults();
+            if (latest) {
+              setTotalVotes(latest.totalVotes);
+            }
+          } catch (e) {
+            // Non-fatal: keep default totalVotes
+          }
         } else {
           setHasVoted(false);
           setSelectedEmoji(null);

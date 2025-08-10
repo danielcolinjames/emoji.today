@@ -10,6 +10,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { RaceChyron } from '@/components/RaceChyron'
 import { supabase } from '@/lib/supabase'
 import { getContrastColor } from './voting/ConfirmEmoji'
+import { sdk } from '@farcaster/frame-sdk'
 
 interface VotingResultsProps {
   userVote?: string
@@ -168,9 +169,12 @@ export function VotingResults({ userVote }: VotingResultsProps) {
     if (!userVote) return;
 
     const shareUrl = `${window.location.origin}/share?emoji=${encodeURIComponent(userVote)}&date=${todayString}&accentColor=${encodeURIComponent(userAccentColor)}`;
-    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(`I just voted ${userVote} for today's emoji on emoji.today!\n\nWhat emoji do you think best represents today? https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`)}&embeds[]=${encodeURIComponent(shareUrl)}`;
+    const castText = `I just voted ${userVote} for today's emoji on emoji.today.\n\nWhat emoji do you think best represents today? https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
 
-    window.open(farcasterUrl, '_blank');
+    await sdk.actions.composeCast({
+      text: castText,
+      embeds: [shareUrl],
+    });
   };
 
   const handleCopyLink = async () => {

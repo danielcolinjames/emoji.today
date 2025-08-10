@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Emoji from "@/components/Emoji";
 import { searchEmojis, type DatabaseEmoji } from "@/lib/emojis";
-import { ArrowRight, Share2, Copy, CheckCircle } from "lucide-react";
+import { ArrowRight, Copy, CheckCircle } from "lucide-react";
+import { sdk } from '@farcaster/frame-sdk'
 
 interface ReviewVoteProps {
   emoji: string;
@@ -55,9 +56,11 @@ export function ReviewVote({ emoji, onShareToFarcaster, onViewResults }: ReviewV
       year: 'numeric'
     })} on emoji.today https://farcaster.xyz/miniapps/c_Y960s6FSE2/emojitoday`;
 
-    // Farcaster compose URL with pre-filled text and embedded frame
-    const farcasterUrl = `https://farcaster.xyz/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(shareUrl)}`;
-    window.open(farcasterUrl, '_blank');
+    // Use Mini App SDK to open cast composer
+    sdk.actions.composeCast({
+      text: castText,
+      embeds: [shareUrl],
+    });
 
     // Call the callback as well
     onShareToFarcaster();
