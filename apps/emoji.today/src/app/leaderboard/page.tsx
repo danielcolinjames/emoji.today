@@ -3,6 +3,8 @@ import { getSession } from "@/auth";
 import { redirect } from 'next/navigation';
 import { LeaderboardClient } from '@/app/leaderboard/LeaderboardClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LeaderboardPage() {
   const session = await getSession();
   const hasFid = Boolean(session?.user?.fid)

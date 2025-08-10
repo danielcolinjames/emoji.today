@@ -158,10 +158,37 @@ export const authOptions: AuthOptions = {
           const address = siwe.address
           if (!address) return null
 
+          // Try to capture fid from verifier response or SIWE resources
+          let fidFromVerify: number | undefined = undefined
+          const maybeFid = anyResp?.fid
+          if (
+            maybeFid !== undefined &&
+            maybeFid !== null &&
+            !Number.isNaN(Number(maybeFid))
+          ) {
+            fidFromVerify = Number(maybeFid)
+          } else if (Array.isArray((siwe as any).resources)) {
+            const resources: string[] = (siwe as any).resources
+            const parsed = resources
+              .map((r) => /farcaster:\/\/fid\/(\d+)/.exec(r)?.[1])
+              .find(Boolean)
+            if (parsed && !Number.isNaN(Number(parsed))) {
+              fidFromVerify = Number(parsed)
+            }
+          }
+
           console.log("[NextAuth] wallet authorize (verified via appClient)", {
             address,
+            fid: fidFromVerify,
           })
-          return { id: address.toLowerCase() }
+
+          // Prefer fid as subject when available, but keep wallet address too
+          return {
+            id: String(fidFromVerify ?? address.toLowerCase()),
+            // The following fields will be propagated via jwt callback
+            ...(fidFromVerify ? { fid: fidFromVerify } : {}),
+            walletAddress: address.toLowerCase(),
+          } as any
         } catch (e) {
           console.error("[NextAuth] wallet authorize error", e)
           return null
@@ -170,13 +197,50 @@ export const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
+    jwt: async ({ token, user }) => {
+      // Persist fid and wallet in the token when provided by authorize()
+      if (user) {
+        const anyUser = user as any
+        if (typeof anyUser.fid === "number" && !Number.isNaN(anyUser.fid)) {
+          ;(token as any).fid = anyUser.fid
+          // Also standardize sub to fid to simplify server checks
+          token.sub = String(anyUser.fid)
+        }
+        if (
+          typeof anyUser.walletAddress === "string" &&
+          anyUser.walletAddress.length > 0
+        ) {
+          ;(token as any).walletAddress = anyUser.walletAddress
+        }
+      }
+      return token
+    },
     session: async ({ session, token }) => {
       if (session?.user) {
+        // Prefer explicit fid/wallet carried on the token
+        const anyToken = token as any
         const sub = token.sub ?? ""
-        const maybeFid = parseInt(sub)
-        if (!Number.isNaN(maybeFid)) {
-          session.user.fid = maybeFid
-          console.log("[NextAuth] session callback set fid", { fid: maybeFid })
+        const tokenFid = anyToken?.fid
+        const tokenWallet = anyToken?.walletAddress
+
+        if (typeof tokenFid === "number" && !Number.isNaN(tokenFid)) {
+          session.user.fid = tokenFid
+          console.log("[NextAuth] session callback set fid", { fid: tokenFid })
+        } else {
+          const maybeFid = parseInt(sub)
+          if (!Number.isNaN(maybeFid)) {
+            session.user.fid = maybeFid
+            console.log("[NextAuth] session callback set fid", {
+              fid: maybeFid,
+            })
+          }
+        }
+
+        if (typeof tokenWallet === "string" && tokenWallet.length > 0) {
+          session.user.walletAddress = tokenWallet.toLowerCase()
+          console.log("[NextAuth] session callback set wallet", {
+            wallet: tokenWallet,
+          })
         } else if (sub.startsWith("0x")) {
           session.user.fid = session.user.fid ?? 0
           session.user.walletAddress = sub.toLowerCase()

@@ -8,6 +8,8 @@ import { ProfilePicture } from '@/components/ProfilePicture';
 import { getSession } from "@/auth";
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 async function getProfileData() {
   try {
     const session = await getSession();
