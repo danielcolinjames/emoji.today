@@ -252,7 +252,7 @@ function VotePageContent() {
             return `You and ${otherVoters} other${otherVoters !== 1 ? 's' : ''} did your civic duty.`;
           }
         }
-        return "Loading results...";
+        return "Tallying results...";
       default:
         return undefined;
     }

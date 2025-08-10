@@ -5,9 +5,10 @@ import { LeaderboardClient } from '@/app/leaderboard/LeaderboardClient';
 
 export default async function LeaderboardPage() {
   const session = await getSession();
-
-  if (!session?.user?.fid) {
-    redirect('/');
+  const hasFid = Boolean(session?.user?.fid)
+  const hasWallet = Boolean((session?.user as any)?.walletAddress)
+  if (!hasFid && !hasWallet) {
+    redirect('/')
   }
 
   return (
