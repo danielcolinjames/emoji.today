@@ -10,8 +10,12 @@ import { ReviewVote } from "@/components/voting/ReviewVote";
 import { VotingResults } from "@/components/VotingResults";
 import { getLiveVotingResults } from "@/lib/actions";
 import { submitVote } from "@/actions/submitVote.server";
-import { clearUserVote as clearUserVoteServer } from "@/actions/clearUserVote.server";
+// import { clearUserVote as clearUserVoteServer } from "@/actions/clearUserVote.server";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { useUnifiedUser } from "@/hooks/useUnifiedUser";
+import { supabasePublic } from "@/lib/supabase-public";
+import { formatDateForDB, getCurrentVotingDay } from "@/lib/date-utils";
+import { useEnsureVerified } from "@/hooks/useEnsureVerified";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { triggerVoteCacheUpdate } from "@/components/SWRCacheManager";
 
@@ -19,7 +23,9 @@ type VotingStep = 'select' | 'confirm' | 'review' | 'results';
 
 function VotePageContent() {
   const { data: session, status } = useSession();
-  const { context } = useMiniKit();
+  const { context, isFrameReady } = useMiniKit();
+  const unifiedUser = useUnifiedUser();
+  useEnsureVerified();
   const [step, setStep] = useState<VotingStep>('select');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
@@ -36,13 +42,13 @@ function VotePageContent() {
       return;
     }
 
-    if (status === "authenticated" && session?.user?.fid) {
+    if ((status === "authenticated" && session?.user?.fid) || (isFrameReady && unifiedUser.fid)) {
       checkVotingStatus();
       setHasInitiallyChecked(true);
-    } else if (status === "unauthenticated") {
+    } else if (status === "unauthenticated" && !unifiedUser.fid) {
       setIsLoading(false);
     }
-  }, [status, session, step, hasInitiallyChecked]);
+  }, [status, session, unifiedUser.fid, isFrameReady, step, hasInitiallyChecked]);
 
   const checkVotingStatus = async () => {
     try {
@@ -58,6 +64,28 @@ function VotePageContent() {
         setHasVoted(false);
         setTotalVotes(0);
         setIsLoading(false);
+        return;
+      }
+
+      // Prefer public check in Mini App context
+      if (unifiedUser.fid) {
+        const client = supabasePublic();
+        const today = formatDateForDB(getCurrentVotingDay());
+        const { data: userVote } = await client
+          .from("votes")
+          .select("emoji")
+          .eq("fid", unifiedUser.fid)
+          .eq("vote_date", today)
+          .single();
+        if (userVote) {
+          setHasVoted(true);
+          setSelectedEmoji(userVote.emoji);
+          if (step === 'select') setStep('results');
+        } else {
+          setHasVoted(false);
+          setSelectedEmoji(null);
+          setStep('select');
+        }
         return;
       }
 

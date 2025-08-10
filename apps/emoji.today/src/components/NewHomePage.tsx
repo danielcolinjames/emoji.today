@@ -13,8 +13,10 @@ import { getContrastTextColor } from "@/lib/utils";
 import { getVotingResults } from "@/lib/actions";
 import { ArrowRight } from 'lucide-react';
 import { VotingCountdown } from '@/components/VotingCountdown';
-import { getCurrentVotingDay, formatDateForDisplay } from "@/lib/date-utils";
+import { getCurrentVotingDay, formatDateForDisplay, formatDateForDB } from "@/lib/date-utils";
+import { supabasePublic } from "@/lib/supabase-public";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { useUnifiedUser } from "@/hooks/useUnifiedUser";
 
 const FADE_DURATION_MS = 500;
 
@@ -32,19 +34,25 @@ export default function NewHomePage() {
   const [hasVoted, setHasVoted] = useState(false);
   const [isCheckingVote, setIsCheckingVote] = useState(false);
 
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   // const { context } = useFrame();
   const router = useRouter();
 
-  const { setFrameReady, isFrameReady } = useMiniKit();
+  const { setFrameReady, isFrameReady, context } = useMiniKit();
+  const unifiedUser = useUnifiedUser();
+  const isAuthenticated = Boolean(
+    session?.user?.fid || (session?.user as any)?.walletAddress
+  );
+  // NextAuth auto-signin runs globally in Providers; no custom verification
 
   useEffect(() => {
     console.log('isFrameReady', isFrameReady);
     console.log('hello!!!!!!!');
+    console.log('unifiedUser', unifiedUser);
     if (!isFrameReady) {
       setFrameReady();
     }
-  }, [setFrameReady, isFrameReady]);
+  }, [setFrameReady, isFrameReady, unifiedUser]);
 
   const loadRandomEmoji = async (updateColorsImmediately = false) => {
     try {
@@ -85,11 +93,24 @@ export default function NewHomePage() {
       const nonce = await getNonce();
       const result = await sdk.actions.signIn({ nonce });
 
-      await signIn("credentials", {
+      // Try Farcaster auth first
+      const res = await signIn("credentials", {
         message: result.message,
         signature: result.signature,
         redirect: false,
       });
+      // If Farcaster auth fails, attempt wallet-only auth to establish a Base session
+      if (!res || (res as any).error || (res as any).ok === false) {
+        await signIn("wallet", {
+          message: result.message,
+          signature: result.signature,
+          redirect: false,
+        });
+      }
+
+      // Refresh NextAuth client session and update CTA
+      await update();
+      await checkVotingStatus();
 
       // No automatic redirect - user stays on home page after sign in
     } catch (e) {
@@ -97,22 +118,17 @@ export default function NewHomePage() {
     } finally {
       setIsSigningIn(false);
     }
-  }, [getNonce, isFrameReady]);
+  }, [getNonce, isFrameReady, update]);
 
-  // Check if user has voted today (only when authenticated)
+  // Check if user has voted today (Mini App or Web session)
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.fid) {
+    if (isFrameReady && (unifiedUser.fid || session?.user?.fid)) {
       checkVotingStatus();
-    } else if (status === "unauthenticated") {
-      // Reset voting status when user logs out
-      setHasVoted(false);
-      setIsCheckingVote(false);
     }
-  }, [status, session]);
+  }, [unifiedUser.fid, session?.user?.fid, isFrameReady]);
 
   const checkVotingStatus = async () => {
-    // Double-check authentication before making the API call
-    if (status !== "authenticated" || !session?.user?.fid) {
+    if (!isAuthenticated) {
       setHasVoted(false);
       setIsCheckingVote(false);
       return;
@@ -120,15 +136,20 @@ export default function NewHomePage() {
 
     try {
       setIsCheckingVote(true);
-      const data = await getVotingResults();
-      setHasVoted(!!data); // If data exists, user has voted
+      // Call cookie-aware API that checks with server-side fid to avoid client auth races
+      // Client-side direct check using public Supabase
+      const client = supabasePublic();
+      const fidToUse = unifiedUser.fid ?? session?.user?.fid;
+      if (!fidToUse) { setHasVoted(false); return; }
+      const today = formatDateForDB(getCurrentVotingDay());
+      const { data: userVote } = await client
+        .from("votes")
+        .select("emoji")
+        .eq("fid", fidToUse)
+        .eq("vote_date", today)
+        .single();
+      setHasVoted(!!userVote);
     } catch (error) {
-      // Handle authentication errors gracefully (e.g., during logout)
-      if (error instanceof Error && error.message.includes('Authentication required')) {
-        console.log('User logged out during voting status check');
-        setHasVoted(false);
-        return;
-      }
       console.error('Error checking voting status:', error);
       setHasVoted(false);
     } finally {
@@ -192,17 +213,14 @@ export default function NewHomePage() {
   }, [isEmojiCycling]);
 
   const getButtonText = () => {
-    if (status === "authenticated") {
-      return hasVoted ? "View results" : "Cast your vote";
-    } else if (isFrameReady) {
-      return "Sign in to vote";
-    }
+    if (isAuthenticated) return hasVoted ? "View results" : "Cast your vote";
+    if (isFrameReady) return "Sign in to vote";
     return "Vote in Farcaster";
   };
 
   const handleButtonClick = () => {
-    if (status === "authenticated") {
-      // If already authenticated, just navigate to vote page
+    if (isAuthenticated) {
+      // If already authenticated (Mini App or Web), navigate to vote page
       router.push('/vote');
     } else {
       // If not authenticated, handle sign in
@@ -327,7 +345,7 @@ export default function NewHomePage() {
               />
             ) : (
               <div className="flex items-center gap-3">
-                {status !== "authenticated" && isFrameReady && (
+                {!isAuthenticated && isFrameReady && (
                   <img
                     src="/images/farcaster-white.svg"
                     alt="Farcaster"
@@ -337,7 +355,7 @@ export default function NewHomePage() {
                     }}
                   />
                 )}
-                {status !== "authenticated" && !isFrameReady && (
+                {!isAuthenticated && !isFrameReady && (
                   <img
                     src="/images/farcaster-white.svg"
                     alt="Farcaster"
@@ -350,7 +368,7 @@ export default function NewHomePage() {
                 <p className="text-base sm:text-lg md:text-xl text-center">
                   {getButtonText()}
                 </p>
-                {status === "authenticated" && (
+                {isAuthenticated && (
                   <ArrowRight
                     className="h-4 w-4 sm:h-6 sm:w-6"
                     style={{
@@ -365,7 +383,7 @@ export default function NewHomePage() {
           {/* Legacy text or Terms text based on context and auth status */}
           {isFrameReady && status !== "authenticated" ? (
             <p className="text-xs text-neutral-600 text-center mt-2 sm:mt-4 font-geist-mono max-w-[220px] mx-auto">
-              By signing in, you accept our{" "}
+              By casting your vote, you accept our{" "}
               <a href="/terms-and-conditions" className="text-neutral-500 hover:text-neutral-400 hover:underline transition-colors">
                 Terms and Conditions
               </a>
