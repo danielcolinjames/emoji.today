@@ -39,8 +39,12 @@ html {
 }
 
 html.dark {
+  /* Ensure gradient variables match forced dark mode */
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
   --tw-bg-opacity: 1;
-  background-color: #000; /* Dark background */
+  background-color: #050505; /* Dark background */
   color-scheme: dark;
 }
 
