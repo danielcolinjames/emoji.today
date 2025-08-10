@@ -411,6 +411,7 @@ export type Database = {
           previous_usernames: string[] | null
           updated_at: string
           username: string | null
+          wallet_address: string | null
         }
         Insert: {
           created_at?: string
@@ -420,6 +421,7 @@ export type Database = {
           previous_usernames?: string[] | null
           updated_at?: string
           username?: string | null
+          wallet_address?: string | null
         }
         Update: {
           created_at?: string
@@ -429,6 +431,7 @@ export type Database = {
           previous_usernames?: string[] | null
           updated_at?: string
           username?: string | null
+          wallet_address?: string | null
         }
         Relationships: []
       }
@@ -487,6 +490,7 @@ export type Database = {
           id: string
           user_id: string
           vote_date: string
+          wallet_address: string | null
         }
         Insert: {
           created_at?: string
@@ -495,6 +499,7 @@ export type Database = {
           id?: string
           user_id: string
           vote_date: string
+          wallet_address?: string | null
         }
         Update: {
           created_at?: string
@@ -503,6 +508,7 @@ export type Database = {
           id?: string
           user_id?: string
           vote_date?: string
+          wallet_address?: string | null
         }
         Relationships: [
           {

@@ -213,19 +213,10 @@ export async function submitVote(
   displayName?: string
 ) {
   try {
-    // Check authentication
+    // Check authentication (either Warpcast fid or Base wallet)
     const session = await getSession()
-
-    if (!session) {
-      throw new Error("No active session found. Please sign in again.")
-    }
-
-    if (!session.user) {
-      throw new Error("Invalid session. Please sign in again.")
-    }
-
-    if (!session.user.fid) {
-      throw new Error("Invalid user session. Please sign in again.")
+    if (!session || !session.user) {
+      throw new Error("Authentication required")
     }
 
     if (!emoji) {
@@ -238,7 +229,7 @@ export async function submitVote(
     // Use service role for all database operations to avoid RLS issues with triggers
     const serviceSupabase = supabaseService()
 
-    // Check if user already voted today (using fid directly for efficiency)
+    // Check if user already voted today (by fid)
     const { data: existingVote, error: voteCheckError } = await serviceSupabase
       .from("votes")
       .select("id")
@@ -261,21 +252,21 @@ export async function submitVote(
       throw new Error("You have already voted today")
     }
 
-    // Upsert user with username tracking (using service role)
-    const userId = await upsertUserWithUsernameServiceRole(
-      fid,
-      serviceSupabase,
-      username,
-      displayName
+    // Resolve user_id by fid
+    let userId: string
+    userId = String(
+      await upsertUserWithUsernameServiceRole(
+        fid,
+        serviceSupabase,
+        username,
+        displayName
+      )
     )
 
     // Insert the vote with both user_id and fid for redundancy and query efficiency
-    const { error: voteError } = await serviceSupabase.from("votes").insert({
-      user_id: userId,
-      fid: fid,
-      emoji,
-      vote_date: today,
-    })
+    const { error: voteError } = await serviceSupabase
+      .from("votes")
+      .insert({ user_id: userId, fid, emoji, vote_date: today })
 
     if (voteError) {
       console.error(

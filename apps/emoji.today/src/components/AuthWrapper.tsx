@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import LoadingSpinner from "./LoadingSpinner";
@@ -51,14 +52,16 @@ export function AuthWrapper({
   fallback
 }: AuthWrapperProps) {
   const { data: session, status } = useSession();
+  const { context } = useMiniKit();
+  const isMiniAppAuthed = Boolean(context?.user);
   const router = useRouter();
 
   // Handle redirect when unauthenticated and auth is required
   useEffect(() => {
-    if (requireAuth && status === "unauthenticated") {
+    if (requireAuth && status === "unauthenticated" && !isMiniAppAuthed) {
       router.push('/');
     }
-  }, [requireAuth, status, router]);
+  }, [requireAuth, status, isMiniAppAuthed, router]);
 
   // If auth is not required, always show children
   if (!requireAuth) {
@@ -75,7 +78,7 @@ export function AuthWrapper({
   }
 
   // Not authenticated - show loading spinner while redirecting
-  if (status === "unauthenticated") {
+  if (status === "unauthenticated" && !isMiniAppAuthed) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-[#050505] text-white">
         <LoadingSpinner size={64} />
